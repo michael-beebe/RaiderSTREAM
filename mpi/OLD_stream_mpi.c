@@ -253,7 +253,7 @@ size_t		array_elements, array_bytes, array_alignment;
 --------------------------------------------------------------------------------------*/
 static double avgtime[NUM_KERNELS] = {0};
 static double maxtime[NUM_KERNELS] = {0};
-static double mintime[NUM_KERNELS]; // TODO: populate this array before checking results
+static double mintime[NUM_KERNELS];
 
 /*--------------------------------------------------------------------------------------
 - Initialize array to store labels for the benchmark kernels.
@@ -292,7 +292,12 @@ static double bytes[NUM_KERNELS] = {
 
 extern void checkSTREAMresults(STREAM_TYPE *AvgErrByRank, int numranks);
 extern void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr);
-void init_idx_array(int *array, int nelems);
+extern void init_idx_array(int *array, int nelems);
+extern void init_stream_array(STREAM_TYPE *array, size_t array_elements, STREAM_TYPE value);
+
+extern void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k);
+extern void print_timer_granularity(int quantum);
+extern void print_info2(double t, int quantum);
 
 #ifdef TUNED
 extern void tuned_STREAM_Copy();
@@ -319,14 +324,11 @@ int main()
 	double		*TimesByRank;
 	double		t0,t1,tmin;
 	int         rc, numranks, myrank;
-	// STREAM_TYPE	AvgError[3] = {0.0,0.0,0.0};
 	STREAM_TYPE *AvgErrByRank;
 
-	// static double times[NUM_KERNELS][NTIMES];
-	// static STREAM_TYPE AvgError[NUM_ARRAYS];
-
-    /* --- SETUP --- call MPI_Init() before anything else! --- */
-
+/*--------------------------------------------------------------------------------------
+    - Setup MPI
+--------------------------------------------------------------------------------------*/
     rc = MPI_Init(NULL, NULL);
 	t0 = MPI_Wtime();
     if (rc != MPI_SUCCESS) {
@@ -337,32 +339,36 @@ int main()
 	MPI_Comm_size(MPI_COMM_WORLD, &numranks);
 	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 
-	/*--------------------------------------------------------------------------------------
-	    - Set the average errror for each array to 0 as default, since we haven't done
-	      anything with the arrays yet. AvgErrByPE will be updated using an OpenSHMEM
-	      collective later on.
-	--------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------
+    - Set the average errror for each array to 0 as default, since we haven't done
+        anything with the arrays yet. AvgErrByPE will be updated using an OpenSHMEM
+        collective later on.
+--------------------------------------------------------------------------------------*/
     for (int i=0;i<NUM_ARRAYS;i++) {
         AvgError[i] = 0.0;
     }
 
-	/*--------------------------------------------------------------------------------------
-	    - Set the mintime to default value (FLT_MAX) for each kernel, since we haven't executed
-	      any of the kernels or done any timing yet
-	--------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------
+    - Set the mintime to default value (FLT_MAX) for each kernel, since we haven't executed
+        any of the kernels or done any timing yet
+--------------------------------------------------------------------------------------*/
     for (int i=0;i<NUM_KERNELS;i++) {
         mintime[i] = FLT_MAX;
     }
 
-	/*--------------------------------------------------------------------------------------
-	    - Initialize the idx arrays on all PEs and populate them with random values ranging
-	        from 0 - STREAM_ARRAY_SIZE
-	--------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------
+    - Initialize the idx arrays on all PEs and populate them with random values ranging
+        from 0 - STREAM_ARRAY_SIZE
+--------------------------------------------------------------------------------------*/
     srand(time(0));
     init_idx_array(a_idx, STREAM_ARRAY_SIZE);
     init_idx_array(b_idx, STREAM_ARRAY_SIZE);
     init_idx_array(c_idx, STREAM_ARRAY_SIZE);
 
+/*--------------------------------------------------------------------------------------
+    - Initialize the idx arrays on all PEs and populate them with random values ranging
+        from 0 - STREAM_ARRAY_SIZE
+--------------------------------------------------------------------------------------*/
     /* --- NEW FEATURE --- distribute requested storage across MPI ranks --- */
 	array_elements = STREAM_ARRAY_SIZE / numranks;		// don't worry about rounding vs truncation
     array_alignment = 64;						// Can be modified -- provides partial support for adjusting relative alignment
@@ -441,93 +447,29 @@ int main()
 	// Initial informational printouts -- rank 0 handles all the output
 --------------------------------------------------------------------------------------*/
 	if (myrank == 0) {
-		// printf(HLINE);
-		// printf("STREAM version $Revision: 1.8 $\n");
-		printf(HLINE);
-		BytesPerWord = sizeof(STREAM_TYPE);
-		printf("This system uses %d bytes per array element.\n", BytesPerWord);
-
-		printf(HLINE);
-#ifdef N
-		printf("*****  WARNING: ******\n");
-		printf("      It appears that you set the preprocessor variable N when compiling this code.\n");
-		printf("      This version of the code uses the preprocesor variable STREAM_ARRAY_SIZE to control the array size\n");
-		printf("      Reverting to default value of STREAM_ARRAY_SIZE=%llu\n",(unsigned long long) STREAM_ARRAY_SIZE);
-		printf("*****  WARNING: ******\n");
-#endif
-		if (OFFSET != 0) {
-			printf("*****  WARNING: ******\n");
-			printf("   This version ignores the OFFSET parameter.\n");
-			printf("*****  WARNING: ******\n");
-		}
-
-		printf("Total Aggregate Array size = %llu (elements)\n" , (unsigned long long) STREAM_ARRAY_SIZE);
-		printf("Total Aggregate Memory per array = %.1f MiB (= %.1f GiB).\n",
-			BytesPerWord * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.0),
-			BytesPerWord * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.0/1024.0));
-		printf("Total Aggregate memory required = %.1f MiB (= %.1f GiB).\n",
-			(3.0 * BytesPerWord) * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.),
-			(3.0 * BytesPerWord) * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024./1024.));
-		printf("Data is distributed across %d MPI ranks\n",numranks);
-		printf("   Array size per MPI rank = %llu (elements)\n" , (unsigned long long) array_elements);
-		printf("   Memory per array per MPI rank = %.1f MiB (= %.1f GiB).\n",
-			BytesPerWord * ( (double) array_elements / 1024.0/1024.0),
-			BytesPerWord * ( (double) array_elements / 1024.0/1024.0/1024.0));
-		printf("   Total memory per MPI rank = %.1f MiB (= %.1f GiB).\n",
-			(3.0 * BytesPerWord) * ( (double) array_elements / 1024.0/1024.),
-			(3.0 * BytesPerWord) * ( (double) array_elements / 1024.0/1024./1024.));
-
-		printf(HLINE);
-		printf("Each kernel will be executed %d times.\n", NTIMES);
-		printf(" The *best* time for each kernel (excluding the first iteration)\n");
-		printf(" will be used to compute the reported bandwidth.\n");
-		printf("The SCALAR value used for this run is %f\n",SCALAR);
-
-#ifdef _OPENMP
-		printf(HLINE);
-#pragma omp parallel
-		{
-#pragma omp master
-		{
-			k = omp_get_num_threads();
-			printf ("Number of Threads requested for each MPI rank = %i\n",k);
-			}
-		}
-#endif
-
-#ifdef _OPENMP
-		k = 0;
-#pragma omp parallel
-#pragma omp atomic
-			k++;
-		printf ("Number of Threads counted for rank 0 = %i\n",k);
-#endif
-
+        print_info1(BytesPerWord, numranks, array_elements, k);
 	}
 
-    /* --- SETUP --- initialize arrays and estimate precision of timer --- */
+/*--------------------------------------------------------------------------------------
+    // Initialize STREAM arrays on all ranks
+--------------------------------------------------------------------------------------*/
+    init_stream_array(a, array_elements, 1.0);
+    init_stream_array(b, array_elements, 2.0);
+    init_stream_array(c, array_elements, 0.0);
 
-#pragma omp parallel for
-    for (j=0; j<array_elements; j++) {
-	    a[j] = 1.0;
-	    b[j] = 2.0;
-	    c[j] = 0.0;
+    init_stream_array(gather_a, array_elements, 1.0);
+    init_stream_array(gather_b, array_elements, 2.0);
+    init_stream_array(gather_c, array_elements, 0.0);
 
-		gather_a[j] = 1.0;
-		gather_b[j] = 2.0;
-		gather_c[j] = 0.0;
-
-		scatter_a[j] = 1.0;
-		scatter_b[j] = 2.0;
-		scatter_c[j] = 0.0;
-	}
+    init_stream_array(scatter_a, array_elements, 1.0);
+    init_stream_array(scatter_b, array_elements, 2.0);
+    init_stream_array(scatter_c, array_elements, 0.0);
 
 	// Rank 0 needs to allocate arrays to hold error data and timing data from
 	// all ranks for analysis and output.
 	// Allocate and instantiate the arrays here -- after the primary arrays
 	// have been instantiated -- so there is no possibility of having these
 	// auxiliary arrays mess up the NUMA placement of the primary arrays.
-
 	if (myrank == 0) {
 		// There are NUM_ARRAYS average error values for each rank (using STREAM_TYPE).
 		AvgErrByRank = (double *) malloc(NUM_ARRAYS * sizeof(STREAM_TYPE) * numranks);
@@ -546,18 +488,12 @@ int main()
 		memset(TimesByRank,0,NUM_KERNELS*NTIMES*sizeof(double)*numranks);
 	}
 
+/*--------------------------------------------------------------------------------------
+    // Estimate precision and granularity of timer
+--------------------------------------------------------------------------------------*/
 	// Simple check for granularity of the timer being used
 	if (myrank == 0) {
-		printf(HLINE);
-
-		if  ( (quantum = checktick()) >= 1)
-		printf("Your timer granularity/precision appears to be "
-			"%d microseconds.\n", quantum);
-		else {
-		printf("Your timer granularity appears to be "
-			"less than one microsecond.\n");
-		quantum = 1;
-		}
+        print_timer_granularity(quantum);
 	}
 
     /* Get initial timing estimate to compare to timer granularity. */
@@ -569,23 +505,7 @@ int main()
     t = 1.0E6 * (MPI_Wtime() - t);
 
 	if (myrank == 0) {
-		printf("Each test below will take on the order"
-		" of %d microseconds.\n", (int) t  );
-		printf("   (= %d timer ticks)\n", (int) (t/quantum) );
-		printf("Increase the size of the arrays if this shows that\n");
-		printf("you are not getting at least 20 timer ticks per test.\n");
-
-		printf(HLINE);
-
-		printf("WARNING -- The above is only a rough guideline.\n");
-		printf("For best results, please be sure you know the\n");
-		printf("precision of your system timer.\n");
-		printf(HLINE);
-#ifdef VERBOSE
-		t1 = MPI_Wtime();
-		printf("VERBOSE: total setup time for rank 0 = %f seconds\n",t1-t0);
-		printf(HLINE);
-#endif
+        print_info2(t, quantum);
 	}
 
 // =================================================================================
@@ -888,7 +808,6 @@ int main()
 
 	if (myrank == 0) {
 		free(TimesByRank);
-		// free(AvgErrByRank);
 	}
 
     MPI_Finalize();
@@ -964,169 +883,273 @@ void init_idx_array(int *array, int nelems)
 	free(flags);
 }
 
-// // ----------------------------------------------------------------------------------
-// // For the MPI code I separate the computation of errors from the error
-// // reporting output functions (which are handled by MPI rank 0).
-// // ----------------------------------------------------------------------------------
-// #ifndef abs
-// #define abs(a) ((a) >= 0 ? (a) : -(a))
-// #endif
-// void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr)
-// {
-// 	STREAM_TYPE aj,bj,cj,scalar;
-// 	STREAM_TYPE aSumErr,bSumErr,cSumErr;
-// 	ssize_t	j;
-// 	int	k;
+void init_stream_array(STREAM_TYPE *array, size_t array_elements, STREAM_TYPE value) {
+    #pragma omp parallel for
+    for (int i = 0; i < array_elements; i++) {
+        array[i] = value;
+    }
+}
 
-//     /* reproduce initialization */
-// 	aj = 1.0;
-// 	bj = 2.0;
-// 	cj = 0.0;
-//     /* a[] is modified during timing check */
-// 	aj = 2.0E0 * aj;
-//     /* now execute timing loop */
-// 	scalar = SCALAR;
-// 	for (k=0; k<NTIMES; k++)
-//         {
-//             cj = aj;
-//             bj = scalar*cj;
-//             cj = aj+bj;
-//             aj = bj+scalar*cj;
-//         }
+void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k) {
+    	// printf(HLINE);
+		// printf("STREAM version $Revision: 1.8 $\n");
+		printf(HLINE);
+		BytesPerWord = sizeof(STREAM_TYPE);
+		printf("This system uses %d bytes per array element.\n", BytesPerWord);
 
-//     /* accumulate deltas between observed and expected results */
-// 	aSumErr = 0.0;
-// 	bSumErr = 0.0;
-// 	cSumErr = 0.0;
-// 	for (j=0; j<array_elements; j++) {
-// 		aSumErr += abs(a[j] - aj);
-// 		bSumErr += abs(b[j] - bj);
-// 		cSumErr += abs(c[j] - cj);
-// 	}
-// 	*aAvgErr = aSumErr / (STREAM_TYPE) array_elements;
-// 	*bAvgErr = bSumErr / (STREAM_TYPE) array_elements;
-// 	*cAvgErr = cSumErr / (STREAM_TYPE) array_elements;
-// }
+		printf(HLINE);
+#ifdef N
+		printf("*****  WARNING: ******\n");
+		printf("      It appears that you set the preprocessor variable N when compiling this code.\n");
+		printf("      This version of the code uses the preprocesor variable STREAM_ARRAY_SIZE to control the array size\n");
+		printf("      Reverting to default value of STREAM_ARRAY_SIZE=%llu\n",(unsigned long long) STREAM_ARRAY_SIZE);
+		printf("*****  WARNING: ******\n");
+#endif
+		if (OFFSET != 0) {
+			printf("*****  WARNING: ******\n");
+			printf("   This version ignores the OFFSET parameter.\n");
+			printf("*****  WARNING: ******\n");
+		}
+
+		printf("Total Aggregate Array size = %llu (elements)\n" , (unsigned long long) STREAM_ARRAY_SIZE);
+		printf("Total Aggregate Memory per array = %.1f MiB (= %.1f GiB).\n",
+			BytesPerWord * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.0),
+			BytesPerWord * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.0/1024.0));
+		printf("Total Aggregate memory required = %.1f MiB (= %.1f GiB).\n",
+			(3.0 * BytesPerWord) * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.),
+			(3.0 * BytesPerWord) * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024./1024.));
+		printf("Data is distributed across %d MPI ranks\n",numranks);
+		printf("   Array size per MPI rank = %llu (elements)\n" , (unsigned long long) array_elements);
+		printf("   Memory per array per MPI rank = %.1f MiB (= %.1f GiB).\n",
+			BytesPerWord * ( (double) array_elements / 1024.0/1024.0),
+			BytesPerWord * ( (double) array_elements / 1024.0/1024.0/1024.0));
+		printf("   Total memory per MPI rank = %.1f MiB (= %.1f GiB).\n",
+			(3.0 * BytesPerWord) * ( (double) array_elements / 1024.0/1024.),
+			(3.0 * BytesPerWord) * ( (double) array_elements / 1024.0/1024./1024.));
+
+		printf(HLINE);
+		printf("Each kernel will be executed %d times.\n", NTIMES);
+		printf(" The *best* time for each kernel (excluding the first iteration)\n");
+		printf(" will be used to compute the reported bandwidth.\n");
+		printf("The SCALAR value used for this run is %f\n",SCALAR);
+
+#ifdef _OPENMP
+		printf(HLINE);
+#pragma omp parallel
+		{
+#pragma omp master
+		{
+			k = omp_get_num_threads();
+			printf ("Number of Threads requested for each MPI rank = %i\n",k);
+			}
+		}
+#endif
+
+#ifdef _OPENMP
+		k = 0;
+#pragma omp parallel
+#pragma omp atomic
+			k++;
+		printf ("Number of Threads counted for rank 0 = %i\n",k);
+#endif
+}
+
+void print_timer_granularity(int quantum) {
+    printf(HLINE);
+
+    if  ( (quantum = checktick()) >= 1)
+    printf("Your timer granularity/precision appears to be "
+        "%d microseconds.\n", quantum);
+    else {
+    printf("Your timer granularity appears to be "
+        "less than one microsecond.\n");
+    quantum = 1;
+    }
+}
+
+void print_info2(double t, int quantum) {
+    	printf("Each test below will take on the order"
+		" of %d microseconds.\n", (int) t  );
+		printf("   (= %d timer ticks)\n", (int) (t/quantum) );
+		printf("Increase the size of the arrays if this shows that\n");
+		printf("you are not getting at least 20 timer ticks per test.\n");
+
+		printf(HLINE);
+
+		printf("WARNING -- The above is only a rough guideline.\n");
+		printf("For best results, please be sure you know the\n");
+		printf("precision of your system timer.\n");
+		printf(HLINE);
+#ifdef VERBOSE
+		t1 = MPI_Wtime();
+		printf("VERBOSE: total setup time for rank 0 = %f seconds\n",t1-t0);
+		printf(HLINE);
+#endif
+}
+
+// ----------------------------------------------------------------------------------
+// For the MPI code I separate the computation of errors from the error
+// reporting output functions (which are handled by MPI rank 0).
+// ----------------------------------------------------------------------------------
+#ifndef abs
+#define abs(a) ((a) >= 0 ? (a) : -(a))
+#endif
+void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr)
+{
+	STREAM_TYPE aj,bj,cj,scalar;
+	STREAM_TYPE aSumErr,bSumErr,cSumErr;
+	ssize_t	j;
+	int	k;
+
+    /* reproduce initialization */
+	aj = 1.0;
+	bj = 2.0;
+	cj = 0.0;
+    /* a[] is modified during timing check */
+	aj = 2.0E0 * aj;
+    /* now execute timing loop */
+	scalar = SCALAR;
+	for (k=0; k<NTIMES; k++)
+        {
+            cj = aj;
+            bj = scalar*cj;
+            cj = aj+bj;
+            aj = bj+scalar*cj;
+        }
+
+    /* accumulate deltas between observed and expected results */
+	aSumErr = 0.0;
+	bSumErr = 0.0;
+	cSumErr = 0.0;
+	for (j=0; j<array_elements; j++) {
+		aSumErr += abs(a[j] - aj);
+		bSumErr += abs(b[j] - bj);
+		cSumErr += abs(c[j] - cj);
+	}
+	*aAvgErr = aSumErr / (STREAM_TYPE) array_elements;
+	*bAvgErr = bSumErr / (STREAM_TYPE) array_elements;
+	*cAvgErr = cSumErr / (STREAM_TYPE) array_elements;
+}
 
 
 
-// void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
-// {
-// 	STREAM_TYPE aj,bj,cj,scalar;
-// 	STREAM_TYPE aSumErr,bSumErr,cSumErr;
-// 	STREAM_TYPE aAvgErr,bAvgErr,cAvgErr;
-// 	double epsilon;
-// 	ssize_t	j;
-// 	int	k,ierr,err;
+void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
+{
+	STREAM_TYPE aj,bj,cj,scalar;
+	STREAM_TYPE aSumErr,bSumErr,cSumErr;
+	STREAM_TYPE aAvgErr,bAvgErr,cAvgErr;
+	double epsilon;
+	ssize_t	j;
+	int	k,ierr,err;
 
-// 	// Repeat the computation of aj, bj, cj because I am lazy
-//     /* reproduce initialization */
-// 	aj = 1.0;
-// 	bj = 2.0;
-// 	cj = 0.0;
-//     /* a[] is modified during timing check */
-// 	aj = 2.0E0 * aj;
-//     /* now execute timing loop */
-// 	scalar = SCALAR;
-// 	for (k=0; k<NTIMES; k++)
-//         {
-//             cj = aj;
-//             bj = scalar*cj;
-//             cj = aj+bj;
-//             aj = bj+scalar*cj;
-//         }
+	// Repeat the computation of aj, bj, cj because I am lazy
+    /* reproduce initialization */
+	aj = 1.0;
+	bj = 2.0;
+	cj = 0.0;
+    /* a[] is modified during timing check */
+	aj = 2.0E0 * aj;
+    /* now execute timing loop */
+	scalar = SCALAR;
+	for (k=0; k<NTIMES; k++)
+        {
+            cj = aj;
+            bj = scalar*cj;
+            cj = aj+bj;
+            aj = bj+scalar*cj;
+        }
 
-// 	// Compute the average of the average errors contributed by each MPI rank
-// 	aSumErr = 0.0;
-// 	bSumErr = 0.0;
-// 	cSumErr = 0.0;
-// 	for (k=0; k<numranks; k++) {
-// 		aSumErr += AvgErrByRank[3*k + 0];
-// 		bSumErr += AvgErrByRank[3*k + 1];
-// 		cSumErr += AvgErrByRank[3*k + 2];
-// 	}
-// 	aAvgErr = aSumErr / (STREAM_TYPE) numranks;
-// 	bAvgErr = bSumErr / (STREAM_TYPE) numranks;
-// 	cAvgErr = cSumErr / (STREAM_TYPE) numranks;
+	// Compute the average of the average errors contributed by each MPI rank
+	aSumErr = 0.0;
+	bSumErr = 0.0;
+	cSumErr = 0.0;
+	for (k=0; k<numranks; k++) {
+		aSumErr += AvgErrByRank[3*k + 0];
+		bSumErr += AvgErrByRank[3*k + 1];
+		cSumErr += AvgErrByRank[3*k + 2];
+	}
+	aAvgErr = aSumErr / (STREAM_TYPE) numranks;
+	bAvgErr = bSumErr / (STREAM_TYPE) numranks;
+	cAvgErr = cSumErr / (STREAM_TYPE) numranks;
 
-// 	if (sizeof(STREAM_TYPE) == 4) {
-// 		epsilon = 1.e-6;
-// 	}
-// 	else if (sizeof(STREAM_TYPE) == 8) {
-// 		epsilon = 1.e-13;
-// 	}
-// 	else {
-// 		printf("WEIRD: sizeof(STREAM_TYPE) = %lu\n",sizeof(STREAM_TYPE));
-// 		epsilon = 1.e-6;
-// 	}
+	if (sizeof(STREAM_TYPE) == 4) {
+		epsilon = 1.e-6;
+	}
+	else if (sizeof(STREAM_TYPE) == 8) {
+		epsilon = 1.e-13;
+	}
+	else {
+		printf("WEIRD: sizeof(STREAM_TYPE) = %lu\n",sizeof(STREAM_TYPE));
+		epsilon = 1.e-6;
+	}
 
-// 	err = 0;
-// 	if (abs(aAvgErr/aj) > epsilon) {
-// 		err++;
-// 		printf ("Failed Validation on array a[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
-// 		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",aj,aAvgErr,abs(aAvgErr)/aj);
-// 		ierr = 0;
-// 		for (j=0; j<array_elements; j++) {
-// 			if (abs(a[j]/aj-1.0) > epsilon) {
-// 				ierr++;
-// #ifdef VERBOSE
-// 				if (ierr < 10) {
-// 					printf("         array a: index: %ld, expected: %e, observed: %e, relative error: %e\n",
-// 						j,aj,a[j],abs((aj-a[j])/aAvgErr));
-// 				}
-// #endif
-// 			}
-// 		}
-// 		printf("     For array a[], %d errors were found.\n",ierr);
-// 	}
-// 	if (abs(bAvgErr/bj) > epsilon) {
-// 		err++;
-// 		printf ("Failed Validation on array b[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
-// 		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",bj,bAvgErr,abs(bAvgErr)/bj);
-// 		printf ("     AvgRelAbsErr > Epsilon (%e)\n",epsilon);
-// 		ierr = 0;
-// 		for (j=0; j<array_elements; j++) {
-// 			if (abs(b[j]/bj-1.0) > epsilon) {
-// 				ierr++;
-// #ifdef VERBOSE
-// 				if (ierr < 10) {
-// 					printf("         array b: index: %ld, expected: %e, observed: %e, relative error: %e\n",
-// 						j,bj,b[j],abs((bj-b[j])/bAvgErr));
-// 				}
-// #endif
-// 			}
-// 		}
-// 		printf("     For array b[], %d errors were found.\n",ierr);
-// 	}
-// 	if (abs(cAvgErr/cj) > epsilon) {
-// 		err++;
-// 		printf ("Failed Validation on array c[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
-// 		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",cj,cAvgErr,abs(cAvgErr)/cj);
-// 		printf ("     AvgRelAbsErr > Epsilon (%e)\n",epsilon);
-// 		ierr = 0;
-// 		for (j=0; j<array_elements; j++) {
-// 			if (abs(c[j]/cj-1.0) > epsilon) {
-// 				ierr++;
-// #ifdef VERBOSE
-// 				if (ierr < 10) {
-// 					printf("         array c: index: %ld, expected: %e, observed: %e, relative error: %e\n",
-// 						j,cj,c[j],abs((cj-c[j])/cAvgErr));
-// 				}
-// #endif
-// 			}
-// 		}
-// 		printf("     For array c[], %d errors were found.\n",ierr);
-// 	}
-// 	if (err == 0) {
-// 		printf ("Solution Validates: avg error less than %e on all three arrays\n",epsilon);
-// 	}
-// #ifdef VERBOSE
-// 	printf ("Results Validation Verbose Results: \n");
-// 	printf ("    Expected a(1), b(1), c(1): %f %f %f \n",aj,bj,cj);
-// 	printf ("    Observed a(1), b(1), c(1): %f %f %f \n",a[1],b[1],c[1]);
-// 	printf ("    Rel Errors on a, b, c:     %e %e %e \n",abs(aAvgErr/aj),abs(bAvgErr/bj),abs(cAvgErr/cj));
-// #endif
-// }
+	err = 0;
+	if (abs(aAvgErr/aj) > epsilon) {
+		err++;
+		printf ("Failed Validation on array a[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
+		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",aj,aAvgErr,abs(aAvgErr)/aj);
+		ierr = 0;
+		for (j=0; j<array_elements; j++) {
+			if (abs(a[j]/aj-1.0) > epsilon) {
+				ierr++;
+#ifdef VERBOSE
+				if (ierr < 10) {
+					printf("         array a: index: %ld, expected: %e, observed: %e, relative error: %e\n",
+						j,aj,a[j],abs((aj-a[j])/aAvgErr));
+				}
+#endif
+			}
+		}
+		printf("     For array a[], %d errors were found.\n",ierr);
+	}
+	if (abs(bAvgErr/bj) > epsilon) {
+		err++;
+		printf ("Failed Validation on array b[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
+		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",bj,bAvgErr,abs(bAvgErr)/bj);
+		printf ("     AvgRelAbsErr > Epsilon (%e)\n",epsilon);
+		ierr = 0;
+		for (j=0; j<array_elements; j++) {
+			if (abs(b[j]/bj-1.0) > epsilon) {
+				ierr++;
+#ifdef VERBOSE
+				if (ierr < 10) {
+					printf("         array b: index: %ld, expected: %e, observed: %e, relative error: %e\n",
+						j,bj,b[j],abs((bj-b[j])/bAvgErr));
+				}
+#endif
+			}
+		}
+		printf("     For array b[], %d errors were found.\n",ierr);
+	}
+	if (abs(cAvgErr/cj) > epsilon) {
+		err++;
+		printf ("Failed Validation on array c[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
+		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",cj,cAvgErr,abs(cAvgErr)/cj);
+		printf ("     AvgRelAbsErr > Epsilon (%e)\n",epsilon);
+		ierr = 0;
+		for (j=0; j<array_elements; j++) {
+			if (abs(c[j]/cj-1.0) > epsilon) {
+				ierr++;
+#ifdef VERBOSE
+				if (ierr < 10) {
+					printf("         array c: index: %ld, expected: %e, observed: %e, relative error: %e\n",
+						j,cj,c[j],abs((cj-c[j])/cAvgErr));
+				}
+#endif
+			}
+		}
+		printf("     For array c[], %d errors were found.\n",ierr);
+	}
+	if (err == 0) {
+		printf ("Solution Validates: avg error less than %e on all three arrays\n",epsilon);
+	}
+#ifdef VERBOSE
+	printf ("Results Validation Verbose Results: \n");
+	printf ("    Expected a(1), b(1), c(1): %f %f %f \n",aj,bj,cj);
+	printf ("    Observed a(1), b(1), c(1): %f %f %f \n",a[1],b[1],c[1]);
+	printf ("    Rel Errors on a, b, c:     %e %e %e \n",abs(aAvgErr/aj),abs(bAvgErr/bj),abs(cAvgErr/cj));
+#endif
+}
 
 
 
