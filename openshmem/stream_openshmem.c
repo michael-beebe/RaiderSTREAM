@@ -840,7 +840,7 @@ int main()
 	}
 #endif
 
-	shmem_free(TimesByRank);
+	// shmem_free(TimesByRank);
 	shmem_free(psync);
 
     shmem_finalize();
@@ -858,8 +858,7 @@ double mysecond()
 }
 
 # define	M	20
-int checktick()
-{
+int checktick() {
     int		i, minDelta, Delta;
     double	t1, t2, timesfound[M];
 
@@ -885,18 +884,17 @@ int checktick()
 	}
 
    return(minDelta);
-    }
+}
 
 
 // ----------------------------------------------------------------------------------
-// For the MPI code I separate the computation of errors from the error
+// For the SHMEM code I separate the computation of errors from the error
 // reporting output functions (which are handled by MPI rank 0).
 // ----------------------------------------------------------------------------------
 #ifndef abs
 #define abs(a) ((a) >= 0 ? (a) : -(a))
 #endif
-void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr)
-{
+void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr) {
 	STREAM_TYPE aj,bj,cj,scalar;
 	STREAM_TYPE aSumErr,bSumErr,cSumErr;
 	ssize_t	j;
@@ -934,8 +932,7 @@ void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE
 
 
 
-void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
-{
+void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks) {
 	STREAM_TYPE aj,bj,cj,scalar;
 	STREAM_TYPE aSumErr,bSumErr,cSumErr;
 	STREAM_TYPE aAvgErr,bAvgErr,cAvgErr;
@@ -1080,8 +1077,8 @@ void init_idx_array(int *array, int nelems)
 
 
 void print_info1(int BytesPerWord, int numranks, ssize_t array_elements) {
-		// printf(HLINE);
-		// printf("STREAM version $Revision: 1.8 $\n"); FIXME:
+		printf(HLINE);
+		printf("STREAM version $Revision: 5.10 $\n");
 		printf(HLINE);
 		//BytesPerWord = sizeof(STREAM_TYPE);
 		printf("This system uses %d bytes per array element.\n",
@@ -1128,19 +1125,20 @@ void print_info1(int BytesPerWord, int numranks, ssize_t array_elements) {
 
 void print_timer_granularity(int quantum) {
     if  ( (quantum = checktick()) >= 1)
-    printf("Your timer granularity/precision appears to be "
-        "%d microseconds.\n", quantum);
+        printf("Your timer granularity/precision appears to be "
+            "%d microseconds.\n", quantum);
     else {
-    printf("Your timer granularity appears to be "
-        "less than one microsecond.\n");
-    quantum = 1;
+        printf("Your timer granularity appears to be "
+            "less than one microsecond.\n");
+        quantum = 1;
     }
 }
 
 void print_info2(double t, double t0, double t1, int quantum) {
     printf("Each test below will take on the order"
     " of %d microseconds.\n", (int) t  );
-    printf("   (= %d timer ticks)\n", (int) (t/quantum) );
+    // printf("   (= %d timer ticks)\n", (int) (t/quantum) );
+    printf("   (= %d timer ticks)\n", (int) (t) );
     printf("Increase the size of the arrays if this shows that\n");
     printf("you are not getting at least 20 timer ticks per test.\n");
 
@@ -1152,7 +1150,7 @@ void print_info2(double t, double t0, double t1, int quantum) {
     printf(HLINE);
     #ifdef VERBOSE
         t1 = mysecond();
-        printf("VERBOSE: total setup time for rank 0 = %f seconds\n",t1-t0);
+        printf("VERBOSE: total setup time for rank 0 = %f seconds\n", t1 - t0);
         printf(HLINE);
     #endif
 }

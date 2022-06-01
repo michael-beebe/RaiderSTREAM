@@ -722,17 +722,7 @@ void checkSTREAMresults()
 
     /* accumulate deltas between observed and expected results */
 	aSumErr = 0.0, bSumErr = 0.0, cSumErr = 0.0;
-
 	for (j=0; j<STREAM_ARRAY_SIZE; j++) {
-    	// Original kernels
-		aSumErr += abs(a[j] - aj);
-		bSumErr += abs(b[j] - bj);
-		cSumErr += abs(c[j] - cj);
-		// Gather kernels
-		aSumErr += abs(a[j] - aj);
-		bSumErr += abs(b[j] - bj);
-		cSumErr += abs(c[j] - cj);
-		// Scatter kernels
 		aSumErr += abs(a[j] - aj);
 		bSumErr += abs(b[j] - bj);
 		cSumErr += abs(c[j] - cj);
@@ -808,8 +798,8 @@ void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
  - Functions for printing initial system information and so forth
 --------------------------------------------------------------------------------------*/
 void print_info1(int BytesPerWord) {
-    // printf(HLINE);
-    // printf("STREAM version $Revision: 5.10 $\n");
+    printf(HLINE);
+    printf("STREAM version $Revision: 5.10 $\n");
     printf(HLINE);
     BytesPerWord = sizeof(STREAM_TYPE);
     printf("This system uses %d bytes per array element.\n",
@@ -851,7 +841,8 @@ void print_timer_granularity(int quantum) {
 void print_info2(double t, int quantum) {
     printf("Each test below will take on the order"
 	" of %d microseconds.\n", (int) t  );
-    printf("   (= %d clock ticks)\n", (int) (t/quantum) );
+	// printf("   (= %d timer ticks)\n", (int) (t/quantum) );
+    printf("   (= %d clock ticks)\n", (int) (t) );
     printf("Increase the size of the arrays if this shows that\n");
     printf("you are not getting at least 20 clock ticks per test.\n");
 

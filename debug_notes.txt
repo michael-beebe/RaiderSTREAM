@@ -3,11 +3,11 @@ TODO:
   	- Finish validation on MPI version
 
   - OpenSHMEM
-	- Fix "timer ticks" bug (change data type) (= -2147483648 timer ticks)
   	- Finish validation on OpenSHMEM version
 
-  - Fix up the comments at the top for each implementation
-
+  - Update the comments at the top for each implementation
+  - Update the README
+  - Make sure the STREAM version printout is accurate
 
 COMPLETE:
   - OpenSHMEM
