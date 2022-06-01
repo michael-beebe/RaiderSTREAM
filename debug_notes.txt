@@ -1,0 +1,25 @@
+TODO:
+  - MPI
+  	- Finish validation on MPI version
+
+  - OpenSHMEM
+	- Fix "timer ticks" bug (change data type) (= -2147483648 timer ticks)
+  	- Finish validation on OpenSHMEM version
+
+  - Fix up the comments at the top for each implementation
+
+
+COMPLETE:
+  - OpenSHMEM
+  	- Modularize OpenSHMEM version
+  	- Remove the gather and scatter arrays from OpenSHMEM version
+  	- Modularize OpenSHMEM version
+
+  - MPI
+  	- Remove gather and scatter arrays from MPI version
+ 	- Modularize MPI version
+
+  - OpenMP
+  	- Remove gather and scatter arrays from openmp version
+  	- Modularize OpenMP version
+  	- Finish validation on OpenMP version

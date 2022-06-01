@@ -576,7 +576,10 @@ int main()
 /*--------------------------------------------------------------------------------------
 	// Validate results
 --------------------------------------------------------------------------------------*/
-    checkSTREAMresults();
+#ifdef INJECTERROR
+	a[11] = 100.0 * a[11];
+#endif
+	checkSTREAMresults();
     printf(HLINE);
 
     return 0;
@@ -753,9 +756,9 @@ void checkSTREAMresults()
 	err = 0;
 
 #ifdef DEBUG
-  printf("aSumErr= %f\t\t aAvgErr=%f\n", aSumErr, aAvgErr);
-  printf("bSumErr= %f\t\t bAvgErr=%f\n", bSumErr, bAvgErr);
-  printf("cSumErr= %f\t\t cAvgErr=%f\n", cSumErr, cAvgErr);
+	printf("aSumErr= %f\t\t aAvgErr=%f\n", aSumErr, aAvgErr);
+	printf("bSumErr= %f\t\t bAvgErr=%f\n", bSumErr, bAvgErr);
+	printf("cSumErr= %f\t\t cAvgErr=%f\n", cSumErr, cAvgErr);
 #endif
 
 
@@ -846,7 +849,6 @@ void print_timer_granularity(int quantum) {
 }
 
 void print_info2(double t, int quantum) {
-	// TODO
     printf("Each test below will take on the order"
 	" of %d microseconds.\n", (int) t  );
     printf("   (= %d clock ticks)\n", (int) (t/quantum) );
