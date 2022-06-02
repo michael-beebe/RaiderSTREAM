@@ -6,14 +6,13 @@ TODO:
   	- Fix validation on OpenSHMEM version
 
   - Update the comments at the top for each implementation
-  - Update the README
+  - Update the GitHub README
   - Make sure the STREAM version printout is accurate
 
 
 
 COMPLETE:
   - OpenSHMEM
-  	- Modularize OpenSHMEM version
   	- Remove the gather and scatter arrays from OpenSHMEM version
   	- Modularize OpenSHMEM version
 
