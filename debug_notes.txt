@@ -1,13 +1,15 @@
 TODO:
   - MPI
-  	- Finish validation on MPI version
+  	- Fix validation on MPI version
 
   - OpenSHMEM
-  	- Finish validation on OpenSHMEM version
+  	- Fix validation on OpenSHMEM version
 
   - Update the comments at the top for each implementation
   - Update the README
   - Make sure the STREAM version printout is accurate
+
+
 
 COMPLETE:
   - OpenSHMEM
