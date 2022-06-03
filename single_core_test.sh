@@ -47,12 +47,13 @@ if [ ! -d $OUTPUT_DIR ]; then
     mkdir $OUTPUT_DIR
 fi
 
-export OMP_IMPL=$STREAM_DIR/openmp/stream_openmp_mb.c
-export SHEM_IMPL=$STREAM_DIR/openshmem/stream_oshmem_mb.c
-export MPI_IMPL=$STREAM_DIR/mpi/stream_mpi_mb.c
+export ORIGINAL_IMPL=$STREAM_DIR/stream_original.c
+export OMP_IMPL=$STREAM_DIR/openmp/stream_openmp.c
+export SHEM_IMPL=$STREAM_DIR/openshmem/stream_openshmem.c
+export MPI_IMPL=$STREAM_DIR/mpi/stream_mpi.c
 
 
-export OUTPUT_FILE=$STREAM_DIR/$OUTPUT_DIR/single_core_outputs.txt
+export OUTPUT_FILE=$OUTPUT_DIR/single_core_output_$(date +"%d-%m-%y")_$(date +"%T").txt
 
 if [[ -f $OUTPUT_FILE ]]; then
     rm $OUTPUT_FILE
@@ -73,6 +74,18 @@ export NP_VALUE=1
 echo "=======================================================================================" >> $OUTPUT_FILE
 echo "                               SINGLE CORE RUNS"                                         >> $OUTPUT_FILE
 echo "=======================================================================================" >> $OUTPUT_FILE
+echo "------------------------------------" >> $OUTPUT_FILE
+echo "         'Original' STREAM"           >> $OUTPUT_FILE
+echo "------------------------------------" >> $OUTPUT_FILE
+gcc -DSTREAM_ARRAY_SIZE=$STREAM_ARRAY_SIZE $ORIGINAL_IMPL -o stream_original_serial
+./stream_original_serial >> $OUTPUT_FILE
+rm stream_original_serial
+
+echo >> $OUTPUT_FILE
+echo >> $OUTPUT_FILE
+
+echo "Original impl finished."
+
 echo "------------------------------------" >> $OUTPUT_FILE
 echo "              OpenMP"                 >> $OUTPUT_FILE
 echo "------------------------------------" >> $OUTPUT_FILE

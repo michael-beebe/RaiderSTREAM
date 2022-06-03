@@ -51,6 +51,7 @@
 # include <limits.h>
 # include <sys/time.h>
 # include <time.h>
+
 # include "mpi.h"
 
 /*-----------------------------------------------------------------------
@@ -299,6 +300,8 @@ extern void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STRE
 // extern void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
 //                   STREAM_TYPE exp_val, double epsilon, int* errors);
 
+double mysecond();
+
 #ifdef TUNED
 extern void tuned_STREAM_Copy();
 extern void tuned_STREAM_Scale(STREAM_TYPE scalar);
@@ -480,7 +483,9 @@ int main()
 // 				  COPY KERNEL
 // ----------------------------------------------
 		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
+		// t0 = mysecond();
+		MPI_Barrier(MPI_COMM_WORLD);		
+
 #ifdef TUNED
         tuned_STREAM_Copy();
 #else
@@ -489,6 +494,7 @@ int main()
 			c[j] = a[j];
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
+		// t1 = mysecond();
 		t1 = MPI_Wtime();
 		times[0][k] = t1 - t0;
 
@@ -777,6 +783,15 @@ int main()
 
 
 
+double mysecond()
+{
+        struct timeval tp;
+        // struct timezone tzp;
+        int i;
+
+        i = gettimeofday(&tp, NULL);
+        return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6 );
+}
 
 
 # define	M	20

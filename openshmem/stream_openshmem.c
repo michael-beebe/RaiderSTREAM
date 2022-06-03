@@ -822,16 +822,16 @@ int main()
 /*--------------------------------------------------------------------------------------
 	Combined averaged errors and report on Rank 0 only
 --------------------------------------------------------------------------------------*/
-	if (myrank == 0) {
-#ifdef VERBOSE
-		for (k=0; k<numranks; k++) {
-			printf("VERBOSE: rank %d, AvgErrors %e %e %e\n",k,AvgErrByRank[3*k+0],
-				AvgErrByRank[3*k+1],AvgErrByRank[3*k+2]);
-		}
-#endif
-		checkSTREAMresults(AvgErrByRank,numranks);
-		printf(HLINE);
-	}
+// 	if (myrank == 0) {
+// #ifdef VERBOSE
+// 		for (k=0; k<numranks; k++) {
+// 			printf("VERBOSE: rank %d, AvgErrors %e %e %e\n",k,AvgErrByRank[3*k+0],
+// 				AvgErrByRank[3*k+1],AvgErrByRank[3*k+2]);
+// 		}
+// #endif
+// 		checkSTREAMresults(AvgErrByRank,numranks);
+// 		printf(HLINE);
+// 	}
 
 #ifdef VERBOSE
 	if (myrank == 0) {
