@@ -1,0 +1,54 @@
+=======================================================================================
+                               SINGLE CORE RUNS
+=======================================================================================
+------------------------------------
+         'Original' STREAM
+------------------------------------
+-------------------------------------------------------------
+STREAM version $Revision: 5.10 $
+-------------------------------------------------------------
+This system uses 8 bytes per array element.
+-------------------------------------------------------------
+Array size = 2500000 (elements), Offset = 0 (elements)
+Memory per array = 19.1 MiB (= 0.0 GiB).
+Total memory required = 57.2 MiB (= 0.1 GiB).
+Each kernel will be executed 10 times.
+ The *best* time for each kernel (excluding the first iteration)
+ will be used to compute the reported bandwidth.
+-------------------------------------------------------------
+Your clock granularity/precision appears to be 1 microseconds.
+Each test below will take on the order of 3055 microseconds.
+   (= 3055 clock ticks)
+Increase the size of the arrays if this shows that
+you are not getting at least 20 clock ticks per test.
+-------------------------------------------------------------
+WARNING -- The above is only a rough guideline.
+For best results, please be sure you know the
+precision of your system timer.
+-------------------------------------------------------------
+Function    Best Rate MB/s  Avg time     Min time     Max time
+Copy:           12662.0     0.004214     0.003159     0.005084
+Scale:          11730.7     0.003761     0.003410     0.004487
+Add:            14944.1     0.004739     0.004015     0.005531
+Triad:          13960.1     0.004421     0.004298     0.004766
+-------------------------------------------------------------
+Solution Validates: avg error less than 1.000000e-13 on all three arrays
+-------------------------------------------------------------
+
+
+------------------------------------
+              OpenMP
+------------------------------------
+FAILED TO RUN!
+
+
+------------------------------------
+               MPI
+------------------------------------
+FAILED TO RUN!
+
+
+------------------------------------
+             OpenSHMEM
+------------------------------------
+FAILED TO RUN!

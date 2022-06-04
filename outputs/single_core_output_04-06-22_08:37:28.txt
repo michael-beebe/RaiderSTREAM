@@ -1,0 +1,89 @@
+=======================================================================================
+                               SINGLE CORE RUNS
+=======================================================================================
+------------------------------------
+         'Original' STREAM
+------------------------------------
+-------------------------------------------------------------
+STREAM version $Revision: 5.10 $
+-------------------------------------------------------------
+This system uses 8 bytes per array element.
+-------------------------------------------------------------
+Array size = 2500000 (elements), Offset = 0 (elements)
+Memory per array = 19.1 MiB (= 0.0 GiB).
+Total memory required = 57.2 MiB (= 0.1 GiB).
+Each kernel will be executed 10 times.
+ The *best* time for each kernel (excluding the first iteration)
+ will be used to compute the reported bandwidth.
+-------------------------------------------------------------
+Your clock granularity/precision appears to be 1 microseconds.
+Each test below will take on the order of 5842 microseconds.
+   (= 5842 clock ticks)
+Increase the size of the arrays if this shows that
+you are not getting at least 20 clock ticks per test.
+-------------------------------------------------------------
+WARNING -- The above is only a rough guideline.
+For best results, please be sure you know the
+precision of your system timer.
+-------------------------------------------------------------
+Function    Best Rate MB/s  Avg time     Min time     Max time
+Copy:            7171.0     0.006656     0.005578     0.009362
+Scale:           6553.1     0.006166     0.006104     0.006376
+Add:             7547.1     0.010325     0.007950     0.011127
+Triad:           7800.2     0.007718     0.007692     0.007847
+-------------------------------------------------------------
+Solution Validates: avg error less than 1.000000e-13 on all three arrays
+-------------------------------------------------------------
+
+
+------------------------------------
+              OpenMP
+------------------------------------
+---------------------------------------------------------------------------------------
+STREAM version $Revision: 5.10 $
+---------------------------------------------------------------------------------------
+This system uses 8 bytes per array element.
+---------------------------------------------------------------------------------------
+Array size = 2500000 (elements), Offset = 0 (elements)
+Memory per array = 19.1 MiB (= 0.0 GiB).
+Total memory required = 57.2 MiB (= 0.1 GiB).
+Each kernel will be executed 10 times.
+ The *best* time for each kernel (excluding the first iteration)
+ will be used to compute the reported bandwidth.
+---------------------------------------------------------------------------------------
+Your clock granularity/precision appears to be 1 microseconds.
+Each test below will take on the order of 3325 microseconds.
+   (= 3325 clock ticks)
+Increase the size of the arrays if this shows that
+you are not getting at least 20 clock ticks per test.
+---------------------------------------------------------------------------------------
+WARNING -- The above is only a rough guideline.
+For best results, please be sure you know the
+precision of your system timer.
+---------------------------------------------------------------------------------------
+Function	Best Rate MB/s	   Avg time	   Min time	   Max time
+Copy:		     13258.4	   0.003419	   0.003017	   0.004773
+Scale:		     12117.9	   0.003575	   0.003301	   0.003861
+Add:		     15278.9	   0.004619	   0.003927	   0.005463
+Triad:		     14211.6	   0.004246	   0.004222	   0.004285
+GATHER Copy:	      1918.5	   0.020904	   0.020850	   0.020987
+GATHER Scale:	      1527.8	   0.027920	   0.026181	   0.030205
+GATHER Add:	      1219.2	   0.049257	   0.049212	   0.049308
+GATHER Triad:	      1100.9	   0.054529	   0.054501	   0.054574
+SCATTER Copy:	      2324.6	   0.018799	   0.017207	   0.020033
+SCATTER Scale:	      2771.4	   0.014653	   0.014433	   0.015057
+SCATTER Add:	      3926.7	   0.015321	   0.015280	   0.015380
+SCATTER Triad:	      3836.8	   0.015721	   0.015638	   0.016046
+---------------------------------------------------------------------------------------
+Solution Validates: avg error less than 1.000000e-13 on all arrays
+---------------------------------------------------------------------------------------
+
+
+------------------------------------
+               MPI
+------------------------------------
+
+
+------------------------------------
+             OpenSHMEM
+------------------------------------
