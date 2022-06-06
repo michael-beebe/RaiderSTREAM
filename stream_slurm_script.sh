@@ -14,7 +14,7 @@ STREAM_DIR=.
 #------------------------------------------------------------
 # Setting vars for file paths to each STREAM implementation
 #------------------------------------------------------------
-export ORIGINAL_IMPL=$STREAM_DIR/stream_original.c
+#export ORIGINAL_IMPL=$STREAM_DIR/stream_original.c
 export OMP_IMPL=$STREAM_DIR/openmp/stream_openmp.c
 export SHEM_IMPL=$STREAM_DIR/openshmem/stream_openshmem.c
 export MPI_IMPL=$STREAM_DIR/mpi/stream_mpi.c

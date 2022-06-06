@@ -1,0 +1,175 @@
+=======================================================================================
+                               SINGLE CORE RUNS
+=======================================================================================
+------------------------------------
+         'Original' STREAM
+------------------------------------
+-------------------------------------------------------------
+STREAM version $Revision: 5.10 $
+-------------------------------------------------------------
+This system uses 8 bytes per array element.
+-------------------------------------------------------------
+Array size = 2500000 (elements), Offset = 0 (elements)
+Memory per array = 19.1 MiB (= 0.0 GiB).
+Total memory required = 57.2 MiB (= 0.1 GiB).
+Each kernel will be executed 10 times.
+ The *best* time for each kernel (excluding the first iteration)
+ will be used to compute the reported bandwidth.
+-------------------------------------------------------------
+Your clock granularity/precision appears to be 1 microseconds.
+Each test below will take on the order of 6108 microseconds.
+   (= 6108 clock ticks)
+Increase the size of the arrays if this shows that
+you are not getting at least 20 clock ticks per test.
+-------------------------------------------------------------
+WARNING -- The above is only a rough guideline.
+For best results, please be sure you know the
+precision of your system timer.
+-------------------------------------------------------------
+Function    Best Rate MB/s  Avg time     Min time     Max time
+Copy:            4821.6     0.009557     0.008296     0.010485
+Scale:           5555.6     0.009367     0.007200     0.011131
+Add:             6348.0     0.012538     0.009452     0.014678
+Triad:           5969.5     0.012575     0.010051     0.015353
+-------------------------------------------------------------
+Solution Validates: avg error less than 1.000000e-13 on all three arrays
+-------------------------------------------------------------
+
+
+------------------------------------
+              OpenMP
+------------------------------------
+---------------------------------------------------------------------------------------
+STREAM version $Revision: 5.10 $
+---------------------------------------------------------------------------------------
+This system uses 8 bytes per array element.
+---------------------------------------------------------------------------------------
+Array size = 2500000 (elements), Offset = 0 (elements)
+Memory per array = 19.1 MiB (= 0.0 GiB).
+Total memory required = 57.2 MiB (= 0.1 GiB).
+Each kernel will be executed 10 times.
+ The *best* time for each kernel (excluding the first iteration)
+ will be used to compute the reported bandwidth.
+---------------------------------------------------------------------------------------
+Your clock granularity/precision appears to be 1 microseconds.
+Each test below will take on the order of 6263 microseconds.
+   (= 6263 clock ticks)
+Increase the size of the arrays if this shows that
+you are not getting at least 20 clock ticks per test.
+---------------------------------------------------------------------------------------
+WARNING -- The above is only a rough guideline.
+For best results, please be sure you know the
+precision of your system timer.
+---------------------------------------------------------------------------------------
+Function	Best Rate MB/s	   Avg time	   Min time	   Max time
+Copy:		      5667.4	   0.009253	   0.007058	   0.010732
+Scale:		      5261.8	   0.009365	   0.007602	   0.010373
+Add:		      6712.1	   0.011987	   0.008939	   0.014796
+Triad:		      6636.4	   0.011856	   0.009041	   0.016811
+GATHER Copy:	       828.2	   0.058410	   0.048298	   0.068595
+GATHER Scale:	       670.8	   0.066027	   0.059630	   0.074628
+GATHER Add:	       727.2	   0.091651	   0.082508	   0.105344
+GATHER Triad:	       691.6	   0.104594	   0.086760	   0.118470
+SCATTER Copy:	       968.0	   0.048937	   0.041322	   0.056676
+SCATTER Scale:	       850.2	   0.049422	   0.047049	   0.053899
+SCATTER Add:	      1279.9	   0.053982	   0.046879	   0.061124
+SCATTER Triad:	      1308.4	   0.054025	   0.045857	   0.062221
+---------------------------------------------------------------------------------------
+Solution Validates: avg error less than 1.000000e-13 on all arrays
+---------------------------------------------------------------------------------------
+
+
+------------------------------------
+               MPI
+------------------------------------
+-------------------------------------------------------------
+STREAM version $Revision: 5.10 $
+-------------------------------------------------------------
+This system uses 8 bytes per array element.
+-------------------------------------------------------------
+Total Aggregate Array size = 2500000 (elements)
+Total Aggregate Memory per array = 19.1 MiB (= 0.0 GiB).
+Total Aggregate memory required = 57.2 MiB (= 0.1 GiB).
+Data is distributed across 1 MPI ranks
+   Array size per MPI rank = 2500000 (elements)
+   Memory per array per MPI rank = 19.1 MiB (= 0.0 GiB).
+   Total memory per MPI rank = 57.2 MiB (= 0.1 GiB).
+-------------------------------------------------------------
+Each kernel will be executed 10 times.
+ The *best* time for each kernel (excluding the first iteration)
+ will be used to compute the reported bandwidth.
+The SCALAR value used for this run is 0.420000
+-------------------------------------------------------------
+Your timer granularity/precision appears to be 1 microseconds.
+Each test below will take on the order of 9089 microseconds.
+   (= 9089 timer ticks)
+Increase the size of the arrays if this shows that
+you are not getting at least 20 timer ticks per test.
+-------------------------------------------------------------
+WARNING -- The above is only a rough guideline.
+For best results, please be sure you know the
+precision of your system timer.
+-------------------------------------------------------------
+Function	Best Rate MB/s	Avg time	Min time	Max time
+Copy:		     5664.2     0.011899     0.007062     0.014447
+Scale:		     5585.0     0.010916     0.007162     0.015155
+Add:		     6950.5     0.014066     0.008632     0.020915
+Triad:		     6574.7     0.014512     0.009126     0.020055
+GATHER Copy:	      654.5     0.089941     0.061119     0.104861
+GATHER Scale:	      574.5     0.101114     0.069628     0.118872
+GATHER Add:	      525.8     0.144638     0.114104     0.170210
+GATHER Triad:	      606.9     0.151600     0.098867     0.184463
+SCATTER Copy:	     1052.6     0.057282     0.038003     0.069019
+SCATTER Scale:	      921.1     0.057228     0.043429     0.071535
+SCATTER Add:	     1347.6     0.066285     0.044524     0.084991
+SCATTER Triad:	     1494.6     0.063592     0.040144     0.082729
+-------------------------------------------------------------
+Solution Validates: avg error less than 1.000000e-13 on all three arrays
+-------------------------------------------------------------
+
+
+------------------------------------
+             OpenSHMEM
+------------------------------------
+-------------------------------------------------------------
+STREAM version $Revision: 5.10 $
+-------------------------------------------------------------
+This system uses 8 bytes per array element.
+-------------------------------------------------------------
+Total Aggregate Array size = 2500000 (elements)
+Total Aggregate Memory per array = 19.1 MiB (= 0.0 GiB).
+Total Aggregate memory required = 57.2 MiB (= 0.1 GiB).
+Data is distributed across 1 SHMEM ranks
+   Array size per SHMEM rank = 2500000 (elements)
+   Memory per array per SHMEM rank = 19.1 MiB (= 0.0 GiB).
+   Total memory per SHMEM rank = 57.2 MiB (= 0.1 GiB).
+-------------------------------------------------------------
+Each kernel will be executed 10 times.
+ The *best* time for each kernel (excluding the first iteration)
+ will be used to compute the reported bandwidth.
+The SCALAR value used for this run is 0.420000
+-------------------------------------------------------------
+Your timer granularity/precision appears to be 1 microseconds.
+Each test below will take on the order of 8315 microseconds.
+   (= 8315 timer ticks)
+Increase the size of the arrays if this shows that
+you are not getting at least 20 timer ticks per test.
+-------------------------------------------------------------
+WARNING -- The above is only a rough guideline.
+For best results, please be sure you know the
+precision of your system timer.
+-------------------------------------------------------------
+Function	Best Rate MB/s	Avg time   Min time	Max time
+Copy:		     5514.3     0.013182     0.007254     0.017748
+Scale:		     4610.5     0.012689     0.008676     0.017701
+Add:		     7633.6     0.016641     0.007860     0.024404
+Triad:		     7124.1     0.015377     0.008422     0.024978
+GATHER Copy:	      654.5     0.101780     0.061118     0.116151
+GATHER Scale:	      502.4     0.115793     0.079614     0.129418
+GATHER Add:	      614.7     0.161156     0.097611     0.188641
+GATHER Triad:	      515.4     0.169068     0.116420     0.195644
+SCATTER Copy:	      931.2     0.061820     0.042955     0.074944
+SCATTER Scale:	      815.7     0.059804     0.049035     0.065540
+SCATTER Add:	     1214.0     0.066861     0.049424     0.091581
+SCATTER Triad:	     1428.8     0.071637     0.041994     0.091009
+-------------------------------------------------------------
