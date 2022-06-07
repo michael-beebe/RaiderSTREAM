@@ -794,6 +794,9 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
 #endif
 }
 
+
+
+
 #ifdef TUNED
 /* stubs for "tuned" versions of the kernels */
 void tuned_STREAM_Copy()

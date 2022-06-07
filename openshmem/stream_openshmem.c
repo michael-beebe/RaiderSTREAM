@@ -302,6 +302,9 @@ extern void print_info2(double t, double t0, double t1, int quantum);
 extern void checkSTREAMresults(STREAM_TYPE *AvgErrByRank, int numranks);
 extern void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr);
 
+void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
+                  STREAM_TYPE exp_val, double epsilon, int* errors);
+
 #ifdef TUNED
 extern void tuned_STREAM_Copy();
 extern void tuned_STREAM_Scale(STREAM_TYPE scalar);
@@ -436,10 +439,6 @@ int main()
 	    b[j] = 2.0;
 	    c[j] = 0.0;
 	}
-
-// init_stream_array(a, array_elements, 1.0);
-// init_stream_array(b, array_elements, 2.0);
-// init_stream_array(c, array_elements, 0.0);
 
 
 	// Rank 0 needs to allocate arrays to hold error data and timing data from
@@ -822,16 +821,16 @@ int main()
 /*--------------------------------------------------------------------------------------
 	Combined averaged errors and report on Rank 0 only
 --------------------------------------------------------------------------------------*/
-// 	if (myrank == 0) {
-// #ifdef VERBOSE
-// 		for (k=0; k<numranks; k++) {
-// 			printf("VERBOSE: rank %d, AvgErrors %e %e %e\n",k,AvgErrByRank[3*k+0],
-// 				AvgErrByRank[3*k+1],AvgErrByRank[3*k+2]);
-// 		}
-// #endif
-// 		checkSTREAMresults(AvgErrByRank,numranks);
-// 		printf(HLINE);
-// 	}
+	if (myrank == 0) {
+#ifdef VERBOSE
+		for (k=0; k<numranks; k++) {
+			printf("VERBOSE: rank %d, AvgErrors %e %e %e\n",k,AvgErrByRank[3*k+0],
+				AvgErrByRank[3*k+1],AvgErrByRank[3*k+2]);
+		}
+#endif
+		checkSTREAMresults(AvgErrByRank,numranks);
+		printf(HLINE);
+	}
 
 #ifdef VERBOSE
 	if (myrank == 0) {
@@ -856,6 +855,7 @@ double mysecond()
     gettimeofday(&tp,NULL);
     return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6 );
 }
+
 
 # define	M	20
 int checktick() {
@@ -908,13 +908,22 @@ void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE
 	aj = 2.0E0 * aj;
     /* now execute timing loop */
 	scalar = SCALAR;
-	for (k=0; k<NTIMES; k++)
-        {
-            cj = aj;
-            bj = scalar*cj;
-            cj = aj+bj;
-            aj = bj+scalar*cj;
-        }
+	for (k=0; k<NTIMES; k++) {
+		cj = aj;
+		bj = scalar*cj;
+		cj = aj+bj;
+		aj = bj+scalar*cj;
+
+		cj = aj;
+		bj = scalar*cj;
+		cj = aj+bj;
+		aj = bj+scalar*cj;
+
+		cj = aj;
+		bj = scalar*cj;
+		cj = aj+bj;
+		aj = bj+scalar*cj;
+	}
 
     /* accumulate deltas between observed and expected results */
 	aSumErr = 0.0;
@@ -955,6 +964,16 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks) {
             bj = scalar*cj;
             cj = aj+bj;
             aj = bj+scalar*cj;
+
+            cj = aj;
+            bj = scalar*cj;
+            cj = aj+bj;
+            aj = bj+scalar*cj;
+
+            cj = aj;
+            bj = scalar*cj;
+            cj = aj+bj;
+            aj = bj+scalar*cj;
         }
 
 	// Compute the average of the average errors contributed by each MPI rank
@@ -982,62 +1001,19 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks) {
 	}
 
 	err = 0;
-	if (abs(aAvgErr/aj) > epsilon) {
-		err++;
-		printf ("Failed Validation on array a[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
-		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",aj,aAvgErr,abs(aAvgErr)/aj);
-		ierr = 0;
-		for (j=0; j<array_elements; j++) {
-			if (abs(a[j]/aj-1.0) > epsilon) {
-				ierr++;
-#ifdef VERBOSE
-				if (ierr < 10) {
-					printf("         array a: index: %ld, expected: %e, observed: %e, relative error: %e\n",
-						j,aj,a[j],abs((aj-a[j])/aAvgErr));
-				}
+
+#ifdef DEBUG
+	printf("aSumErr= %f\t\t aAvgErr=%f\n", aSumErr, aAvgErr);
+	printf("bSumErr= %f\t\t bAvgErr=%f\n", bSumErr, bAvgErr);
+	printf("cSumErr= %f\t\t cAvgErr=%f\n", cSumErr, cAvgErr);
 #endif
-			}
-		}
-		printf("     For array a[], %d errors were found.\n",ierr);
-	}
-	if (abs(bAvgErr/bj) > epsilon) {
-		err++;
-		printf ("Failed Validation on array b[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
-		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",bj,bAvgErr,abs(bAvgErr)/bj);
-		printf ("     AvgRelAbsErr > Epsilon (%e)\n",epsilon);
-		ierr = 0;
-		for (j=0; j<array_elements; j++) {
-			if (abs(b[j]/bj-1.0) > epsilon) {
-				ierr++;
-#ifdef VERBOSE
-				if (ierr < 10) {
-					printf("         array b: index: %ld, expected: %e, observed: %e, relative error: %e\n",
-						j,bj,b[j],abs((bj-b[j])/bAvgErr));
-				}
-#endif
-			}
-		}
-		printf("     For array b[], %d errors were found.\n",ierr);
-	}
-	if (abs(cAvgErr/cj) > epsilon) {
-		err++;
-		printf ("Failed Validation on array c[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
-		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",cj,cAvgErr,abs(cAvgErr)/cj);
-		printf ("     AvgRelAbsErr > Epsilon (%e)\n",epsilon);
-		ierr = 0;
-		for (j=0; j<array_elements; j++) {
-			if (abs(c[j]/cj-1.0) > epsilon) {
-				ierr++;
-#ifdef VERBOSE
-				if (ierr < 10) {
-					printf("         array c: index: %ld, expected: %e, observed: %e, relative error: %e\n",
-						j,cj,c[j],abs((cj-c[j])/cAvgErr));
-				}
-#endif
-			}
-		}
-		printf("     For array c[], %d errors were found.\n",ierr);
-	}
+
+
+ // Check errors on each array
+	check_errors("a[]", a, aAvgErr, aj, epsilon, &err);
+	check_errors("b[]", b, bAvgErr, bj, epsilon, &err);
+	check_errors("c[]", c, cAvgErr, cj, epsilon, &err);
+
 	if (err == 0) {
 		printf ("Solution Validates: avg error less than %e on all three arrays\n",epsilon);
 	}
@@ -1047,6 +1023,32 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks) {
 	printf ("    Observed a(1), b(1), c(1): %f %f %f \n",a[1],b[1],c[1]);
 	printf ("    Rel Errors on a, b, c:     %e %e %e \n",abs(aAvgErr/aj),abs(bAvgErr/bj),abs(cAvgErr/cj));
 #endif
+}
+
+void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
+                  STREAM_TYPE exp_val, double epsilon, int* errors)
+{
+	int i;
+  	int ierr = 0;
+
+	if (abs(avg_err/exp_val) > epsilon) {
+		(*errors)++;
+		printf ("Failed Validation on array %s, AvgRelAbsErr > epsilon (%e)\n", label, epsilon);
+		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n", exp_val, avg_err, abs(avg_err/exp_val));
+		ierr = 0;
+		for (i=0; i<STREAM_ARRAY_SIZE; i++) {
+			if (abs(array[i]/exp_val-1.0) > epsilon) {
+				ierr++;
+#ifdef VERBOSE
+				if (ierr < 10) {
+					printf("         array %s: index: %ld, expected: %e, observed: %e, relative error: %e\n",
+						label, i, exp_val, array[i], abs((exp_val-array[i])/avg_err));
+				}
+#endif
+			}
+		}
+		printf("     For array %s, %d errors were found.\n", label, ierr);
+	}
 }
 
 

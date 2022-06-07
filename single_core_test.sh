@@ -2,37 +2,35 @@
 
 
 
-# bugs		: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass
-# bogomips	: 5788.84
-# TLB size	: 3072 4K pages
-# clflush size	: 64
-# cache_alignment	: 64
-# address sizes	: 43 bits physical, 48 bits virtual
-# power management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]
-# processor	: 2
-# vendor_id	: AuthenticAMD
-# cpu family	: 23
-# model		: 49
-# model name	: AMD EPYC 7542 32-Core Processor
-# stepping	: 0
-# microcode	: 0x8301034
-# cpu MHz		: 1794.551
-# cache size	: 512 KB
-# physical id	: 0
-# siblings	: 64
-# core id		: 2
-# cpu cores	: 32
-# apicid		: 4
-# initial apicid	: 4
-# fpu		: yes
-# fpu_exception	: yes
-# cpuid level	: 16
-# wp		: yes
-# -------------------------------
-#     32 Cores per socket
-#     2 Sockets per Node
-# ------------------------------
-
+# Architecture:        x86_64
+# CPU op-mode(s):      32-bit, 64-bit
+# Byte Order:          Little Endian
+# CPU(s):              128
+# On-line CPU(s) list: 0-127
+# Thread(s) per core:  1
+# Core(s) per socket:  64
+# Socket(s):           2
+# NUMA node(s):        8
+# Vendor ID:           AuthenticAMD
+# CPU family:          23
+# Model:               49
+# Model name:          AMD EPYC 7702 64-Core Processor
+# Stepping:            0
+# CPU MHz:             2663.352
+# BogoMIPS:            3992.61
+# Virtualization:      AMD-V
+# L1d cache:           32K
+# L1i cache:           32K
+# L2 cache:            512K
+# L3 cache:            16384K
+# NUMA node0 CPU(s):   0-15
+# NUMA node1 CPU(s):   16-31
+# NUMA node2 CPU(s):   32-47
+# NUMA node3 CPU(s):   48-63
+# NUMA node4 CPU(s):   64-79
+# NUMA node5 CPU(s):   80-95
+# NUMA node6 CPU(s):   96-111
+# NUMA node7 CPU(s):   112-127
 
 
 # -------------------------------------------
@@ -47,14 +45,16 @@ export STREAM_ARRAY_SIZE=2500000
 # Setting vars for file paths to each STREAM implementation
 #------------------------------------------------------------
 export STREAM_DIR=$(pwd)
-export ORIGINAL_IMPL=$STREAM_DIR/stream_original.c
-export OMP_IMPL=$STREAM_DIR/openmp/stream_openmp.c
-export SHEM_IMPL=$STREAM_DIR/openshmem/stream_openshmem.c
-export MPI_IMPL=$STREAM_DIR/mpi/stream_mpi.c
 export OUTPUT_DIR=$STREAM_DIR/outputs
 if [ ! -d $OUTPUT_DIR ]; then
     mkdir $OUTPUT_DIR
 fi
+
+export ORIGINAL_IMPL=$STREAM_DIR/stream_original.c
+export OMP_IMPL=$STREAM_DIR/openmp/stream_openmp.c
+export SHEM_IMPL=$STREAM_DIR/openshmem/stream_openshmem.c
+export MPI_IMPL=$STREAM_DIR/mpi/stream_mpi.c
+
 
 export OUTPUT_FILE=$OUTPUT_DIR/single_core_output_$(date +"%d-%m-%y")_$(date +"%T").txt
 if [[ -f $OUTPUT_FILE ]]; then
@@ -66,6 +66,10 @@ fi
 
 echo "Running..."
 
+
+#------------------------------------------------------------
+# Load necessary modules
+#------------------------------------------------------------
 module purge
 module load gcc
 module load openmpi
