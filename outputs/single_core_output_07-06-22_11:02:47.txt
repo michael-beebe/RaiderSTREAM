@@ -1,0 +1,200 @@
+=======================================================================================
+                               SINGLE CORE RUNS
+=======================================================================================
+------------------------------------
+         'Original' STREAM
+------------------------------------
+FAILED TO RUN!
+
+
+------------------------------------
+              OpenMP
+------------------------------------
+---------------------------------------------------------------------------------------
+STREAM version $Revision: 5.10 $
+---------------------------------------------------------------------------------------
+This system uses 8 bytes per array element.
+---------------------------------------------------------------------------------------
+Array size = 2500000 (elements), Offset = 0 (elements)
+Memory per array = 19.1 MiB (= 0.0 GiB).
+Total memory required = 57.2 MiB (= 0.1 GiB).
+Each kernel will be executed 10 times.
+ The *best* time for each kernel (excluding the first iteration)
+ will be used to compute the reported bandwidth.
+---------------------------------------------------------------------------------------
+Number of Threads requested = 64
+Number of Threads counted = 64
+---------------------------------------------------------------------------------------
+Your clock granularity/precision appears to be 1 microseconds.
+Each test below will take on the order of 191 microseconds.
+   (= 191 clock ticks)
+Increase the size of the arrays if this shows that
+you are not getting at least 20 clock ticks per test.
+---------------------------------------------------------------------------------------
+WARNING -- The above is only a rough guideline.
+For best results, please be sure you know the
+precision of your system timer.
+---------------------------------------------------------------------------------------
+Function	Best Rate MB/s	   Avg time	   Min time	   Max time
+Copy:		    168784.9	   0.000249	   0.000237	   0.000267
+Scale:		    207382.2	   0.000199	   0.000193	   0.000209
+Add:		    287281.1	   0.000214	   0.000209	   0.000222
+Triad:		    246965.9	   0.000249	   0.000243	   0.000257
+GATHER Copy:	     30142.3	   0.001336	   0.001327	   0.001359
+GATHER Scale:	     25493.4	   0.001582	   0.001569	   0.001592
+GATHER Add:	     19927.0	   0.003024	   0.003011	   0.003036
+GATHER Triad:	     23661.0	   0.002546	   0.002536	   0.002552
+SCATTER Copy:	     19638.6	   0.002051	   0.002037	   0.002079
+SCATTER Scale:	     18848.7	   0.002136	   0.002122	   0.002165
+SCATTER Add:	     33261.7	   0.001840	   0.001804	   0.001871
+SCATTER Triad:	     31512.4	   0.001957	   0.001904	   0.002308
+---------------------------------------------------------------------------------------
+Solution Validates: avg error less than 1.000000e-13 on all arrays
+Results Validation Verbose Results: 
+    Expected a(1), b(1), c(1): 383502118465768154754829359194832896.000000 76700423693153627261617057097056256.000000 102267231590871509164404100699258880.000000 
+    Observed a(1), b(1), c(1): 383502118465768154754829359194832896.000000 76700423693153627261617057097056256.000000 102267231590871509164404100699258880.000000 
+    Rel Errors on a, b, c:     0.000000e+00 0.000000e+00 0.000000e+00 
+---------------------------------------------------------------------------------------
+
+
+------------------------------------
+               MPI
+------------------------------------
+-------------------------------------------------------------
+STREAM version $Revision: 5.10 $
+-------------------------------------------------------------
+This system uses 8 bytes per array element.
+-------------------------------------------------------------
+Total Aggregate Array size = 2500000 (elements)
+Total Aggregate Memory per array = 19.1 MiB (= 0.0 GiB).
+Total Aggregate memory required = 57.2 MiB (= 0.1 GiB).
+Data is distributed across 1 MPI ranks
+   Array size per MPI rank = 2500000 (elements)
+   Memory per array per MPI rank = 19.1 MiB (= 0.0 GiB).
+   Total memory per MPI rank = 57.2 MiB (= 0.1 GiB).
+-------------------------------------------------------------
+Each kernel will be executed 10 times.
+ The *best* time for each kernel (excluding the first iteration)
+ will be used to compute the reported bandwidth.
+The SCALAR value used for this run is 0.420000
+-------------------------------------------------------------
+Number of Threads requested for each MPI rank = 2
+Number of Threads counted for rank 0 = 2
+-------------------------------------------------------------
+Your timer granularity/precision appears to be 1 microseconds.
+Each test below will take on the order of 3383 microseconds.
+   (= 3383 timer ticks)
+Increase the size of the arrays if this shows that
+you are not getting at least 20 timer ticks per test.
+-------------------------------------------------------------
+WARNING -- The above is only a rough guideline.
+For best results, please be sure you know the
+precision of your system timer.
+-------------------------------------------------------------
+VERBOSE: total setup time for rank 0 = 2.406843 seconds
+-------------------------------------------------------------
+Function	Best Rate MB/s	Avg time	Min time	Max time
+Copy:		    12555.5     0.003209     0.003186     0.003253
+Scale:		    11209.7     0.003574     0.003568     0.003581
+Add:		    13845.4     0.004345     0.004334     0.004358
+Triad:		    12574.4     0.004781     0.004772     0.004791
+GATHER Copy:	     1903.5     0.021146     0.021014     0.021461
+GATHER Scale:	     1575.3     0.026665     0.025392     0.027414
+GATHER Add:	     1035.1     0.058061     0.057965     0.058165
+GATHER Triad:	      960.4     0.062564     0.062476     0.062649
+SCATTER Copy:	     2671.6     0.015553     0.014973     0.016170
+SCATTER Scale:	     3132.8     0.012815     0.012768     0.012887
+SCATTER Add:	     4454.1     0.013533     0.013471     0.013590
+SCATTER Triad:	     4413.0     0.013684     0.013596     0.013788
+-------------------------------------------------------------
+aj bc cj part 1: 36318856, 36318864, -394846641
+aj bc cj part 2: 0, 0, 0
+aj bc cj part 3: 0, 0, 0
+aj bc cj part 1: 0, 0, 0
+aj bc cj part 2: 0, 0, 0
+aj bc cj part 3: 0, 0, 0
+aj bc cj part 1: 0, 0, 0
+aj bc cj part 2: 0, 0, 0
+aj bc cj part 3: 0, 0, 0
+aj bc cj part 1: 0, 0, 0
+aj bc cj part 2: 0, 0, 0
+aj bc cj part 3: 0, 0, 0
+aj bc cj part 1: 0, 0, 0
+aj bc cj part 2: 0, 0, 0
+aj bc cj part 3: 0, 0, 0
+aj bc cj part 1: 0, 0, 0
+aj bc cj part 2: 0, 0, 0
+aj bc cj part 3: 0, 0, 0
+aj bc cj part 1: 0, 0, 0
+aj bc cj part 2: 0, 0, 0
+aj bc cj part 3: 0, 0, 0
+aj bc cj part 1: 0, 0, 0
+aj bc cj part 2: 0, 0, 0
+aj bc cj part 3: 0, 0, 0
+aj bc cj part 1: 0, 0, 0
+aj bc cj part 2: 0, 0, 0
+aj bc cj part 3: 0, 0, 0
+aj bc cj part 1: 0, 0, 0
+aj bc cj part 2: 0, 0, 0
+aj bc cj part 3: 0, 0, 0
+VERBOSE: rank 0, AvgErrors 0.000000e+00 0.000000e+00 0.000000e+00
+Solution Validates: avg error less than 1.000000e-13 on all three arrays
+Results Validation Verbose Results: 
+    Expected a(1), b(1), c(1): 3.258140 1.346339 4.551907 
+    Observed a(1), b(1), c(1): 3.258140 1.346339 4.551907 
+    Rel Errors on a, b, c:     0.000000e+00 0.000000e+00 0.000000e+00 
+-------------------------------------------------------------
+VERBOSE: total shutdown time for rank 0 = 0.013152 seconds
+
+
+------------------------------------
+             OpenSHMEM
+------------------------------------
+-------------------------------------------------------------
+STREAM version $Revision: 5.10 $
+-------------------------------------------------------------
+This system uses 8 bytes per array element.
+-------------------------------------------------------------
+Total Aggregate Array size = 2500000 (elements)
+Total Aggregate Memory per array = 19.1 MiB (= 0.0 GiB).
+Total Aggregate memory required = 57.2 MiB (= 0.1 GiB).
+Data is distributed across 1 SHMEM ranks
+   Array size per SHMEM rank = 2500000 (elements)
+   Memory per array per SHMEM rank = 19.1 MiB (= 0.0 GiB).
+   Total memory per SHMEM rank = 57.2 MiB (= 0.1 GiB).
+-------------------------------------------------------------
+Each kernel will be executed 10 times.
+ The *best* time for each kernel (excluding the first iteration)
+ will be used to compute the reported bandwidth.
+The SCALAR value used for this run is 0.420000
+-------------------------------------------------------------
+Number of Threads requested for each SHMEM rank = 2
+Number of Threads counted for rank 0 = 2
+-------------------------------------------------------------
+Your timer granularity/precision appears to be 1 microseconds.
+Each test below will take on the order of 3354 microseconds.
+   (= 3354 timer ticks)
+Increase the size of the arrays if this shows that
+you are not getting at least 20 timer ticks per test.
+-------------------------------------------------------------
+WARNING -- The above is only a rough guideline.
+For best results, please be sure you know the
+precision of your system timer.
+-------------------------------------------------------------
+VERBOSE: total setup time for rank 0 = 2.242804 seconds
+-------------------------------------------------------------
+Function	Best Rate MB/s	Avg time   Min time	Max time
+Copy:		    12460.8     0.003222     0.003210     0.003252
+Scale:		    11152.1     0.003594     0.003587     0.003623
+Add:		    13780.4     0.004366     0.004354     0.004370
+Triad:		    12531.5     0.004795     0.004788     0.004808
+GATHER Copy:	     1685.3     0.023807     0.023734     0.023894
+GATHER Scale:	     1211.6     0.033992     0.033013     0.034446
+GATHER Add:	      960.8     0.062503     0.062445     0.062582
+GATHER Triad:	      889.8     0.067479     0.067432     0.067525
+SCATTER Copy:	     2383.0     0.017458     0.016786     0.018586
+SCATTER Scale:	     2758.8     0.014558     0.014499     0.014667
+SCATTER Add:	     3955.5     0.015210     0.015169     0.015265
+SCATTER Triad:	     3904.7     0.015414     0.015366     0.015452
+-------------------------------------------------------------
+VERBOSE: total shutdown time for rank 0 = 0.013067 seconds
