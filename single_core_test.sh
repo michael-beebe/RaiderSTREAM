@@ -1,7 +1,6 @@
 #!/bin/bash
 
 
-
 # bugs		: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass
 # bogomips	: 5788.84
 # TLB size	: 3072 4K pages
@@ -43,14 +42,12 @@
 export NP_VALUE=1
 export STREAM_ARRAY_SIZE=2500000
 
+
+
 #------------------------------------------------------------
 # Setting vars for file paths to each STREAM implementation
 #------------------------------------------------------------
 export STREAM_DIR=$(pwd)
-export ORIGINAL_IMPL=$STREAM_DIR/stream_original.c
-export OMP_IMPL=$STREAM_DIR/openmp/stream_openmp.c
-export SHEM_IMPL=$STREAM_DIR/openshmem/stream_openshmem.c
-export MPI_IMPL=$STREAM_DIR/mpi/stream_mpi.c
 export OUTPUT_DIR=$STREAM_DIR/outputs
 if [ ! -d $OUTPUT_DIR ]; then
     mkdir $OUTPUT_DIR
@@ -66,11 +63,31 @@ fi
 
 echo "Running..."
 
+
+
+#------------------------------------------------------------
+# Load correct modules
+#------------------------------------------------------------
 module purge
 module load gcc
 module load openmpi
-make all
+module list
 
+
+
+#------------------------------------------------------------
+# For all of the following make call you can add PFLAGS and CFLAGS.
+# If you are running only on version of stream or the same flags between 
+# the different versions of stream you can use export CFLAGS or export PFLAGS
+# to define the variable.
+
+# Use PFLAGS for program flags ie -DVERBOSE and -DDEBUG
+# Use CFLAGS for compiler flags such as -fopenmp
+#------------------------------------------------------------
+make stream_original.exe CFLAGS="" PFLAGS="-DVERBOSE"
+make stream_omp.exe CFLAGS="" PFLAGS="-DVERBOSE"
+make stream_mpi.exe CFLAGS="" PFLAGS="-DVERBOSE"
+make stream_oshmem.exe CFLAGS="" PFLAGS="-DVERBOSE"
 
 
 echo "=======================================================================================" >> $OUTPUT_FILE
