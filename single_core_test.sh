@@ -1,7 +1,6 @@
 #!/bin/bash
 
 
-
 # Architecture:        x86_64
 # CPU op-mode(s):      32-bit, 64-bit
 # Byte Order:          Little Endian
@@ -16,8 +15,8 @@
 # Model:               49
 # Model name:          AMD EPYC 7702 64-Core Processor
 # Stepping:            0
-# CPU MHz:             2663.352
-# BogoMIPS:            3992.61
+# CPU MHz:             3353.158
+# BogoMIPS:            3992.52
 # Virtualization:      AMD-V
 # L1d cache:           32K
 # L1i cache:           32K
@@ -33,13 +32,17 @@
 # NUMA node7 CPU(s):   112-127
 
 
+
 # -------------------------------------------
 # Single core run for each implementation
 # OMP_NUM_THREADS=0
 # -np 1
 # -------------------------------------------
 export NP_VALUE=1
+export OMP_NUM_THREADS=
 export STREAM_ARRAY_SIZE=2500000
+
+
 
 #------------------------------------------------------------
 # Setting vars for file paths to each STREAM implementation
@@ -49,12 +52,6 @@ export OUTPUT_DIR=$STREAM_DIR/outputs
 if [ ! -d $OUTPUT_DIR ]; then
     mkdir $OUTPUT_DIR
 fi
-
-export ORIGINAL_IMPL=$STREAM_DIR/stream_original.c
-export OMP_IMPL=$STREAM_DIR/openmp/stream_openmp.c
-export SHEM_IMPL=$STREAM_DIR/openshmem/stream_openshmem.c
-export MPI_IMPL=$STREAM_DIR/mpi/stream_mpi.c
-
 
 export OUTPUT_FILE=$OUTPUT_DIR/single_core_output_$(date +"%d-%m-%y")_$(date +"%T").txt
 if [[ -f $OUTPUT_FILE ]]; then
@@ -67,14 +64,34 @@ fi
 echo "Running..."
 
 
-#------------------------------------------------------------
-# Load necessary modules
-#------------------------------------------------------------
-module purge
-module load gcc
-module load openmpi
-make all
 
+#------------------------------------------------------------
+# Load correct modules
+#------------------------------------------------------------
+# module purge
+# module load gcc
+# module load openmpi
+# module list
+
+module purge
+module load gcc/10.1.0  openmpi/4.0.4
+
+
+
+#------------------------------------------------------------
+# For all of the following make call you can add PFLAGS and CFLAGS.
+# If you are running only on version of stream or the same flags between 
+# the different versions of stream you can use export CFLAGS or export PFLAGS
+# to define the variable.
+
+# Use PFLAGS for program flags ie -DVERBOSE and -DDEBUG
+# Use CFLAGS for compiler flags such as -fopenmp
+#------------------------------------------------------------
+make stream_original.exe        CFLAGS=""       PFLAGS=""
+make original_stream_mpi.exe    CFLAGS=""       PFLAGS=""
+make stream_omp.exe             CFLAGS=""       PFLAGS=""
+make stream_mpi.exe             CFLAGS=""       PFLAGS=""
+make stream_oshmem.exe          CFLAGS=""       PFLAGS=""
 
 
 echo "=======================================================================================" >> $OUTPUT_FILE
@@ -88,6 +105,18 @@ if ./stream_original.exe >> $OUTPUT_FILE; then
 else
         echo "FAILED TO RUN!" >> $OUTPUT_FILE
 	echo "Original impl FAILED TO RUN!"
+fi
+echo >> $OUTPUT_FILE
+echo >> $OUTPUT_FILE
+
+echo "------------------------------------" >> $OUTPUT_FILE
+echo "           'Original' MPI"           >> $OUTPUT_FILE
+echo "------------------------------------" >> $OUTPUT_FILE
+if mpirun -np $NP_VALUE original_stream_mpi.exe >> $OUTPUT_FILE; then
+        echo "Original MPI impl finished."
+else
+        echo "FAILED TO RUN!" >> $OUTPUT_FILE
+	echo "Original MPI impl FAILED TO RUN!"
 fi
 echo >> $OUTPUT_FILE
 echo >> $OUTPUT_FILE

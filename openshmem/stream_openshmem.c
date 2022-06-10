@@ -370,9 +370,9 @@ int main()
         from 0 - STREAM_ARRAY_SIZE
 --------------------------------------------------------------------------------------*/
     srand(time(0));
-    init_idx_array(a_idx, STREAM_ARRAY_SIZE);
-    init_idx_array(b_idx, STREAM_ARRAY_SIZE);
-    init_idx_array(c_idx, STREAM_ARRAY_SIZE);
+    init_idx_array(a_idx, STREAM_ARRAY_SIZE/numranks);
+    init_idx_array(b_idx, STREAM_ARRAY_SIZE/numranks);
+    init_idx_array(c_idx, STREAM_ARRAY_SIZE/numranks);
 
 /*--------------------------------------------------------------------------------------
 	used to dynamically allocate the three arrays using "posix_memalign()"
