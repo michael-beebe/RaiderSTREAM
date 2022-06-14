@@ -88,8 +88,8 @@ module load gcc/10.1.0  openmpi/4.0.4
 # Use CFLAGS for compiler flags such as -fopenmp
 #------------------------------------------------------------
 make stream_original.exe        CFLAGS=""       PFLAGS=""
-make original_stream_mpi.exe    CFLAGS=""       PFLAGS=""
 make stream_omp.exe             CFLAGS=""       PFLAGS=""
+make stream_mpi_original.exe    CFLAGS=""       PFLAGS=""
 make stream_mpi.exe             CFLAGS=""       PFLAGS=""
 make stream_oshmem.exe          CFLAGS=""       PFLAGS=""
 
@@ -109,18 +109,6 @@ fi
 echo >> $OUTPUT_FILE
 echo >> $OUTPUT_FILE
 
-echo "------------------------------------" >> $OUTPUT_FILE
-echo "           'Original' MPI"           >> $OUTPUT_FILE
-echo "------------------------------------" >> $OUTPUT_FILE
-if mpirun -np $NP_VALUE original_stream_mpi.exe >> $OUTPUT_FILE; then
-        echo "Original MPI impl finished."
-else
-        echo "FAILED TO RUN!" >> $OUTPUT_FILE
-	echo "Original MPI impl FAILED TO RUN!"
-fi
-echo >> $OUTPUT_FILE
-echo >> $OUTPUT_FILE
-
 
 echo "------------------------------------" >> $OUTPUT_FILE
 echo "              OpenMP"                 >> $OUTPUT_FILE
@@ -130,6 +118,19 @@ if ./stream_omp.exe >> $OUTPUT_FILE; then
 else
         echo "FAILED TO RUN!" >> $OUTPUT_FILE
         echo "OpenMP impl FAILED TO RUN!"
+fi
+echo >> $OUTPUT_FILE
+echo >> $OUTPUT_FILE
+
+
+echo "------------------------------------" >> $OUTPUT_FILE
+echo "           'Original' MPI"           >> $OUTPUT_FILE
+echo "------------------------------------" >> $OUTPUT_FILE
+if mpirun -np $NP_VALUE stream_mpi_original.exe >> $OUTPUT_FILE; then
+        echo "Original MPI impl finished."
+else
+        echo "FAILED TO RUN!" >> $OUTPUT_FILE
+	echo "Original MPI impl FAILED TO RUN!"
 fi
 echo >> $OUTPUT_FILE
 echo >> $OUTPUT_FILE
@@ -158,7 +159,6 @@ else
         echo "OpenSHMEM impl FAILED TO RUN!"
 fi
 echo "Done! Output was directed to $OUTPUT_FILE"
-
 
 
 make clean
