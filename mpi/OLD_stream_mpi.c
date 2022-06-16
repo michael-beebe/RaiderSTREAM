@@ -296,9 +296,6 @@ extern void print_info2(double t, double t0, double t1, int quantum);
 
 extern void checkSTREAMresults(STREAM_TYPE *AvgErrByRank, int numranks);
 extern void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr);
-// extern void checkSTREAMresults();
-// extern void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
-//                   STREAM_TYPE exp_val, double epsilon, int* errors);
 
 double mysecond();
 
@@ -364,9 +361,9 @@ int main()
         from 0 - STREAM_ARRAY_SIZE
 --------------------------------------------------------------------------------------*/
     srand(time(0));
-    init_idx_array(a_idx, STREAM_ARRAY_SIZE);
-    init_idx_array(b_idx, STREAM_ARRAY_SIZE);
-    init_idx_array(c_idx, STREAM_ARRAY_SIZE);
+    init_idx_array(a_idx, STREAM_ARRAY_SIZE/numranks);
+    init_idx_array(b_idx, STREAM_ARRAY_SIZE/numranks);
+    init_idx_array(c_idx, STREAM_ARRAY_SIZE/numranks);
 
 /*--------------------------------------------------------------------------------------
     - Initialize the idx arrays on all PEs and populate them with random values ranging
@@ -769,9 +766,9 @@ int main()
 	}
 #endif
 
-	// free(a);
-	// free(b);
-	// free(c);
+	free(a);
+	free(b);
+	free(c);
 	if (myrank == 0) {
 		free(TimesByRank);
 	}
@@ -1039,131 +1036,6 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
 	printf ("    Rel Errors on a, b, c:     %e %e %e \n",abs(aAvgErr/aj),abs(bAvgErr/bj),abs(cAvgErr/cj));
 #endif
 }
-
-// void checkSTREAMresults()
-// {
-// 	STREAM_TYPE aj, bj, cj;
-// 	STREAM_TYPE aSumErr, bSumErr, cSumErr;
-// 	STREAM_TYPE aAvgErr, bAvgErr, cAvgErr;
-
-// 	STREAM_TYPE scalar;
-
-// 	double epsilon;
-// 	ssize_t	j;
-// 	int	k, err;
-
-//     /* reproduce initialization */
-// 	aj = 1.0;
-// 	bj = 2.0;
-// 	cj = 0.0;
-
-//     /* a[] is modified during timing check */
-// 	aj = 2.0E0 * aj;
-
-//   /* now execute timing loop  */
-// 	scalar = 3.0;
-// 	for (k=0; k<NTIMES; k++){
-// 		// Sequential kernels
-// 		cj = aj;
-// 		bj = scalar*cj;
-// 		cj = aj+bj;
-// 		aj = bj+scalar*cj;
-// 		// Gather kernels
-// 		cj = aj;
-// 		bj = scalar*cj;
-// 		cj = aj+bj;
-// 		aj = bj+scalar*cj;
-// 		// Scatter kernels
-// 		cj = aj;
-// 		bj = scalar*cj;
-// 		cj = aj+bj;
-// 		aj = bj+scalar*cj;
-//   }
-
-//     /* accumulate deltas between observed and expected results */
-// 	aSumErr = 0.0, bSumErr = 0.0, cSumErr = 0.0;
-
-// 	for (j=0; j<array_elements; j++) {
-//     	// Original kernels
-// 		aSumErr += abs(a[j] - aj);
-// 		bSumErr += abs(b[j] - bj);
-// 		cSumErr += abs(c[j] - cj);
-// 		// Gather kernels
-// 		aSumErr += abs(a[j] - aj);
-// 		bSumErr += abs(b[j] - bj);
-// 		cSumErr += abs(c[j] - cj);
-// 		// Scatter kernels
-// 		aSumErr += abs(a[j] - aj);
-// 		bSumErr += abs(b[j] - bj);
-// 		cSumErr += abs(c[j] - cj);
-// 	}
-
-// 	aAvgErr = aSumErr / (STREAM_TYPE) array_elements;
-// 	bAvgErr = bSumErr / (STREAM_TYPE) array_elements;
-// 	cAvgErr = cSumErr / (STREAM_TYPE) array_elements;
-
-// 	if (sizeof(STREAM_TYPE) == 4) {
-// 		epsilon = 1.e-6;
-// 	}
-// 	else if (sizeof(STREAM_TYPE) == 8) {
-// 		epsilon = 1.e-13;
-// 	}
-// 	else {
-// 		printf("WEIRD: sizeof(STREAM_TYPE) = %lu\n",sizeof(STREAM_TYPE));
-// 		epsilon = 1.e-6;
-// 	}
-
-// 	err = 0;
-
-// #ifdef DEBUG
-// 	printf("aSumErr= %f\t\t aAvgErr=%f\n", aSumErr, aAvgErr);
-// 	printf("bSumErr= %f\t\t bAvgErr=%f\n", bSumErr, bAvgErr);
-// 	printf("cSumErr= %f\t\t cAvgErr=%f\n", cSumErr, cAvgErr);
-// #endif
-
-
-//  // Check errors on each array
-// 	check_errors("a[]", a, aAvgErr, aj, epsilon, &err);
-// 	check_errors("b[]", b, bAvgErr, bj, epsilon, &err);
-// 	check_errors("c[]", c, cAvgErr, cj, epsilon, &err);
-
-// 	if (err == 0) {
-// 		printf ("Solution Validates: avg error less than %e on all arrays\n", epsilon);
-// 	}
-// #ifdef VERBOSE
-// 	printf ("Results Validation Verbose Results: \n");
-// 	printf ("    Expected a(1), b(1), c(1): %f %f %f \n",aj,bj,cj);
-// 	printf ("    Observed a(1), b(1), c(1): %f %f %f \n",a[1],b[1],c[1]);
-// 	printf ("    Rel Errors on a, b, c:     %e %e %e \n",abs(aAvgErr/aj),abs(bAvgErr/bj),abs(cAvgErr/cj));
-// #endif
-// }
-
-// /* Checks error results against epsilon and prints debug info */
-// void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
-//                   STREAM_TYPE exp_val, double epsilon, int* errors) {
-//   int i;
-//   int ierr = 0;
-
-// 	if (abs(avg_err/exp_val) > epsilon) {
-// 		(*errors)++;
-// 		printf ("Failed Validation on array %s, AvgRelAbsErr > epsilon (%e)\n", label, epsilon);
-// 		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n", exp_val, avg_err, abs(avg_err/exp_val));
-// 		ierr = 0;
-// 		for (i=0; i<array_elements; i++) {
-// 			if (abs(array[i]/exp_val-1.0) > epsilon) {
-// 				ierr++;
-// #ifdef VERBOSE
-// 				if (ierr < 10) {
-// 					printf("         array %s: index: %ld, expected: %e, observed: %e, relative error: %e\n",
-// 						label, i, exp_val, array[i], abs((exp_val-array[i])/avg_err));
-// 				}
-// #endif
-// 			}
-// 		}
-// 		printf("     For array %s, %d errors were found.\n", label, ierr);
-// 	}
-// }
-
 
 void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k) {
     	printf(HLINE);

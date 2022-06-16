@@ -293,12 +293,10 @@ extern void init_idx_array(int *array, int nelems);
 extern void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k);
 extern void print_timer_granularity(int quantum);
 extern void print_info2(double t, double t0, double t1, int quantum);
+extern void print_memory_usage();
 
 extern void checkSTREAMresults(STREAM_TYPE *AvgErrByRank, int numranks);
 extern void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr);
-// extern void checkSTREAMresults();
-// extern void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
-//                   STREAM_TYPE exp_val, double epsilon, int* errors);
 
 double mysecond();
 
@@ -460,6 +458,7 @@ int main()
 
 	if (myrank == 0) {
         print_info2(t, t0, t1, quantum);
+		print_memory_usage();
 	}
 
 // =================================================================================
@@ -747,7 +746,7 @@ int main()
 #endif
 	/* --- Collect the Average Errors for Each Array on Rank 0 --- */
 	computeSTREAMerrors(&AvgError[0], &AvgError[1], &AvgError[2]);
-	MPI_Gather(AvgError, 3, MPI_DOUBLE, AvgErrByRank, 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Gather(AvgError, NUM_ARRAYS, MPI_DOUBLE, AvgErrByRank, NUM_ARRAYS, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 	/* -- Combined averaged errors and report on Rank 0 only --- */
 	if (myrank == 0) {
@@ -769,9 +768,9 @@ int main()
 	}
 #endif
 
-	// free(a);
-	// free(b);
-	// free(c);
+	free(a);
+	free(b);
+	free(c);
 	if (myrank == 0) {
 		free(TimesByRank);
 	}
@@ -1139,8 +1138,43 @@ void print_info2(double t, double t0, double t1, int quantum) {
 }
 
 
+void print_memory_usage() {
+	unsigned long totalMemory = \
+		(sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) + 	// a[]
+		(sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) + 	// b[]
+		(sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) + 	// c[]
+		(sizeof(int) * (STREAM_ARRAY_SIZE)) + 			// a_idx[]
+		(sizeof(int) * (STREAM_ARRAY_SIZE)) + 			// b_idx[]
+		(sizeof(int) * (STREAM_ARRAY_SIZE)) + 			// c_idx[]
+		(sizeof(double) * NUM_KERNELS) + 				// avgtime[]
+		(sizeof(double) * NUM_KERNELS) + 				// maxtime[]
+		(sizeof(double) * NUM_KERNELS) + 				// mintime[]
+		(sizeof(char) * NUM_KERNELS) +					// label[]
+		(sizeof(double) * NUM_KERNELS);					// bytes[]
 
-
+#ifdef VERBOSE // if -DVERBOSE enabled break down memory usage by each array
+	printf("---------------------------------\n");
+	printf("  VERBOSE Memory Breakdown\n");
+	printf("---------------------------------\n");
+	printf("a[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("b[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("c[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("a_idx[]:\t%.2f MB\n", (sizeof(int) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("b_idx[]:\t%.2f MB\n", (sizeof(int) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("c_idx[]:\t%.2f MB\n", (sizeof(int) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("avgtime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
+	printf("maxtime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
+	printf("mintime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
+	printf("label[]:\t%lu B\n", (sizeof(char) * NUM_KERNELS));
+	printf("bytes[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
+	printf("---------------------------------\n");
+	printf("Total Memory Allocated: %.2f MB\n", totalMemory / 1024.0 / 1024.0);
+	printf("---------------------------------\n");
+#else
+	printf("Totaly Memory Allocated: %.2f MB\n", totalMemory / 1024.0 / 1024.0);
+#endif
+	printf(HLINE);
+}
 
 
 

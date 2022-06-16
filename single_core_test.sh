@@ -68,11 +68,6 @@ echo "Running..."
 #------------------------------------------------------------
 # Load correct modules
 #------------------------------------------------------------
-# module purge
-# module load gcc
-# module load openmpi
-# module list
-
 module purge
 module load gcc/10.1.0  openmpi/4.0.4
 

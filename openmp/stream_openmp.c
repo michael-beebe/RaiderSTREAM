@@ -265,6 +265,7 @@ extern void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_
 extern void print_info1(int BytesPerWord);
 extern void print_timer_granularity(int quantum);
 extern void print_info2(double t, int quantum);
+extern void print_memory_usage();
 
 #ifdef TUNED
 void tuned_STREAM_Copy();
@@ -361,6 +362,7 @@ int main()
     t = 1.0E6 * (mysecond() - t);
 
 	print_info2(t, quantum);
+	print_memory_usage();
 
 // =================================================================================
     		/*	--- MAIN LOOP --- repeat test cases NTIMES times --- */
@@ -853,6 +855,51 @@ void print_info2(double t, int quantum) {
     printf("precision of your system timer.\n");
     printf(HLINE);
 }
+
+void print_memory_usage() {
+	unsigned long totalMemory = \
+		(sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) + 	// a[]
+		(sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) + 	// b[]
+		(sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) + 	// c[]
+		(sizeof(int) * (STREAM_ARRAY_SIZE)) + 			// a_idx[]
+		(sizeof(int) * (STREAM_ARRAY_SIZE)) + 			// b_idx[]
+		(sizeof(int) * (STREAM_ARRAY_SIZE)) + 			// c_idx[]
+		(sizeof(double) * NUM_KERNELS) + 				// avgtime[]
+		(sizeof(double) * NUM_KERNELS) + 				// maxtime[]
+		(sizeof(double) * NUM_KERNELS) + 				// mintime[]
+		(sizeof(char) * NUM_KERNELS) +					// label[]
+		(sizeof(double) * NUM_KERNELS);					// bytes[]
+
+#ifdef VERBOSE // if -DVERBOSE enabled break down memory usage by each array
+	printf("---------------------------------\n");
+	printf("  VERBOSE Memory Breakdown\n");
+	printf("---------------------------------\n");
+	printf("a[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("b[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("c[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("a_idx[]:\t%.2f MB\n", (sizeof(int) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("b_idx[]:\t%.2f MB\n", (sizeof(int) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("c_idx[]:\t%.2f MB\n", (sizeof(int) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
+	printf("avgtime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
+	printf("maxtime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
+	printf("mintime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
+	printf("label[]:\t%lu B\n", (sizeof(char) * NUM_KERNELS));
+	printf("bytes[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
+	printf("---------------------------------\n");
+	printf("Total Memory Allocated: %.2f MB\n", totalMemory / 1024.0 / 1024.0);
+	printf("---------------------------------\n");
+#else
+	printf("Totaly Memory Allocated: %.2f MB\n", totalMemory / 1024.0 / 1024.0);
+#endif
+	printf(HLINE);
+}
+
+
+
+
+
+
+
 
 /* stubs for "tuned" versions of the kernels */
 #ifdef TUNED
