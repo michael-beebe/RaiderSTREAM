@@ -8,6 +8,12 @@ THOUGHTS:
       are distributed across PEs. Perhaps add more information to reflect the
       memory allocated on each single PE as well as the total mmeory allocated
 
+ - avx <- hardware capability of AMD cpus
+ - -mtune, -march=, -mcpu
+ - sweep (fit in cache)
+ - Put results into spreadsheet
+ - put in timer 
+
 TODO:
   - Get to the bottom of the performance discrepency
   - Update the comments at the top for each implementation
