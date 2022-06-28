@@ -1,0 +1,40 @@
+THOUGHTS:
+  - I've noticed that the validation piece gives different expected/observed
+      results between the OpenMP version and the multi-node versions. Could
+      this have something to do with the performance discrepency?
+
+  - The VERBOSE printout for memory allocation is the some for all three
+      implementations. However, in the multinode versions the STREAM arrays
+      are distributed across PEs. Perhaps add more information to reflect the
+      memory allocated on each single PE as well as the total mmeory allocated
+
+ - avx <- hardware capability of AMD cpus
+ - -mtune, -march=, -mcpu
+ - sweep (fit in cache)
+ - Put results into spreadsheet
+ - put in timer 
+
+TODO:
+  - Get to the bottom of the performance discrepency
+  - Update the comments at the top for each implementation
+  - Update the GitHub README
+  - Make sure the STREAM version printout is accurate
+  - Get rid of the "OLD" source files once all of the code is good to go
+  - Go through codes to make sure there is no TODOs or FIXMEs and that the comments are thorough
+
+
+COMPLETE:
+  - OpenSHMEM
+  	- Fix validation on OpenSHMEM version
+  	- Remove the gather and scatter arrays from OpenSHMEM version
+  	- Modularize OpenSHMEM version
+
+  - MPI
+  	- Fix validation on MPI version
+  	- Remove gather and scatter arrays from MPI version
+ 	- Modularize MPI version
+
+  - OpenMP
+  	- Remove gather and scatter arrays from openmp version
+  	- Modularize OpenMP version
+  	- Finish validation on OpenMP version
