@@ -119,7 +119,7 @@ echo >> $OUTPUT_FILE
 
 
 echo "------------------------------------" >> $OUTPUT_FILE
-echo "           'Original' MPI"           >> $OUTPUT_FILE
+echo "           'Original' MPI"            >> $OUTPUT_FILE
 echo "------------------------------------" >> $OUTPUT_FILE
 if mpirun -n $NP_VALUE ./stream_mpi_original.exe >> $OUTPUT_FILE; then
         echo "Original MPI impl finished."
