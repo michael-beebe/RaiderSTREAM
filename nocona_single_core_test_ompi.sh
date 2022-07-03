@@ -40,7 +40,7 @@
 # -------------------------------------------
 export NP_VALUE=1
 export OMP_NUM_THREADS=
-export STREAM_ARRAY_SIZE=2500000
+export STREAM_ARRAY_SIZE=8700000
 
 
 
@@ -48,7 +48,7 @@ export STREAM_ARRAY_SIZE=2500000
 # Setting vars for file paths to each STREAM implementation
 #------------------------------------------------------------
 export STREAM_DIR=$(pwd)
-export OUTPUT_DIR=$STREAM_DIR/outputs
+export OUTPUT_DIR=$STREAM_DIR/outputs_sc_o3_shmem
 if [ ! -d $OUTPUT_DIR ]; then
     mkdir $OUTPUT_DIR
 fi
@@ -82,66 +82,69 @@ module load gcc/10.1.0  openmpi/4.0.4
 # Use PFLAGS for program flags ie -DVERBOSE and -DDEBUG
 # Use CFLAGS for compiler flags such as -fopenmp
 #------------------------------------------------------------
-make stream_original.exe        CFLAGS=""       PFLAGS=""
-make stream_omp.exe             CFLAGS=""       PFLAGS=""
-make stream_mpi_original.exe    CFLAGS=""       PFLAGS=""
-make stream_mpi.exe             CFLAGS=""       PFLAGS=""
-make stream_oshmem.exe          CFLAGS=""       PFLAGS=""
+# make stream_original.exe        CFLAGS=""       PFLAGS=""
+# make stream_omp.exe             CFLAGS=""       PFLAGS=""
+# make stream_mpi_original.exe    CFLAGS=""       PFLAGS=""
+# make stream_mpi.exe             CFLAGS=""       PFLAGS=""
+make stream_oshmem.exe          CFLAGS="-O3"       PFLAGS=""
+
+for i in {1..5}
+do
 
 
 echo "=======================================================================================" >> $OUTPUT_FILE
 echo "                               SINGLE CORE RUNS"                                         >> $OUTPUT_FILE
 echo "=======================================================================================" >> $OUTPUT_FILE
-echo "------------------------------------" >> $OUTPUT_FILE
-echo "         'Original' STREAM"           >> $OUTPUT_FILE
-echo "------------------------------------" >> $OUTPUT_FILE
-if ./stream_original.exe >> $OUTPUT_FILE; then
-        echo "Original impl finished."
-else
-        echo "FAILED TO RUN!" >> $OUTPUT_FILE
-	echo "Original impl FAILED TO RUN!"
-fi
-echo >> $OUTPUT_FILE
-echo >> $OUTPUT_FILE
+# echo "------------------------------------" >> $OUTPUT_FILE
+# echo "         'Original' STREAM"           >> $OUTPUT_FILE
+# echo "------------------------------------" >> $OUTPUT_FILE
+# if ./stream_original.exe >> $OUTPUT_FILE; then
+#         echo "Original impl finished."
+# else
+#         echo "FAILED TO RUN!" >> $OUTPUT_FILE
+# 	echo "Original impl FAILED TO RUN!"
+# fi
+# echo >> $OUTPUT_FILE
+# echo >> $OUTPUT_FILE
 
 
-echo "------------------------------------" >> $OUTPUT_FILE
-echo "              OpenMP"                 >> $OUTPUT_FILE
-echo "------------------------------------" >> $OUTPUT_FILE
-if ./stream_omp.exe >> $OUTPUT_FILE; then
-        echo "OpenMP impl finished."
-else
-        echo "FAILED TO RUN!" >> $OUTPUT_FILE
-        echo "OpenMP impl FAILED TO RUN!"
-fi
-echo >> $OUTPUT_FILE
-echo >> $OUTPUT_FILE
+# echo "------------------------------------" >> $OUTPUT_FILE
+# echo "              OpenMP"                 >> $OUTPUT_FILE
+# echo "------------------------------------" >> $OUTPUT_FILE
+# if ./stream_omp.exe >> $OUTPUT_FILE; then
+#         echo "OpenMP impl finished."
+# else
+#         echo "FAILED TO RUN!" >> $OUTPUT_FILE
+#         echo "OpenMP impl FAILED TO RUN!"
+# fi
+# echo >> $OUTPUT_FILE
+# echo >> $OUTPUT_FILE
 
 
-echo "------------------------------------" >> $OUTPUT_FILE
-echo "           'Original' MPI"           >> $OUTPUT_FILE
-echo "------------------------------------" >> $OUTPUT_FILE
-if mpirun -np $NP_VALUE stream_mpi_original.exe >> $OUTPUT_FILE; then
-        echo "Original MPI impl finished."
-else
-        echo "FAILED TO RUN!" >> $OUTPUT_FILE
-	echo "Original MPI impl FAILED TO RUN!"
-fi
-echo >> $OUTPUT_FILE
-echo >> $OUTPUT_FILE
+# echo "------------------------------------" >> $OUTPUT_FILE
+# echo "           'Original' MPI"           >> $OUTPUT_FILE
+# echo "------------------------------------" >> $OUTPUT_FILE
+# if mpirun -np $NP_VALUE stream_mpi_original.exe >> $OUTPUT_FILE; then
+#         echo "Original MPI impl finished."
+# else
+#         echo "FAILED TO RUN!" >> $OUTPUT_FILE
+# 	echo "Original MPI impl FAILED TO RUN!"
+# fi
+# echo >> $OUTPUT_FILE
+# echo >> $OUTPUT_FILE
 
 
-echo "------------------------------------" >> $OUTPUT_FILE
-echo "               MPI"                   >> $OUTPUT_FILE
-echo "------------------------------------" >> $OUTPUT_FILE
-if mpirun -np $NP_VALUE stream_mpi.exe >> $OUTPUT_FILE; then
-        echo "MPI impl finished."
-else
-        echo "FAILED TO RUN!" >> $OUTPUT_FILE
-        echo "MPI impl FAILED TO RUN!"
-fi
-echo >> $OUTPUT_FILE
-echo >> $OUTPUT_FILE
+# echo "------------------------------------" >> $OUTPUT_FILE
+# echo "               MPI"                   >> $OUTPUT_FILE
+# echo "------------------------------------" >> $OUTPUT_FILE
+# if mpirun -np $NP_VALUE stream_mpi.exe >> $OUTPUT_FILE; then
+#         echo "MPI impl finished."
+# else
+#         echo "FAILED TO RUN!" >> $OUTPUT_FILE
+#         echo "MPI impl FAILED TO RUN!"
+# fi
+# echo >> $OUTPUT_FILE
+# echo >> $OUTPUT_FILE
 
 
 echo "------------------------------------" >> $OUTPUT_FILE
@@ -156,12 +159,14 @@ fi
 echo "Done! Output was directed to $OUTPUT_FILE"
 
 
+done
+
 make clean
 
-echo "Would you like to see the results? (y/n)"
-read RESPONSE
-if [[ "${RESPONSE}" == "y" || "${RESPONSE}" == "Y" ]]; then
-    cat $OUTPUT_FILE
-    echo ""
-    echo ""
-fi
+# echo "Would you like to see the results? (y/n)"
+# read RESPONSE
+# if [[ "${RESPONSE}" == "y" || "${RESPONSE}" == "Y" ]]; then
+#     cat $OUTPUT_FILE
+#     echo ""
+#     echo ""
+# fi
