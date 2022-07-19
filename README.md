@@ -21,18 +21,23 @@ With RaiderSTREAM, we address these two limitations by:
 * `STREAM_ARRAY_SIZE`: the problem size, or the size of the STREAM arrays
     * Ex: `-DSTREAM_ARRAY_SIZE=10000000`
 <br/>
+
 * `NTIMES`: the kernels are run on each element of the STREAM arrays `NTIMES` times. The best MB/s for each kernel amongst all `NTIMES` runs is reported in the benchmark's output.
     * Ex: `-DNTIMES=10`
 <br/>
+
 * `STREAM_TYPE`: sets the data type used in the STREAM arrays. Set to <i>double</i> by default.
     * Ex: `-DSTREAM_TYPE=int`
 <br/>
+
 * `DEBUG`: prints "debug" output
     * Ex: `-DDEBUG`
 <br/>
+
 * `VERBOSE`: prints "verbose" memory usage and validation output
     * Ex: `-DBERBOSE`
 <br/>
+
 * `TUNED`: if you look at the bottom of the .c source files, there are additional blank functions that users can write in their own custom kernels. If you want to run your custom kernels, pass in this flag.
     * Ex: `-DTUNED`
 
