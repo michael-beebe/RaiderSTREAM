@@ -41,7 +41,7 @@ With RaiderSTREAM, we address these two limitations by:
 * `TUNED`: if you look at the bottom of the .c source files, there are additional blank functions that users can write in their own custom kernels. If you want to run your custom kernels, pass in this flag.
     * Ex: `-DTUNED`
 
-### STREAM Run Rules
+### Run Rules
 STREAM is intended to measure the bandwidth from main memory. However, it can be used to measure cache bandwidth as well by the adjusting the environment variable STREAM_ARRAY_SIZE such that the memory needed to allocate the arrays can fit in the cache level of interest. The general rule for STREAM_ARRAY_SIZE is that each array must be at least 4x the size of the sum of all the lastlevel caches, or 1 million elements – whichever is larger
 
 ### Irregular Memory Access Patterns
