@@ -1110,7 +1110,7 @@ void init_idx_array(int *array, int nelems)
 
 void print_info1(int BytesPerWord, int numranks, ssize_t array_elements) {
 		printf(HLINE);
-		printf("STREAM version $Revision: 5.10 $\n");
+		printf("RaiderSTREAM\n");
 		printf(HLINE);
 		//BytesPerWord = sizeof(STREAM_TYPE);
 		printf("This system uses %d bytes per array element.\n",

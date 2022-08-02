@@ -1070,13 +1070,7 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
 
 void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k) {
     	printf(HLINE);
-		// printf("RaiderSTREAM version $Revision: 5.10 $\n");
-		// printf(" _____       _     _			 						");
-		// printf("|  __ \     (_)   | |			   	  				");
-		// printf("| |__) |__ _ _  __| | ___ _ __	 		");
-		// printf("|  _  // _` | |/ _` |/ _ \ '__|					");
-		// printf("| | \ \ (_| | | (_| |  __/ |	  					");
-		// printf("|_|  \_\__,_|_|\__,_|\___|_|	 					");
+		printf("RaiderSTREAM\n");
 		printf(HLINE);
 		BytesPerWord = sizeof(STREAM_TYPE);
 		printf("This system uses %d bytes per array element.\n", BytesPerWord);
