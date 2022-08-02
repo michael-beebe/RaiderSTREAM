@@ -1,13 +1,11 @@
 /*-----------------------------------------------------------------------*/
-/* Program: STREAM                                                       */
-/* Original code developed by John D. McCalpin                           */
-/* Programmers: John D. McCalpin                                         */
-/*              Joe R. Zagar                                             */
-/*                                                                       */
+/* Program: RaiderSTREAM                                                 */
+/* Original STREAM code developed by John D. McCalpin                    */
+/* Programmers: Michael Beebe                                            */
+/*              Brody Williams                                           */
+/*              Stephen Devaney                                          */
 /* This program measures memory transfer rates in MB/s for simple        */
 /* computational kernels coded in C.                                     */
-/*-----------------------------------------------------------------------*/
-/* Copyright 1991-2022: John D. McCalpin                                 */
 /*-----------------------------------------------------------------------*/
 /* License:                                                              */
 /*  1. You are free to use this program and/or to redistribute           */
@@ -1041,7 +1039,7 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
 
 void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k) {
     	printf(HLINE);
-		printf("STREAM version $Revision: 5.10 $\n");
+		printf("RaiderSTREAM version $Revision: 5.10 $\n");
 		printf(HLINE);
 		BytesPerWord = sizeof(STREAM_TYPE);
 		printf("This system uses %d bytes per array element.\n", BytesPerWord);

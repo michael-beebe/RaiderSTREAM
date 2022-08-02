@@ -1,14 +1,11 @@
 /*-----------------------------------------------------------------------*/
-/* Program: STREAM                                                       */
-/* Revision: $Id: stream.c,v 5.10 2013/01/17 16:01:06 mccalpin Exp mccalpin $ */
-/* Original code developed by John D. McCalpin                           */
-/* Programmers: John D. McCalpin                                         */
-/*              Joe R. Zagar                                             */
-/*                                                                       */
+/* Program: RaiderSTREAM                                                 */
+/* Original STREAM code developed by John D. McCalpin                    */
+/* Programmers: Michael Beebe                                            */
+/*              Brody Williams                                           */
+/*              Stephen Devaney                                          */
 /* This program measures memory transfer rates in MB/s for simple        */
 /* computational kernels coded in C.                                     */
-/*-----------------------------------------------------------------------*/
-/* Copyright 1991-2013: John D. McCalpin                                 */
 /*-----------------------------------------------------------------------*/
 /* License:                                                              */
 /*  1. You are free to use this program and/or to redistribute           */
