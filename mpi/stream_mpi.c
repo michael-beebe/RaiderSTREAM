@@ -1069,7 +1069,7 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
 }
 
 void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k) {
-    	printf(HLINE);
+    printf(HLINE);
 		printf("RaiderSTREAM\n");
 		printf(HLINE);
 		BytesPerWord = sizeof(STREAM_TYPE);
