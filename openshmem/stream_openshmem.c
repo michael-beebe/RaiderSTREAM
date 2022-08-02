@@ -1,13 +1,11 @@
 /*-----------------------------------------------------------------------*/
-/* Program: STREAM                                                       */
-/* Original code developed by John D. McCalpin                           */
-/* Programmers: John D. McCalpin                                         */
-/*              Joe R. Zagar                                             */
-/*                                                                       */
+/* Program: RaiderSTREAM                                                 */
+/* Original STREAM code developed by John D. McCalpin                    */
+/* Programmers: Michael Beebe                                            */
+/*              Brody Williams                                           */
+/*              Stephen Devaney                                          */
 /* This program measures memory transfer rates in MB/s for simple        */
 /* computational kernels coded in C.                                     */
-/*-----------------------------------------------------------------------*/
-/* Copyright 1991-2013: John D. McCalpin                                 */
 /*-----------------------------------------------------------------------*/
 /* License:                                                              */
 /*  1. You are free to use this program and/or to redistribute           */
@@ -157,7 +155,7 @@
 #endif
 
 
-/*
+/* 
  *	3) Compile the code with optimization.  Many compilers generate
  *       unreasonably bad code before the optimizer tightens things up.
  *     If the results are unreasonably good, on the other hand, the
@@ -285,6 +283,24 @@ static double bytes[NUM_KERNELS] = {
 	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // SCATTER Scale
 	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // SCATTER Add
 	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE  // SCATTER Triad
+};
+
+static double   flops[NUM_KERNELS] = {
+	// Original Kernels
+	(int)0,                // Copy
+	1 * STREAM_ARRAY_SIZE, // Scale
+	1 * STREAM_ARRAY_SIZE, // Add
+	2 * STREAM_ARRAY_SIZE, // Triad
+	// Gather Kernels
+	(int)0,                // GATHER Copy
+	1 * STREAM_ARRAY_SIZE, // GATHER Scale
+	1 * STREAM_ARRAY_SIZE, // GATHER Add
+	2 * STREAM_ARRAY_SIZE, // GATHER Triad
+	// Scatter Kernels
+	(int)0,                // SCATTER Copy
+	1 * STREAM_ARRAY_SIZE, // SCATTER Scale
+	1 * STREAM_ARRAY_SIZE, // SCATTER Add
+	2 * STREAM_ARRAY_SIZE, // SCATTER Triad
 };
 
 static double times[NUM_KERNELS][NTIMES];
@@ -781,15 +797,28 @@ int main()
 		}
 
 		// note that "bytes[j]" is the aggregate array size, so no "numranks" is needed here
-		printf("Function\tBest Rate MB/s\tAvg time   Min time\tMax time\n");
+		printf("Function\tBest Rate MB/s\t      FLOP/s\t   Avg time\t   Min time\t   Max time\n");
 		for (j=0; j<NUM_KERNELS; j++) {
 			avgtime[j] = avgtime[j]/(double)(NTIMES-1);
-
-			printf("%s%11.1f  %11.6f  %11.6f  %11.6f\n", label[j],
-			   1.0E-06 * bytes[j]/mintime[j],
-			   avgtime[j],
-			   mintime[j],
-			   maxtime[j]);
+			
+			if (flops[j] == 0) {
+				printf("%s%12.1f\t\t%s\t%11.6f\t%11.6f\t%11.6f\n",
+					label[j],                           // Kernel
+					1.0E-06 * bytes[j]/mintime[j],      // MB/s
+					"-",      // FLOP/s
+					avgtime[j],                         // Avg Time
+					mintime[j],                         // Min Time
+					maxtime[j]);                        // Max time
+			}
+			else {
+				printf("%s%12.1f\t%12.1f\t%11.6f\t%11.6f\t%11.6f\n",
+					label[j],                           // Kernel
+					1.0E-06 * bytes[j]/mintime[j],      // MB/s
+					1.0E-06 * flops[j]/mintime[j],      // FLOP/s
+					avgtime[j],                         // Avg Time
+					mintime[j],                         // Min Time
+					maxtime[j]);                        // Max time
+			}
 		}
 		printf(HLINE);
 	}

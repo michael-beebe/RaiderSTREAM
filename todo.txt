@@ -1,0 +1,15 @@
+- Include per PE basis for memory allocation printout on multi-node versions
+- Fix up the Make situation
+- Add FLOPs to benchmark output
+- New kernels
+    - stride-N, pointer-chase, central, etc.
+- Read in user-specified access patterns via file or arrays
+    - Enable via compilation flag
+    - use .txt file input that requires specific formatting
+    - similar to HPL .dat file
+
+
+- Find a good way to incorporate IPC with RaiderSTREAM
+    - OSU microbenchmarks as inspiration
+    - Cost function – is it worthwhile to offload? How much time does it take to offload? Compute? Etc.?
+    - Write up design document

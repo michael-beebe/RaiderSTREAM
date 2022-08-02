@@ -1,14 +1,11 @@
 /*-----------------------------------------------------------------------*/
-/* Program: STREAM                                                       */
-/* Revision: $Id: stream.c,v 5.10 2013/01/17 16:01:06 mccalpin Exp mccalpin $ */
-/* Original code developed by John D. McCalpin                           */
-/* Programmers: John D. McCalpin                                         */
-/*              Joe R. Zagar                                             */
-/*                                                                       */
+/* Program: RaiderSTREAM                                                 */
+/* Original STREAM code developed by John D. McCalpin                    */
+/* Programmers: Michael Beebe                                            */
+/*              Brody Williams                                           */
+/*              Stephen Devaney                                          */
 /* This program measures memory transfer rates in MB/s for simple        */
 /* computational kernels coded in C.                                     */
-/*-----------------------------------------------------------------------*/
-/* Copyright 1991-2013: John D. McCalpin                                 */
 /*-----------------------------------------------------------------------*/
 /* License:                                                              */
 /*  1. You are free to use this program and/or to redistribute           */
@@ -130,7 +127,7 @@
 #   define OFFSET	0
 #endif
 
-/*
+/* FIXME: update this
  *	3) Compile the code with optimization.  Many compilers generate
  *       unreasonably bad code before the optimizer tightens things up.
  *     If the results are unreasonably good, on the other hand, the
@@ -226,8 +223,8 @@ static double mintime[NUM_KERNELS];
 - Initialize array to store labels for the benchmark kernels.
 --------------------------------------------------------------------------------------*/
 static char	*label[NUM_KERNELS] = {
-  "Copy:\t\t", "Scale:\t\t",
-  "Add:\t\t", "Triad:\t\t",
+    "Copy:\t\t", "Scale:\t\t",
+    "Add:\t\t", "Triad:\t\t",
 	"GATHER Copy:\t", "GATHER Scale:\t",
 	"GATHER Add:\t", "GATHER Triad:\t",
 	"SCATTER Copy:\t", "SCATTER Scale:\t",
@@ -250,6 +247,24 @@ static double	bytes[NUM_KERNELS] = {
 	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // SCATTER Scale
 	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // SCATTER Add
 	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE  // SCATTER Triad
+};
+
+static double   flops[NUM_KERNELS] = {
+	// Original Kernels
+	(int)0,                // Copy
+	1 * STREAM_ARRAY_SIZE, // Scale
+	1 * STREAM_ARRAY_SIZE, // Add
+	2 * STREAM_ARRAY_SIZE, // Triad
+	// Gather Kernels
+	(int)0,                // GATHER Copy
+	1 * STREAM_ARRAY_SIZE, // GATHER Scale
+	1 * STREAM_ARRAY_SIZE, // GATHER Add
+	2 * STREAM_ARRAY_SIZE, // GATHER Triad
+	// Scatter Kernels
+	(int)0,                // SCATTER Copy
+	1 * STREAM_ARRAY_SIZE, // SCATTER Scale
+	1 * STREAM_ARRAY_SIZE, // SCATTER Add
+	2 * STREAM_ARRAY_SIZE, // SCATTER Triad
 };
 
 extern double mysecond();
@@ -562,16 +577,28 @@ int main()
 /*--------------------------------------------------------------------------------------
 	// Print results table
 --------------------------------------------------------------------------------------*/
-    printf("Function\tBest Rate MB/s\t   Avg time\t   Min time\t   Max time\n");
+    printf("Function\tBest Rate MB/s\t      FLOP/s\t   Avg time\t   Min time\t   Max time\n");
     for (j=0; j<NUM_KERNELS; j++) {
 		avgtime[j] = avgtime[j]/(double)(NTIMES-1);
-
-		printf("%s%12.1f\t%11.6f\t%11.6f\t%11.6f\n",
-			label[j],
-			1.0E-06 * bytes[j]/mintime[j],
-			avgtime[j],
-			mintime[j],
-			maxtime[j]);
+        
+        if (flops[j] == 0) {
+            printf("%s%12.1f\t\t%s\t%11.6f\t%11.6f\t%11.6f\n",
+                label[j],                           // Kernel
+                1.0E-06 * bytes[j]/mintime[j],      // MB/s
+                "-",      // FLOP/s
+                avgtime[j],                         // Avg Time
+                mintime[j],                         // Min Time
+                maxtime[j]);                        // Max time
+        }
+        else {
+            printf("%s%12.1f\t%12.1f\t%11.6f\t%11.6f\t%11.6f\n",
+                label[j],                           // Kernel
+                1.0E-06 * bytes[j]/mintime[j],      // MB/s
+                1.0E-06 * flops[j]/mintime[j],      // FLOP/s
+                avgtime[j],                         // Avg Time
+                mintime[j],                         // Min Time
+                maxtime[j]);                        // Max time
+        }
     }
     printf(HLINE);
 
@@ -801,7 +828,7 @@ void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
 --------------------------------------------------------------------------------------*/
 void print_info1(int BytesPerWord) {
     printf(HLINE);
-    printf("STREAM version $Revision: 5.10 $\n");
+    printf("RaiderSTREAM\n");
     printf(HLINE);
     BytesPerWord = sizeof(STREAM_TYPE);
     printf("This system uses %d bytes per array element.\n",
