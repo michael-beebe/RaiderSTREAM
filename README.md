@@ -17,17 +17,17 @@ With RaiderSTREAM, we address these two limitations by:
 ### Benchmark Kernels
 ![Benchmark Kernels](.readme_images/kernels.png)
 
-### Compiler Flags and Environment Variables
+### How are bytes and FLOP/s counted?
+
+### Build
+
+##### Compiler Flags and Environment Variables
 * `STREAM_ARRAY_SIZE`: the problem size, or the size of the STREAM arrays
     * Ex: `-DSTREAM_ARRAY_SIZE=10000000`
 <br/>
 
 * `NTIMES`: the kernels are run on each element of the STREAM arrays `NTIMES` times. The best MB/s for each kernel amongst all `NTIMES` runs is reported in the benchmark's output.
     * Ex: `-DNTIMES=10`
-<br/>
-
-* `STREAM_TYPE`: sets the data type used in the STREAM arrays. Set to <i>double</i> by default.
-    * Ex: `-DSTREAM_TYPE=int`
 <br/>
 
 * `DEBUG`: prints "debug" output
