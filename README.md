@@ -15,19 +15,69 @@ With RaiderSTREAM, we address these two limitations by:
 <!-- ### Table of Contents -->
 
 ### Benchmark Kernels
-![Benchmark Kernels](.readme_images/kernels.png)
+![Benchmark Kernels](readme_images/kernels.png)
 
-### Compiler Flags and Environment Variables
+### How are bytes and FLOP/s counted?
+![Benchmark Kernels](readme_images/mbps_formula.png)
+$\alpha$ = number of memory accesses per iteration of the main STREAM loops
+$\gamma$ = size in bytes of `STREAM_TYPE` (8 bytes for doubles)
+$\lambda$ = `STREAM_ARRAY_SIZE`
+
+### Build
+Running 
+```
+make
+```
+or 
+```
+make all
+```
+
+from the project root directory will build each RaiderSTREAM implementation.
+
+To build a single implementations, the following commands are available:
+
+##### Original STREAM Implementation
+```
+make stream_original
+```
+
+##### Pure OpenMP
+```
+make stream_omp
+```
+
+##### MPI
+```
+make stream_mpi
+```
+
+##### OpenSHMEM
+```
+make stream_oshmem
+```
+
+##### Clean
+Running
+```
+make clean
+```
+will delete the executables and delete the build directory.
+
+```
+make clean_outputs
+```
+will delete the `outputs` directory and its contents.
+
+
+
+##### Compiler Flags and Environment Variables
 * `STREAM_ARRAY_SIZE`: the problem size, or the size of the STREAM arrays
     * Ex: `-DSTREAM_ARRAY_SIZE=10000000`
 <br/>
 
 * `NTIMES`: the kernels are run on each element of the STREAM arrays `NTIMES` times. The best MB/s for each kernel amongst all `NTIMES` runs is reported in the benchmark's output.
     * Ex: `-DNTIMES=10`
-<br/>
-
-* `STREAM_TYPE`: sets the data type used in the STREAM arrays. Set to <i>double</i> by default.
-    * Ex: `-DSTREAM_TYPE=int`
 <br/>
 
 * `DEBUG`: prints "debug" output
@@ -49,11 +99,11 @@ The gather and scatter benchmark kernels are similar in that they both provide i
 * The gather memory access pattern is characterized by randomly indexed loads coupled with sequential stores. This can help give us an understanding of read performance from sparse datasets such as arrays or matrices.
 * The scatter memory access pattern can be considered the inverse of its gather counterpart, and is characterized by the combination of sequential loads coupled together with randomly indexed stores. This pattern can give us an understanding of write performance to sparse datasets.
 
-![Gather Scatter](.readme_images/gather_scatter.png)
+![Gather Scatter](readme_images/gather_scatter.png)
 
 ### Multi-Node Support
 RadierSTREAM does not currently use any inter-process communication routines such as MPI_SEND or SHMEM_PUT within the benchmark kernels. Instead, the programming models are essentially leveraged as a <b>resource allocator</b>. The STREAM arrays are distributed evenly across a user-specified number of processing elements (PEs), each PE computes the kernel and writes the result back to its own array segment.
 
-![Multi-Node Support](.readme_images/oshrun.png)
+![Multi-Node Support](readme_images/oshrun.png)
 
 <!-- ### Citing -->
