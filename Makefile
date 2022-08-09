@@ -31,7 +31,7 @@ all: build
 	oshcc $(CFLAGS) $(PFLAGS) $(OPENMP) $(SHMEM_FLAGS) -DSTREAM_ARRAY_SIZE=$(STREAM_ARRAY_SIZE) $(SHEM_IMPL) -o $(BUILD_DIR)/stream_oshmem.exe	
 
 stream_original: build
-	gcc $(CFLAGS) $(PFLAGS) $(OPENMP) -DSTREAM_ARRAY_SIZE=$(STREAM_ARRAY_SIZE) $(ORIGINAL_OMP_IMPL) -o $(BUILD_DIR)/stream_original.exe
+	gcc $(CFLAGS) $(PFLAGS) $(OPENMP) -DSTREAM_ARRAY_SIZE=$(STREAM_ARRAY_SIZE) $(ORIGINAL_IMPL) -o $(BUILD_DIR)/stream_original.exe
 
 stream_omp: build
 	gcc $(CFLAGS) $(PFLAGS) $(OPENMP) -DSTREAM_ARRAY_SIZE=$(STREAM_ARRAY_SIZE) $(OMP_IMPL) -o $(BUILD_DIR)/stream_omp.exe
@@ -48,3 +48,6 @@ build:
 clean: 
 	rm -f *.exe
 	rm -rf $(BUILD_DIR)
+
+clean_outputs:
+	@rm -rf $(MAKE_DIR)/outputs
