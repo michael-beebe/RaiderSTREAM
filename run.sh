@@ -1,12 +1,14 @@
 #!/bin/bash
 
+# NOTE: STREAM_ARRAY_SIZE is set in the Makefile or can be exported globally
+
 # -------------------------------------------------
 #  Set true only for implementations you want to run
 # -------------------------------------------------
-export RUN_ORIGINAL=true
+export RUN_ORIGINAL=false
 export RUN_OMP=true
-export RUN_MPI=true
-export RUM_SHMEM=true
+export RUN_MPI=false
+export RUM_SHMEM=false
 
 # Don't forget to set OMP_NUM_THREADS if you are using OpenMP
 export OMP_NUM_THREADS=1
@@ -17,17 +19,23 @@ export NP_VALUE=1
 # Set this to true if you want this script to recompile the executables
 export COMPILE=true
 
+# Set this to true if you want to clean the build directory after the run
+export CLEAN=false
+
+# Set this to true if you want to be prompted to cat your output file. Good for a single run, not so good if you're running several runs at once
+export PROMPT_OUTPUT=true
+
 # -------------------------------------------------
 #   Setting up directory to dump benchmark output
 # -------------------------------------------------
 export STREAM_DIR=$(pwd)
 export OUTPUT_DIR=$STREAM_DIR/outputs
-if [ ! -d $OUTPUT_DIR ]; then
+if [[ ! -d $OUTPUT_DIR ]] ; then
     mkdir $OUTPUT_DIR
 fi
 
 export OUTPUT_FILE=$OUTPUT_DIR/raiderstream_output_$(date +"%d-%m-%y")_$(date +"%T").txt
-if [[ -f $OUTPUT_FILE ]]; then
+if [[ -f $OUTPUT_FILE ]] ; then
     rm $OUTPUT_FILE
     touch $OUTPUT_FILE
 else
@@ -36,31 +44,31 @@ fi
 
 export BUILD_DIR=$STREAM_DIR/build
 
-
-
 # -------------------------------------------------
 #   Compile each desired implementation
 # -------------------------------------------------
-if [ $RUN_ORIGINAL == true ] ; then
-    make stream_original
-fi
+if [[ $COMPILE == true ]] ; then
+    if [[ $RUN_ORIGINAL == true ]] ; then
+        make stream_original
+    fi
 
-if [ $RUN_OMP == true ] ; then
-    make stream_omp
-fi
+    if [[ $RUN_OMP == true ]] ; then
+        make stream_omp
+    fi
 
-if [ $RUN_MPI == true ] ; then
-    make stream_mpi
-fi
+    if [[ $RUN_MPI == true ]] ; then
+        make stream_mpi
+    fi
 
-if [ $RUM_SHMEM == true ] ; then
-    make stream_oshmem
+    if [[ $RUM_SHMEM == true ]] ; then
+        make stream_oshmem
+    fi
 fi
 
 echo "==========================================================================" >> $OUTPUT_FILE
 echo "      RaiderSTREAM Run On "$(date +"%d-%m-%y")" AT "$(date +"%T")           >> $OUTPUT_FILE
 echo "==========================================================================" >> $OUTPUT_FILE
-if [ $RUN_ORIGINAL == true ] ; then
+if [[ $RUN_ORIGINAL == true ]] ; then
     echo "------------------------------------" >> $OUTPUT_FILE
     echo "         'Original' STREAM"           >> $OUTPUT_FILE
     echo "------------------------------------" >> $OUTPUT_FILE
@@ -74,7 +82,7 @@ if [ $RUN_ORIGINAL == true ] ; then
     echo >> $OUTPUT_FILE
 fi
 
-if [ $RUN_OMP == true ] ; then
+if [[ $RUN_OMP == true ]] ; then
     echo "------------------------------------" >> $OUTPUT_FILE
     echo "              OpenMP"                 >> $OUTPUT_FILE
     echo "------------------------------------" >> $OUTPUT_FILE
@@ -88,7 +96,7 @@ if [ $RUN_OMP == true ] ; then
     echo >> $OUTPUT_FILE
 fi
 
-if [ $RUN_MPI == true ] ; then
+if [[ $RUN_MPI == true ]] ; then
     echo "------------------------------------" >> $OUTPUT_FILE
     echo "                MPI"                  >> $OUTPUT_FILE
     echo "------------------------------------" >> $OUTPUT_FILE
@@ -102,7 +110,7 @@ if [ $RUN_MPI == true ] ; then
     echo >> $OUTPUT_FILE
 fi
 
-if [ $RUN_SHMEM == true ] ; then
+if [[ $RUN_SHMEM == true ]] ; then
     echo "------------------------------------" >> $OUTPUT_FILE
     echo "            OpenSHMEM"                >> $OUTPUT_FILE
     echo "------------------------------------" >> $OUTPUT_FILE
@@ -119,3 +127,16 @@ fi
 
 echo "Done! Output was directed to $OUTPUT_FILE"
 
+if [[ $CLEAN == true ]] ; then
+    make clean > /dev/null 2>&1
+fi
+
+if [[ $PROMPT_OUTPUT == true ]] ; then
+    echo "Would you like to see the results? (y/n)"
+    read RESPONSE
+    if [[ $RESPONSE == "y" || $RESPONSE == "Y" ]] ; then
+        cat $OUTPUT_FILE
+        echo ""
+        echo ""
+    fi
+fi

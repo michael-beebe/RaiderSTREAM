@@ -18,8 +18,58 @@ With RaiderSTREAM, we address these two limitations by:
 ![Benchmark Kernels](readme_images/kernels.png)
 
 ### How are bytes and FLOP/s counted?
+![Benchmark Kernels](readme_images/mbps_formula.png)
+$\alpha$ = number of memory accesses per iteration of the main STREAM loops
+$\gamma$ = size in bytes of `STREAM_TYPE` (8 bytes for doubles)
+$\lambda$ = `STREAM_ARRAY_SIZE`
 
 ### Build
+Running 
+```
+make
+```
+or 
+```
+make all
+```
+
+from the project root directory will build each RaiderSTREAM implementation.
+
+To build a single implementations, the following commands are available:
+
+##### Original STREAM Implementation
+```
+make stream_original
+```
+
+##### Pure OpenMP
+```
+make stream_omp
+```
+
+##### MPI
+```
+make stream_mpi
+```
+
+##### OpenSHMEM
+```
+make stream_oshmem
+```
+
+##### Clean
+Running
+```
+make clean
+```
+will delete the executables and delete the build directory.
+
+```
+make clean_outputs
+```
+will delete the `outputs` directory and its contents.
+
+
 
 ##### Compiler Flags and Environment Variables
 * `STREAM_ARRAY_SIZE`: the problem size, or the size of the STREAM arrays

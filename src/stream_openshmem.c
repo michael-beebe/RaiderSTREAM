@@ -797,7 +797,7 @@ int main()
 		}
 
 		// note that "bytes[j]" is the aggregate array size, so no "numranks" is needed here
-		printf("Function\tBest Rate MB/s\t      FLOP/s\t   Avg time\t   Min time\t   Max time\n");
+		printf("Function\tBest Rate MB/s\t      Best FLOP/s\t   Avg time\t   Min time\t   Max time\n");
 		for (j=0; j<NUM_KERNELS; j++) {
 			avgtime[j] = avgtime[j]/(double)(NTIMES-1);
 			
