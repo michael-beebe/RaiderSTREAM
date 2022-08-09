@@ -15,7 +15,7 @@ With RaiderSTREAM, we address these two limitations by:
 <!-- ### Table of Contents -->
 
 ### Benchmark Kernels
-![Benchmark Kernels](.readme_images/kernels.png)
+![Benchmark Kernels](readme_images/kernels.png)
 
 ### How are bytes and FLOP/s counted?
 
@@ -49,11 +49,11 @@ The gather and scatter benchmark kernels are similar in that they both provide i
 * The gather memory access pattern is characterized by randomly indexed loads coupled with sequential stores. This can help give us an understanding of read performance from sparse datasets such as arrays or matrices.
 * The scatter memory access pattern can be considered the inverse of its gather counterpart, and is characterized by the combination of sequential loads coupled together with randomly indexed stores. This pattern can give us an understanding of write performance to sparse datasets.
 
-![Gather Scatter](.readme_images/gather_scatter.png)
+![Gather Scatter](readme_images/gather_scatter.png)
 
 ### Multi-Node Support
 RadierSTREAM does not currently use any inter-process communication routines such as MPI_SEND or SHMEM_PUT within the benchmark kernels. Instead, the programming models are essentially leveraged as a <b>resource allocator</b>. The STREAM arrays are distributed evenly across a user-specified number of processing elements (PEs), each PE computes the kernel and writes the result back to its own array segment.
 
-![Multi-Node Support](.readme_images/oshrun.png)
+![Multi-Node Support](readme_images/oshrun.png)
 
 <!-- ### Citing -->
