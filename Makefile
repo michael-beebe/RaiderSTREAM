@@ -18,7 +18,7 @@ STREAM_ARRAY_SIZE 	?= 10000000
 PFLAGS 				?= # Program-specific flags
 CFLAGS 				?= # C Compiler flags
 MPI_FLAGS			?= # MPI-specific flags
-SHMEM_FLAGS			?= # OpenSHMEM-specifc flags
+SHMEM_FLAGS		?= # OpenSHMEM-specifc flags
 
 
 #------------------------------------------------------------------

@@ -314,7 +314,7 @@ extern double mysecond();
 extern void print_info1(int BytesPerWord, int numranks, ssize_t array_elements);
 extern void print_timer_granularity(int quantum);
 extern void print_info2(double t, double t0, double t1, int quantum);
-extern void print_memory_usage();
+extern void print_memory_usage(int numranks);
 
 extern void checkSTREAMresults(STREAM_TYPE *AvgErrByRank, int numranks);
 extern void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr);
@@ -519,7 +519,7 @@ int main()
 
 	if (myrank == 0) {
         print_info2(t, t0, t1, quantum);
-		print_memory_usage();
+		print_memory_usage(numranks);
 	}
 
 
@@ -1187,40 +1187,40 @@ void print_info2(double t, double t0, double t1, int quantum) {
     #endif
 }
 
-void print_memory_usage() {
+void print_memory_usage(int numranks) {
 	unsigned long totalMemory = \
-		(sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) + 	// a[]
-		(sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) + 	// b[]
-		(sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) + 	// c[]
-		(sizeof(int) * (STREAM_ARRAY_SIZE)) + 			// a_idx[]
-		(sizeof(int) * (STREAM_ARRAY_SIZE)) + 			// b_idx[]
-		(sizeof(int) * (STREAM_ARRAY_SIZE)) + 			// c_idx[]
-		(sizeof(double) * NUM_KERNELS) + 				// avgtime[]
-		(sizeof(double) * NUM_KERNELS) + 				// maxtime[]
-		(sizeof(double) * NUM_KERNELS) + 				// mintime[]
-		(sizeof(char) * NUM_KERNELS) +					// label[]
-		(sizeof(double) * NUM_KERNELS);					// bytes[]
+		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// a[]
+		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// b[]
+		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// c[]
+		((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) + 			// a_idx[]
+		((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) + 			// b_idx[]
+		((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) + 			// c_idx[]
+		((sizeof(double) * NUM_KERNELS) * numranks) + 				// avgtime[]
+		((sizeof(double) * NUM_KERNELS) * numranks) + 				// maxtime[]
+		((sizeof(double) * NUM_KERNELS) * numranks) + 				// mintime[]
+		((sizeof(char) * NUM_KERNELS) * numranks) +					// label[]
+		((sizeof(double) * NUM_KERNELS) * numranks);				// bytes[]
 
 #ifdef VERBOSE // if -DVERBOSE enabled break down memory usage by each array
-	printf("---------------------------------\n");
-	printf("  VERBOSE Memory Breakdown\n");
-	printf("---------------------------------\n");
-	printf("a[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
-	printf("b[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
-	printf("c[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
-	printf("a_idx[]:\t%.2f MB\n", (sizeof(int) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
-	printf("b_idx[]:\t%.2f MB\n", (sizeof(int) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
-	printf("c_idx[]:\t%.2f MB\n", (sizeof(int) * (STREAM_ARRAY_SIZE)) / 1024.0 / 1024.0);
-	printf("avgtime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
-	printf("maxtime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
-	printf("mintime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
-	printf("label[]:\t%lu B\n", (sizeof(char) * NUM_KERNELS));
-	printf("bytes[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
-	printf("---------------------------------\n");
-	printf("Total Memory Allocated: %.2f MB\n", totalMemory / 1024.0 / 1024.0);
-	printf("---------------------------------\n");
+	printf("-----------------------------------------\n");
+	printf("     VERBOSE Memory Breakdown\n");
+	printf("-----------------------------------------\n");
+	printf("a[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
+	printf("b[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
+	printf("c[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
+	printf("a_idx[]:\t%.2f MB\n", ((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
+	printf("b_idx[]:\t%.2f MB\n", ((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
+	printf("c_idx[]:\t%.2f MB\n", ((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
+	printf("avgtime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
+	printf("maxtime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
+	printf("mintime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
+	printf("label[]:\t%lu B\n", ((sizeof(char) * NUM_KERNELS) * numranks));
+	printf("bytes[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
+	printf("-----------------------------------------\n");
+	printf("Total Memory Allocated Across All Ranks: %.2f MB\n", totalMemory / 1024.0 / 1024.0);
+	printf("-----------------------------------------\n");
 #else
-	printf("Totaly Memory Allocated: %.2f MB\n", totalMemory / 1024.0 / 1024.0);
+	printf("Totaly Memory Allocated Across All Ranks: %.2f MB\n", totalMemory / 1024.0 / 1024.0);
 #endif
 	printf(HLINE);
 }
