@@ -6,9 +6,9 @@
 #  Set true only for implementations you want to run
 # -------------------------------------------------
 export RUN_ORIGINAL=false
-export RUN_OMP=false
+export RUN_OMP=true
 export RUN_MPI=true
-export RUM_SHMEM=false
+export RUN_SHMEM=true
 
 # Don't forget to set OMP_NUM_THREADS if you are using OpenMP
 export OMP_NUM_THREADS=1
@@ -34,6 +34,8 @@ if [[ ! -d $OUTPUT_DIR ]] ; then
     mkdir $OUTPUT_DIR
 fi
 
+export BUILD_DIR=$STREAM_DIR/build
+
 export OUTPUT_FILE=$OUTPUT_DIR/raiderstream_output_$(date +"%d-%m-%y")_$(date +"%T").txt
 if [[ -f $OUTPUT_FILE ]] ; then
     rm $OUTPUT_FILE
@@ -41,8 +43,6 @@ if [[ -f $OUTPUT_FILE ]] ; then
 else
     touch $OUTPUT_FILE
 fi
-
-export BUILD_DIR=$STREAM_DIR/build
 
 # -------------------------------------------------
 #   Compile each desired implementation
@@ -60,7 +60,7 @@ if [[ $COMPILE == true ]] ; then
         make stream_mpi
     fi
 
-    if [[ $RUM_SHMEM == true ]] ; then
+    if [[ $RUN_SHMEM == true ]] ; then
         make stream_oshmem
     fi
 fi
