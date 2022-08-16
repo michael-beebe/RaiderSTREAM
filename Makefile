@@ -2,23 +2,23 @@ BUILD_DIR 	= ./build
 SRC_DIR		= ./src
 MAKE_DIR	= ./
 
-ORIGINAL_IMPL 		?= $(SRC_DIR)/stream_original.c
-OMP_IMPL 			?= $(SRC_DIR)/stream_openmp.c
-MPI_IMPL 			?= $(SRC_DIR)/stream_mpi.c
-SHEM_IMPL 			?= $(SRC_DIR)/stream_openshmem.c
+ORIGINAL_IMPL 		?= $(SRC_DIR)/original/stream_original.c
+OMP_IMPL 			?= $(SRC_DIR)/openmp/stream_openmp.c
+MPI_IMPL 			?= $(SRC_DIR)/mpi/stream_mpi.c
+SHEM_IMPL 			?= $(SRC_DIR)/openshmem/stream_openshmem.c
 
-ENABLE_OPENMP ?= true
-ifeq ($(ENABLE_OPENMP), true) # Change this to false if you don't want to use OpenMP
+ENABLE_OPENMP ?= true # Change this to false if you don't want to use OpenMP
+ifeq ($(ENABLE_OPENMP), true)
 OPENMP = -fopenmp
 endif
 
 
 STREAM_ARRAY_SIZE 	?= 10000000
 
-PFLAGS 				?= # Program-specific flags
+PFLAGS 				?= -DCUSTOM # Program-specific flags
 CFLAGS 				?= # C Compiler flags
 MPI_FLAGS			?= # MPI-specific flags
-SHMEM_FLAGS		?= # OpenSHMEM-specifc flags
+SHMEM_FLAGS			?= # OpenSHMEM-specifc flags
 
 
 #------------------------------------------------------------------
@@ -28,7 +28,7 @@ all: build
 	gcc   $(CFLAGS) $(PFLAGS) $(OPENMP) -DSTREAM_ARRAY_SIZE=$(STREAM_ARRAY_SIZE) $(ORIGINAL_IMPL) -o $(BUILD_DIR)/stream_original.exe
 	gcc   $(CFLAGS) $(PFLAGS) $(OPENMP) -DSTREAM_ARRAY_SIZE=$(STREAM_ARRAY_SIZE) $(OMP_IMPL) -o $(BUILD_DIR)/stream_omp.exe
 	mpicc $(CFLAGS) $(PFLAGS) $(OPENMP) $(MPI_FLAGS) -DSTREAM_ARRAY_SIZE=$(STREAM_ARRAY_SIZE) $(MPI_IMPL) -o $(BUILD_DIR)/stream_mpi.exe
-	oshcc $(CFLAGS) $(PFLAGS) $(OPENMP) $(SHMEM_FLAGS) -DSTREAM_ARRAY_SIZE=$(STREAM_ARRAY_SIZE) $(SHEM_IMPL) -o $(BUILD_DIR)/stream_oshmem.exe	
+	oshcc $(CFLAGS) $(PFLAGS) $(OPENMP) $(SHMEM_FLAGS) -DSTREAM_ARRAY_SIZE=$(STREAM_ARRAY_SIZE) $(SHEM_IMPL) -o $(BUILD_DIR)/stream_oshmem.exe
 
 stream_original: build
 	gcc $(CFLAGS) $(PFLAGS) $(OPENMP) -DSTREAM_ARRAY_SIZE=$(STREAM_ARRAY_SIZE) $(ORIGINAL_IMPL) -o $(BUILD_DIR)/stream_original.exe
@@ -45,7 +45,7 @@ stream_oshmem: build
 build:
 	@mkdir $(BUILD_DIR)
 
-clean: 
+clean:
 	rm -f *.exe
 	rm -rf $(BUILD_DIR)
 
