@@ -5,16 +5,16 @@
 # -------------------------------------------------
 #  Set true only for implementations you want to run
 # -------------------------------------------------
-export RUN_ORIGINAL=true
-export RUN_OMP=true
+export RUN_ORIGINAL=false
+export RUN_OMP=false
 export RUN_MPI=true
-export RUM_SHMEM=true
+export RUM_SHMEM=false
 
 # Don't forget to set OMP_NUM_THREADS if you are using OpenMP
 export OMP_NUM_THREADS=1
 
 # Set the number of PEs/ranks if using MPI and/or OpenSHMEM implementations
-export NP_VALUE=
+export NP_VALUE=1
 
 # Set this to true if you want this script to recompile the executables
 export COMPILE=true

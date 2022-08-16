@@ -320,7 +320,7 @@ int main()
     }
 
 /*--------------------------------------------------------------------------------------
-    - Initialize the idx arrays on all PEs
+    - Initialize the idx arrays
 	- Use the input .txt files to populate each array if the -DCUSTOM flag is enabled
 	- If -DCUSTOM is not enabled, populate the IDX arrays with random values
 --------------------------------------------------------------------------------------*/
@@ -473,7 +473,7 @@ int main()
 #else
 #pragma omp parallel for
 	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-		b[j] = scalar * c[IDX1[j]];
+		b[j] = scalar * c[IDX1[j]]; // FIXME: should this be IDX2 instead?
 #endif
 	t1 = mysecond();
 	times[5][k] = t1 - t0;
@@ -532,7 +532,7 @@ int main()
 #else
 #pragma omp parallel for
 	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-		b[IDX1[j]] = scalar * c[j];
+		b[IDX1[j]] = scalar * c[j]; // FIXME: should this be IDX2 instead?
 #endif
 	t1 = mysecond();
 	times[9][k] = t1 - t0;
@@ -560,7 +560,7 @@ int main()
 #else
 #pragma omp parallel for
 	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-    a[IDX1[j]] = b[j] + scalar * c[j];
+    a[IDX1[j]] = b[j] + scalar * c[j]; // FIXME: should this be IDX2 instead?
 #endif
 	t1 = mysecond();
 	times[11][k] = t1 - t0;

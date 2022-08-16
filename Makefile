@@ -7,7 +7,7 @@ OMP_IMPL 			?= $(SRC_DIR)/openmp/stream_openmp.c
 MPI_IMPL 			?= $(SRC_DIR)/mpi/stream_mpi.c
 SHEM_IMPL 			?= $(SRC_DIR)/openshmem/stream_openshmem.c
 
-ENABLE_OPENMP ?= true # Change this to false if you don't want to use OpenMP
+ENABLE_OPENMP ?= false # Change this to false if you don't want to use OpenMP
 ifeq ($(ENABLE_OPENMP), true)
 OPENMP = -fopenmp
 endif

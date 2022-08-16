@@ -23,10 +23,10 @@ extern void init_user_idx_array(int *array, int nelems);
 // ------------------------------------------------------------
 
 int main() {
-    // srand(time(0));
-    // init_random_idx_array(IDX, STREAM_ARRAY_SIZE);
+    srand(time(0));
+    init_random_idx_array(IDX, STREAM_ARRAY_SIZE);
 
-    init_user_idx_array(IDX, STREAM_ARRAY_SIZE);
+    // init_user_idx_array(IDX, STREAM_ARRAY_SIZE);
 
     for (int i=0; i<STREAM_ARRAY_SIZE; i++) {
         printf("%d\n", IDX[i]);

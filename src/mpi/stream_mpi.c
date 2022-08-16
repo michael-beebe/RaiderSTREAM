@@ -115,7 +115,7 @@
 #   define STREAM_ARRAY_SIZE	10000000
 #endif
 
-/*  
+/*
  *   2) STREAM runs each kernel "NTIMES" times and reports the *best* result
  *         for any iteration after the first, therefore the minimum value
  *         for NTIMES is 2.
@@ -234,9 +234,8 @@ STREAM_TYPE * restrict a, * restrict b, * restrict c;
 /*--------------------------------------------------------------------------------------
 - Initialize idx arrays (which will be used by gather/scatter kernels)
 --------------------------------------------------------------------------------------*/
-static int a_idx[STREAM_ARRAY_SIZE];
-static int b_idx[STREAM_ARRAY_SIZE];
-static int c_idx[STREAM_ARRAY_SIZE];
+static int IDX1[STREAM_ARRAY_SIZE];
+static int IDX2[STREAM_ARRAY_SIZE];
 
 /*--------------------------------------------------------------------------------------
 -
@@ -304,7 +303,8 @@ static double   flops[NUM_KERNELS] = {
 	2 * STREAM_ARRAY_SIZE, // SCATTER Triad
 };
 
-extern void init_idx_array(int *array, int nelems);
+extern void init_random_idx_array(int *array, int nelems);
+extern void init_read_idx_array(int *array, int nelems, char *filename);
 
 extern void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k);
 extern void print_timer_granularity(int quantum);
@@ -374,13 +374,18 @@ int main()
     }
 
 /*--------------------------------------------------------------------------------------
-    - Initialize the idx arrays on all PEs and populate them with random values ranging
-        from 0 - STREAM_ARRAY_SIZE
+    - Initialize the idx arrays on all PEs
+	- Use the input .txt files to populate each array if the -DCUSTOM flag is enabled
+	- If -DCUSTOM is not enabled, populate the IDX arrays with random values
 --------------------------------------------------------------------------------------*/
-    srand(time(0));
-    init_idx_array(a_idx, STREAM_ARRAY_SIZE/numranks);
-    init_idx_array(b_idx, STREAM_ARRAY_SIZE/numranks);
-    init_idx_array(c_idx, STREAM_ARRAY_SIZE/numranks);
+    #ifdef CUSTOM
+    	init_read_idx_array(IDX1, STREAM_ARRAY_SIZE, "IDX1.txt");
+    	init_read_idx_array(IDX2, STREAM_ARRAY_SIZE, "IDX2.txt");
+    #else
+        srand(time(0));
+        init_random_idx_array(IDX1, STREAM_ARRAY_SIZE);
+        init_random_idx_array(IDX2, STREAM_ARRAY_SIZE);
+    #endif
 
 /*--------------------------------------------------------------------------------------
     - Initialize the idx arrays on all PEs and populate them with random values ranging
@@ -499,7 +504,7 @@ int main()
 // ----------------------------------------------
 		t0 = MPI_Wtime();
 		// t0 = mysecond();
-		MPI_Barrier(MPI_COMM_WORLD);		
+		MPI_Barrier(MPI_COMM_WORLD);
 
 #ifdef TUNED
         tuned_STREAM_Copy();
@@ -574,7 +579,7 @@ int main()
 #else
 #pragma omp parallel for
 		for (j=0; j<array_elements; j++)
-			c[j] = a[a_idx[j]];
+			c[j] = a[IDX1[j]];
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
@@ -590,7 +595,7 @@ int main()
 #else
 #pragma omp parallel for
 		for (j=0; j<array_elements; j++)
-			b[j] = scalar * c[c_idx[j]];
+			b[j] = scalar * c[IDX1[j]]; // FIXME: should this be IDX2 instead?
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
@@ -606,7 +611,7 @@ int main()
 #else
 #pragma omp parallel for
 		for (j=0; j<array_elements; j++)
-			c[j] = a[a_idx[j]] + b[b_idx[j]];
+			c[j] = a[IDX1[j]] + b[IDX2[j]];
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
@@ -622,7 +627,7 @@ int main()
 #else
 #pragma omp parallel for
 		for (j=0; j<array_elements; j++)
-			a[j] = b[b_idx[j]] + scalar * c[c_idx[j]];
+			a[j] = b[IDX1[j]] + scalar * c[IDX2[j]];
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
@@ -641,7 +646,7 @@ int main()
 #else
 #pragma omp parallel for
 		for (j=0; j<array_elements; j++)
-			c[c_idx[j]] = a[j];
+			c[IDX1[j]] = a[j];
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
@@ -657,7 +662,7 @@ int main()
 #else
 #pragma omp parallel for
 		for (j=0; j<array_elements; j++)
-			b[b_idx[j]] = scalar * c[j];
+			b[IDX1[j]] = scalar * c[j]; // FIXME: should this be IDX2 instead?
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
@@ -673,7 +678,7 @@ int main()
 #else
 #pragma omp parallel for
 		for (j=0; j<array_elements; j++)
-			c[c_idx[j]] = a[j] + b[j];
+			c[IDX1[j]] = a[j] + b[j];
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
@@ -689,7 +694,7 @@ int main()
 #else
 #pragma omp parallel for
 		for (j=0; j<array_elements; j++)
-			a[a_idx[j]] = b[j] + scalar * c[j];
+			a[IDX1[j]] = b[j] + scalar * c[j]; // FIXME: should this be IDX2 instead?
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
@@ -743,7 +748,7 @@ int main()
 		printf("Function\tBest Rate MB/s      Best FLOP/s\t   Avg time\t   Min time\t   Max time\n");
 		for (j=0; j<NUM_KERNELS; j++) {
 			avgtime[j] = avgtime[j]/(double)(NTIMES-1);
-			
+
 			if (flops[j] == 0) {
 				printf("%s%12.1f\t\t%s\t%11.6f\t%11.6f\t%11.6f\n",
 					label[j],                           // Kernel
@@ -859,7 +864,7 @@ checktick() {
     to utilized indices in index array. This simplifies the scatter kernel
     verification process and precludes the need for atomic operations.
 --------------------------------------------------------------------------------------*/
-void init_idx_array(int *array, int nelems) {
+void init_random_idx_array(int *array, int nelems) {
 	int i, success, idx;
 
 	// Array to track used indices
@@ -883,6 +888,24 @@ void init_idx_array(int *array, int nelems) {
 	free(flags);
 }
 
+/*--------------------------------------------------------------------------------------
+ - Initializes the IDX arrays with the contents of IDX1.txt and IDX2.txt, respectively
+--------------------------------------------------------------------------------------*/
+void init_read_idx_array(int *array, int nelems, char *filename) {
+    FILE *file;
+    file = fopen(filename, "r");
+    if (!file) {
+        perror(filename);
+        exit(1);
+    }
+
+    for (int i=0; i < nelems; i++) {
+        fscanf(file, "%d", &array[i]);
+    }
+
+    fclose(file);
+}
+
 
 //========================================================================================
 // 				VALIDATION PIECE
@@ -891,7 +914,7 @@ void init_idx_array(int *array, int nelems) {
 #define abs(a) ((a) >= 0 ? (a) : -(a))
 #endif
 void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr)
-{
+{   // FIXME:
 	STREAM_TYPE aj,bj,cj,scalar;
 	STREAM_TYPE aSumErr,bSumErr,cSumErr;
 	ssize_t	j;
@@ -1067,6 +1090,8 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
 	printf ("    Rel Errors on a, b, c:     %e %e %e \n",abs(aAvgErr/aj),abs(bAvgErr/bj),abs(cAvgErr/cj));
 #endif
 }
+
+//========================================================================================
 
 void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k) {
     printf(HLINE);
@@ -1309,4 +1334,3 @@ void tuned_STREAM_Triad_Scatter(STREAM_TYPE scalar) {
 }
 /* end of stubs for the "tuned" versions of the kernels */
 #endif
-
