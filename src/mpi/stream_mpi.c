@@ -595,7 +595,7 @@ int main()
 #else
 #pragma omp parallel for
 		for (j=0; j<array_elements; j++)
-			b[j] = scalar * c[IDX1[j]]; // FIXME: should this be IDX2 instead?
+			b[j] = scalar * c[IDX2[j]];
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
@@ -662,7 +662,7 @@ int main()
 #else
 #pragma omp parallel for
 		for (j=0; j<array_elements; j++)
-			b[IDX1[j]] = scalar * c[j]; // FIXME: should this be IDX2 instead?
+			b[IDX2[j]] = scalar * c[j];
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
@@ -694,7 +694,7 @@ int main()
 #else
 #pragma omp parallel for
 		for (j=0; j<array_elements; j++)
-			a[IDX1[j]] = b[j] + scalar * c[j]; // FIXME: should this be IDX2 instead?
+			a[IDX2[j]] = b[j] + scalar * c[j];
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
@@ -914,7 +914,7 @@ void init_read_idx_array(int *array, int nelems, char *filename) {
 #define abs(a) ((a) >= 0 ? (a) : -(a))
 #endif
 void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr)
-{   // FIXME:
+{
 	STREAM_TYPE aj,bj,cj,scalar;
 	STREAM_TYPE aSumErr,bSumErr,cSumErr;
 	ssize_t	j;

@@ -638,7 +638,7 @@ int main()
 #else
 #pragma omp parallel for
     for (j=0; j<array_elements; j++)
-        b[j] = scalar * c[IDX1[j]]; // FIXME: should this be IDX2 instead?
+        b[j] = scalar * c[IDX2[j]];
 #endif
     shmem_barrier_all();
     t1 = mysecond();
@@ -705,7 +705,7 @@ int main()
 #else
 #pragma omp parallel for
     for (j=0; j<array_elements; j++)
-        b[IDX1[j]] = scalar * c[j]; // FIXME: should this be IDX2 instead?
+        b[IDX2[j]] = scalar * c[j];
 #endif
     shmem_barrier_all();
     t1 = mysecond();
@@ -737,7 +737,7 @@ int main()
 #else
 #pragma omp parallel for
     for (j=0; j<array_elements; j++)
-        a[IDX1[j]] = b[j] + scalar * c[j]; // FIXME: should this be IDX2 instead?
+        a[IDX2[j]] = b[j] + scalar * c[j];
 #endif
     shmem_barrier_all();
     t1 = mysecond();
