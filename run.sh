@@ -6,21 +6,21 @@
 #  Set true only for implementations you want to run
 # -------------------------------------------------
 export RUN_ORIGINAL=false
-export RUN_OMP=true
+export RUN_OMP=false
 export RUN_MPI=true
-export RUN_SHMEM=true
+export RUN_SHMEM=false
+
+# Problem Size
+export STREAM_ARRAY_SIZE=10000
 
 # Don't forget to set OMP_NUM_THREADS if you are using OpenMP
 export OMP_NUM_THREADS=1
 
 # Set the number of PEs/ranks if using MPI and/or OpenSHMEM implementations
-export NP_VALUE=1
+export NPES=1
 
 # Set this to true if you want this script to recompile the executables
-export COMPILE=true
-
-# Set this to true if you want to clean the build directory after the run
-export CLEAN=false
+export COMPILE=false
 
 # Set this to true if you want to be prompted to cat your output file. Good for a single run, not so good if you're running several runs at once
 export PROMPT_OUTPUT=true
@@ -72,7 +72,7 @@ if [[ $RUN_ORIGINAL == true ]] ; then
     echo "------------------------------------" >> $OUTPUT_FILE
     echo "         'Original' STREAM"           >> $OUTPUT_FILE
     echo "------------------------------------" >> $OUTPUT_FILE
-    if $BUILD_DIR/stream_original.exe >> $OUTPUT_FILE; then
+    if $BUILD_DIR/stream_original.exe -n $STREAM_ARRAY_SIZE >> $OUTPUT_FILE; then
         echo "Original implementation finished."
     else
         echo "Original implementation failed to run!" >> $OUTPUT_FILE
@@ -86,7 +86,7 @@ if [[ $RUN_OMP == true ]] ; then
     echo "------------------------------------" >> $OUTPUT_FILE
     echo "              OpenMP"                 >> $OUTPUT_FILE
     echo "------------------------------------" >> $OUTPUT_FILE
-    if $BUILD_DIR/stream_omp.exe >> $OUTPUT_FILE; then
+    if $BUILD_DIR/stream_omp.exe -n $STREAM_ARRAY_SIZE >> $OUTPUT_FILE; then
         echo "OpenMP implementation finished."
     else
         echo "OpenMP implementation failed to run!" >> $OUTPUT_FILE
@@ -100,7 +100,7 @@ if [[ $RUN_MPI == true ]] ; then
     echo "------------------------------------" >> $OUTPUT_FILE
     echo "                MPI"                  >> $OUTPUT_FILE
     echo "------------------------------------" >> $OUTPUT_FILE
-    if mpirun -np $NP_VALUE $BUILD_DIR/stream_mpi.exe >> $OUTPUT_FILE; then
+    if mpirun -np $NPES $BUILD_DIR/stream_mpi.exe -n $STREAM_ARRAY_SIZE >> $OUTPUT_FILE; then
         echo "MPI implementation finished."
     else
         echo "MPI implementation failed to run!" >> $OUTPUT_FILE
@@ -114,7 +114,7 @@ if [[ $RUN_SHMEM == true ]] ; then
     echo "------------------------------------" >> $OUTPUT_FILE
     echo "            OpenSHMEM"                >> $OUTPUT_FILE
     echo "------------------------------------" >> $OUTPUT_FILE
-    if oshrun -np $NP_VALUE $BUILD_DIR/stream_oshmem.exe >> $OUTPUT_FILE; then
+    if oshrun -np $NPES $BUILD_DIR/stream_oshmem.exe -n $STREAM_ARRAY_SIZE >> $OUTPUT_FILE; then
         echo "OpenSHMEM implementation finished."
     else
         echo "OpenSHMEM implementation failed to run!" >> $OUTPUT_FILE
@@ -126,10 +126,6 @@ fi
 
 
 echo "Done! Output was directed to $OUTPUT_FILE"
-
-if [[ $CLEAN == true ]] ; then
-    make clean > /dev/null 2>&1
-fi
 
 if [[ $PROMPT_OUTPUT == true ]] ; then
     echo "Would you like to see the results? (y/n)"

@@ -68,14 +68,20 @@ will delete the executables and delete the build directory.
 ```
 make clean_outputs
 ```
-will delete the `outputs` directory and its contents.
+will remove the `outputs` directory and its contents.
+```
+make clean_inputs
+```
+will empty the input files
 
+<!-- TODO: Talk about arraygen -->
 
+<!-- TODO: Talk about setting STREAM_ARRAY_SIZE at runtime -->
 
 ##### Compiler Flags and Environment Variables
-* `STREAM_ARRAY_SIZE`: the problem size, or the size of the STREAM arrays
+<!-- * `STREAM_ARRAY_SIZE`: the problem size, or the size of the STREAM arrays
     * Ex: `-DSTREAM_ARRAY_SIZE=10000000`
-<br/>
+<br/> -->
 
 * `NTIMES`: the kernels are run on each element of the STREAM arrays `NTIMES` times. The best MB/s for each kernel amongst all `NTIMES` runs is reported in the benchmark's output.
     * Ex: `-DNTIMES=10`
