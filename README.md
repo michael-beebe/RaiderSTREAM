@@ -58,23 +58,19 @@ make stream_mpi
 make stream_oshmem
 ```
 
-##### Clean
-Running
+##### Cleaning
+Clean build directory:
 ```
-make clean
+make clean_build
 ```
-will delete the executables and delete the build directory.
-
+Clean output directory:
 ```
 make clean_outputs
 ```
-will remove the `outputs` directory and its contents.
+Empty IDX1.txt and IDX2.txt:
 ```
 make clean_inputs
 ```
-will empty the input files
-
-<!-- TODO: Talk about arraygen -->
 
 <!-- TODO: Talk about setting STREAM_ARRAY_SIZE at runtime -->
 
@@ -97,6 +93,19 @@ will empty the input files
 
 * `TUNED`: if you look at the bottom of the .c source files, there are additional blank functions that users can write in their own custom kernels. If you want to run your custom kernels, pass in this flag.
     * Ex: `-DTUNED`
+
+* `CUSTOM`: enable this flag to use your own IDX arrays for the scatter/gather kernels. The source code will read inputs from IDX1.txt and IDX2.txt.
+    * Ex: `-DTUNED`
+
+### Custom Memory Access Patterns
+To make RaiderSTREAM more configurable. We have added a simple way to input your own IDX array indices. If `-DCUSTOM` is enabled at compile time, the source code will read in the contents of IDX1.txt and IDX2.txt to the respective IDX arrays used simulate irregularity in the scatter/gather kernels. The number of array indices must match the user-specified STREAM_ARRAY_SIZE, and each array index must be on its own line in the file, otherwise an error will occur.
+
+To make it easier to populate these input files, we have included a file called arraygen.c, where you can write your own function for producing the indices in a way that matches your use case of interest. If that is done properly, you can populate the IDX files like so:
+```
+gcc arraygen.c -o arraygen.exe
+./arraygen.exe > IDX1.txt
+./arraygen.exe > IDX2.txt
+```
 
 ### Run Rules
 STREAM is intended to measure the bandwidth from main memory. However, it can be used to measure cache bandwidth as well by the adjusting the environment variable STREAM_ARRAY_SIZE such that the memory needed to allocate the arrays can fit in the cache level of interest. The general rule for STREAM_ARRAY_SIZE is that each array must be at least 4x the size of the sum of all the lastlevel caches, or 1 million elements – whichever is larger

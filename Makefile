@@ -18,7 +18,7 @@ endif
 PFLAGS 				?= #-DCUSTOM # Program-specific flags
 CFLAGS 				?= # C Compiler flags
 MPI_FLAGS			?= # MPI-specific flags
-SHMEM_FLAGS		?= # OpenSHMEM-specifc flags
+SHMEM_FLAGS			?= # OpenSHMEM-specifc flags
 
 
 #------------------------------------------------------------------

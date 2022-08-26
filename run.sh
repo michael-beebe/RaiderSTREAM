@@ -6,12 +6,12 @@
 #  Set true only for implementations you want to run
 # -------------------------------------------------
 export RUN_ORIGINAL=false
-export RUN_OMP=false
-export RUN_MPI=true
+export RUN_OMP=true
+export RUN_MPI=false
 export RUN_SHMEM=false
 
 # Problem Size
-export STREAM_ARRAY_SIZE=10000
+export STREAM_ARRAY_SIZE=100000
 
 # Don't forget to set OMP_NUM_THREADS if you are using OpenMP
 export OMP_NUM_THREADS=1
@@ -20,10 +20,10 @@ export OMP_NUM_THREADS=1
 export NPES=1
 
 # Set this to true if you want this script to recompile the executables
-export COMPILE=false
+export COMPILE=true
 
 # Set this to true if you want to be prompted to cat your output file. Good for a single run, not so good if you're running several runs at once
-export PROMPT_OUTPUT=true
+export PROMPT_OUTPUT=false
 
 # -------------------------------------------------
 #   Setting up directory to dump benchmark output
@@ -134,5 +134,12 @@ if [[ $PROMPT_OUTPUT == true ]] ; then
         cat $OUTPUT_FILE
         echo ""
         echo ""
+    else
+        echo ""
+        echo ""
     fi
+else
+    cat $OUTPUT_FILE
 fi
+
+
