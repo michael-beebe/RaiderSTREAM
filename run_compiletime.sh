@@ -8,13 +8,13 @@
 export RUN_ORIGINAL=false
 export RUN_OMP=true
 export RUN_MPI=true
-export RUN_SHMEM=true
+export RUN_SHMEM=false
 
 # Don't forget to set OMP_NUM_THREADS if you are using OpenMP
 export OMP_NUM_THREADS=1
 
 # Set the number of PEs/ranks if using MPI and/or OpenSHMEM implementations
-export NP_VALUE=1
+export NP_VALUE=2
 
 # Set this to true if you want this script to recompile the executables
 export COMPILE=true
@@ -128,7 +128,7 @@ fi
 echo "Done! Output was directed to $OUTPUT_FILE"
 
 if [[ $CLEAN == true ]] ; then
-    make clean > /dev/null 2>&1
+    make clean_build > /dev/null 2>&1
 fi
 
 if [[ $PROMPT_OUTPUT == true ]] ; then
@@ -138,5 +138,10 @@ if [[ $PROMPT_OUTPUT == true ]] ; then
         cat $OUTPUT_FILE
         echo ""
         echo ""
+    else
+        echo ""
+        echo ""
     fi
+else
+    cat $OUTPUT_FILE
 fi

@@ -373,24 +373,6 @@ int main()
         mintime[i] = FLT_MAX;
     }
 
-/*--------------------------------------------------------------------------------------
-    - Initialize the idx arrays on all PEs
-	- Use the input .txt files to populate each array if the -DCUSTOM flag is enabled
-	- If -DCUSTOM is not enabled, populate the IDX arrays with random values
---------------------------------------------------------------------------------------*/
-    #ifdef CUSTOM
-    	init_read_idx_array(IDX1, STREAM_ARRAY_SIZE, "IDX1.txt");
-    	init_read_idx_array(IDX2, STREAM_ARRAY_SIZE, "IDX2.txt");
-    #else
-        srand(time(0));
-        init_random_idx_array(IDX1, STREAM_ARRAY_SIZE);
-        init_random_idx_array(IDX2, STREAM_ARRAY_SIZE);
-    #endif
-
-/*--------------------------------------------------------------------------------------
-    - Initialize the idx arrays on all PEs and populate them with random values ranging
-        from 0 - STREAM_ARRAY_SIZE
---------------------------------------------------------------------------------------*/
     /* --- NEW FEATURE --- distribute requested storage across MPI ranks --- */
 	array_elements = STREAM_ARRAY_SIZE / numranks;		// don't worry about rounding vs truncation
     array_alignment = 64;						// Can be modified -- provides partial support for adjusting relative alignment
@@ -420,6 +402,20 @@ int main()
 		MPI_Abort(MPI_COMM_WORLD, 2);
         exit(1);
     }
+
+/*--------------------------------------------------------------------------------------
+    - Initialize the idx arrays on all PEs
+	- Use the input .txt files to populate each array if the -DCUSTOM flag is enabled
+	- If -DCUSTOM is not enabled, populate the IDX arrays with random values
+--------------------------------------------------------------------------------------*/
+    #ifdef CUSTOM
+    	init_read_idx_array(IDX1, array_elements, "IDX1.txt");
+    	init_read_idx_array(IDX2, array_elements, "IDX2.txt");
+    #else
+        srand(time(0));
+        init_random_idx_array(IDX1, array_elements);
+        init_random_idx_array(IDX2, array_elements);
+    #endif
 
 /*--------------------------------------------------------------------------------------
 	// Initial informational printouts -- rank 0 handles all the output

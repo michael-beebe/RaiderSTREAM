@@ -255,7 +255,7 @@ int main()
 	myrank = shmem_my_pe();
 
 /*--------------------------------------------------------------------------------------
-    - Distribute requested storage across MPI ranks
+    - Distribute requested storage across SHMEM ranks
 --------------------------------------------------------------------------------------*/
 	array_elements = STREAM_ARRAY_SIZE / numranks;		// don't worry about rounding vs truncation
     array_alignment = 64;						// Can be modified -- provides partial support for adjusting relative alignment
@@ -278,22 +278,8 @@ int main()
         mintime[i] = FLT_MAX;
     }
 
-    /*--------------------------------------------------------------------------------------
-        - Initialize the idx arrays on all PEs
-    	- Use the input .txt files to populate each array if the -DCUSTOM flag is enabled
-    	- If -DCUSTOM is not enabled, populate the IDX arrays with random values
-    --------------------------------------------------------------------------------------*/
-        #ifdef CUSTOM
-        	init_read_idx_array(IDX1, STREAM_ARRAY_SIZE, "IDX1.txt");
-        	init_read_idx_array(IDX2, STREAM_ARRAY_SIZE, "IDX2.txt");
-        #else
-            srand(time(0));
-            init_random_idx_array(IDX1, STREAM_ARRAY_SIZE);
-            init_random_idx_array(IDX2, STREAM_ARRAY_SIZE);
-        #endif
-
 /*--------------------------------------------------------------------------------------
-	used to dynamically allocate the three arrays using "posix_memalign()"
+	used to dynamically allocate the three arrays using "shmem_align()"
 	NOTE that the OFFSET parameter is not used in this version of the code!
 --------------------------------------------------------------------------------------*/
     array_bytes = array_elements * sizeof(STREAM_TYPE);
@@ -321,6 +307,20 @@ int main()
 	}
 
 	BytesPerWord = sizeof(STREAM_TYPE);
+
+/*--------------------------------------------------------------------------------------
+	- Initialize the idx arrays on all PEs
+	- Use the input .txt files to populate each array if the -DCUSTOM flag is enabled
+	- If -DCUSTOM is not enabled, populate the IDX arrays with random values
+--------------------------------------------------------------------------------------*/
+	#ifdef CUSTOM
+		init_read_idx_array(IDX1, array_elements, "IDX1.txt");
+		init_read_idx_array(IDX2, array_elements, "IDX2.txt");
+	#else
+		srand(time(0));
+		init_random_idx_array(IDX1, array_elements);
+		init_random_idx_array(IDX2, array_elements);
+	#endif
 
 /*--------------------------------------------------------------------------------------
 	// Initial informational printouts -- rank 0 handles all the output
