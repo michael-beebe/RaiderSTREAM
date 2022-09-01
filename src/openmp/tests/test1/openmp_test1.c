@@ -165,8 +165,6 @@ int main(int argc, char *argv[])
 	int stream_array_size = 10000000; // Default stream_array_size is 10000000
 
 	// TODO: use getopt() to take in file names that will be passed into init_read_idx_array()
-	// FILE *idx1;
-	// FILE *idx2;
 
 	int			quantum, checktick();
     int			BytesPerWord;

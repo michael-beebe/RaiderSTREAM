@@ -98,8 +98,8 @@
 - Initialize the STREAM arrays used in the kernels
 - Some compilers require an extra keyword to recognize the "restrict" qualifier.
 --------------------------------------------------------------------------------------*/
-STREAM_TYPE *a;
-STREAM_TYPE *b;
+STREAM_TYPE a[STREAM_ARRAY_SIZE+OFFSET];
+STREAM_TYPE b[STREAM_ARRAY_SIZE+OFFSET];
 STREAM_TYPE c[STREAM_ARRAY_SIZE+OFFSET];
 
 /*--------------------------------------------------------------------------------------
