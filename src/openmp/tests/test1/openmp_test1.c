@@ -92,15 +92,15 @@
 // - Initialize the STREAM arrays used in the kernels
 // - Some compilers require an extra keyword to recognize the "restrict" qualifier.
 // --------------------------------------------------------------------------------------*/
-static STREAM_TYPE * restrict a;
-static STREAM_TYPE * restrict b;
-static STREAM_TYPE * restrict c;
+STREAM_TYPE * restrict a;
+STREAM_TYPE * restrict b;
+STREAM_TYPE * restrict c;
 
 /*--------------------------------------------------------------------------------------
 - Initialize IDX arrays (which will be used by gather/scatter kernels)
 --------------------------------------------------------------------------------------*/
-static int *IDX1;
-static int *IDX2;
+int *IDX1;
+int *IDX2;
 
 /*--------------------------------------------------------------------------------------
 - Initialize arrays to store avgtime, maxime, and mintime metrics for each kernel.
@@ -178,16 +178,9 @@ int main(int argc, char *argv[])
 
 	parse_opts(argc, argv, &stream_array_size);
 
-	// STREAM_TYPE a[stream_array_size];
-	// STREAM_TYPE b[stream_array_size];
-	// STREAM_TYPE c[stream_array_size];
-
 	a = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
 	b = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
 	c = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
-
-	// int IDX1[stream_array_size];
-	// int IDX2[stream_array_size];
 
 	IDX1 = (int *) malloc(sizeof(int) * stream_array_size+OFFSET);
 	IDX2 = (int *) malloc(sizeof(int) * stream_array_size+OFFSET);

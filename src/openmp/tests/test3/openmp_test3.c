@@ -49,7 +49,7 @@
 // #define DEBUG 1
 
 #ifndef STREAM_ARRAY_SIZE
-#   define STREAM_ARRAY_SIZE	100000
+#   define STREAM_ARRAY_SIZE	10000000
 #endif
 
 #ifdef NTIMES

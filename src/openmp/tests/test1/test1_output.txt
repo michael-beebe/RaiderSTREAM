@@ -1,0 +1,40 @@
+---------------------------------------------------------------------------------------
+RaiderSTREAM
+---------------------------------------------------------------------------------------
+This system uses 8 bytes per array element.
+---------------------------------------------------------------------------------------
+Array size = 10000000 (elements), Offset = 0 (elements)
+Memory per array = 76.3 MiB (= 0.1 GiB).
+Total memory required = 228.9 MiB (= 0.2 GiB).
+Each kernel will be executed 10 times.
+ The *best* time for each kernel (excluding the first iteration)
+ will be used to compute the reported bandwidth.
+---------------------------------------------------------------------------------------
+Your clock granularity/precision appears to be 1 microseconds.
+Each test below will take on the order of 15929 microseconds.
+   (= 15929 clock ticks)
+Increase the size of the arrays if this shows that
+you are not getting at least 20 clock ticks per test.
+---------------------------------------------------------------------------------------
+WARNING -- The above is only a rough guideline.
+For best results, please be sure you know the
+precision of your system timer.
+---------------------------------------------------------------------------------------
+Totaly Memory Allocated: 343.32 MB
+---------------------------------------------------------------------------------------
+Function	Best Rate MB/s      Best FLOP/s	   Avg time	   Min time	   Max time
+Copy:		      8568.5		-	   0.025458	   0.018673	   0.034474
+Scale:		      8343.8	       521.5	   0.019976	   0.019176	   0.024354
+Add:		      11393.8	       474.7	   0.022457	   0.021064	   0.027073
+Triad:		      10717.2	       893.1	   0.022573	   0.022394	   0.023036
+GATHER Copy:	  1023.5		-	   0.156410	   0.156319	   0.156522
+GATHER Scale:	  912.4	        57.0	   0.175452	   0.175355	   0.175625
+GATHER Add:	      989.0	        41.2	   0.242775	   0.242676	   0.243019
+GATHER Triad:	  921.0	        76.7	   0.260693	   0.260594	   0.260774
+SCATTER Copy:	  1847.7		-	   0.086930	   0.086592	   0.087917
+SCATTER Scale:	  1814.5	       113.4	   0.088296	   0.088179	   0.088637
+SCATTER Add:	  2561.2	       106.7	   0.093943	   0.093705	   0.095166
+SCATTER Triad:	  2532.4	       211.0	   0.095157	   0.094770	   0.095975
+---------------------------------------------------------------------------------------
+Solution Validates: avg error less than 1.000000e-13 on all arrays
+---------------------------------------------------------------------------------------
