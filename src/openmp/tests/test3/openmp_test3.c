@@ -49,10 +49,8 @@
 // #define DEBUG 1
 
 #ifndef STREAM_ARRAY_SIZE
-#   define STREAM_ARRAY_SIZE	10000000
+#   define STREAM_ARRAY_SIZE	100000
 #endif
-
-// int STREAM_ARRAY_SIZE 
 
 #ifdef NTIMES
 #if NTIMES<=1
@@ -100,9 +98,9 @@
 - Initialize the STREAM arrays used in the kernels
 - Some compilers require an extra keyword to recognize the "restrict" qualifier.
 --------------------------------------------------------------------------------------*/
-static STREAM_TYPE a[STREAM_ARRAY_SIZE+OFFSET];
-static STREAM_TYPE b[STREAM_ARRAY_SIZE+OFFSET];
-static STREAM_TYPE c[STREAM_ARRAY_SIZE+OFFSET];
+STREAM_TYPE *a;
+STREAM_TYPE *b;
+STREAM_TYPE c[STREAM_ARRAY_SIZE+OFFSET];
 
 /*--------------------------------------------------------------------------------------
 - Initialize IDX arrays (which will be used by gather/scatter kernels)
@@ -167,6 +165,8 @@ static double   flops[NUM_KERNELS] = {
 	2 * STREAM_ARRAY_SIZE, // SCATTER Triad
 };
 
+extern void parse_opts(int argc, char **argv, int *stream_array_size);
+
 extern double mysecond();
 
 extern void init_random_idx_array(int *array, int nelems);
@@ -202,8 +202,10 @@ extern int omp_get_num_threads();
 #endif
 
 
-int main()
+int main(int argc, char *argv[])
 {
+    int stream_array_size;
+
     int			quantum, checktick();
     int			BytesPerWord;
     int			k;
@@ -211,6 +213,13 @@ int main()
     STREAM_TYPE		scalar;
     double		t, times[NUM_KERNELS][NTIMES];
 	double		t0,t1,tmin;
+
+    parse_opts(argc, argv, &stream_array_size);
+
+    // TODO: remalloc
+    a = realloc(a, sizeof(STREAM_TYPE) * stream_array_size);
+    b = realloc(b, sizeof(STREAM_TYPE) * stream_array_size);
+    c = realloc(c, sizeof(STREAM_TYPE) * stream_array_size);
 
 /*--------------------------------------------------------------------------------------
     - Set the mintime to default value (FLT_MAX) for each kernel, since we haven't executed
@@ -845,7 +854,19 @@ void print_memory_usage() {
 	printf(HLINE);
 }
 
-
+void parse_opts(int argc, char **argv, int *stream_array_size) {
+    int option;
+    while( (option = getopt(argc, argv, "n:t:h")) != -1 ) {
+        switch (option) {
+            case 'n':
+                *stream_array_size = atoi(optarg);
+                break;
+            case 'h':
+                printf("Usage: -n <stream_array_size>\n");
+                exit(2);
+        }
+    }
+}
 
 
 
@@ -951,3 +972,4 @@ void tuned_STREAM_Triad_Scatter(STREAM_TYPE scalar) {
 }
 /* end of stubs for the "tuned" versions of the kernels */
 #endif
+
