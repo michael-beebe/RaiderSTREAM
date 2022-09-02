@@ -123,7 +123,7 @@ static char	*label[NUM_KERNELS] = {
 	"SCATTER Add:\t", "SCATTER Triad:\t"
 };
 
-extern void parse_opts(int argc, char **argv, int *stream_array_size);
+extern void parse_opts(int argc, char **argv, ssize_t *stream_array_size);
 
 extern double mysecond();
 
@@ -162,11 +162,7 @@ extern int omp_get_num_threads();
 
 int main(int argc, char *argv[])
 {
-	int stream_array_size = 10000000; // Default stream_array_size is 10000000
-
-	// TODO: use getopt() to take in file names that will be passed into init_read_idx_array()
-	// FILE *idx1;
-	// FILE *idx2;
+	ssize_t stream_array_size = 10000000; // Default stream_array_size is 10000000
 
 	int			quantum, checktick();
     int			BytesPerWord;
@@ -178,16 +174,10 @@ int main(int argc, char *argv[])
 
 	parse_opts(argc, argv, &stream_array_size);
 
-	// STREAM_TYPE a[stream_array_size];
-	// STREAM_TYPE b[stream_array_size];
-	// STREAM_TYPE c[stream_array_size];
-
 	a = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
 	b = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
 	c = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
 
-	// int IDX1[stream_array_size];
-	// int IDX2[stream_array_size];
 
 	IDX1 = (int *) malloc(sizeof(int) * stream_array_size+OFFSET);
 	IDX2 = (int *) malloc(sizeof(int) * stream_array_size+OFFSET);
@@ -200,15 +190,15 @@ int main(int argc, char *argv[])
 		3 * sizeof(STREAM_TYPE) * stream_array_size, // Add
 		3 * sizeof(STREAM_TYPE) * stream_array_size, // Triad
 		// Gather Kernels
-		2 * sizeof(STREAM_TYPE) * stream_array_size, // GATHER Copy
-		2 * sizeof(STREAM_TYPE) * stream_array_size, // GATHER Scale
-		3 * sizeof(STREAM_TYPE) * stream_array_size, // GATHER Add
-		3 * sizeof(STREAM_TYPE) * stream_array_size, // GATHER Triad
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // GATHER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // GATHER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // GATHER Add
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // GATHER Triad
 		// Scatter Kernels
-		2 * sizeof(STREAM_TYPE) * stream_array_size, // SCATTER Copy
-		2 * sizeof(STREAM_TYPE) * stream_array_size, // SCATTER Scale
-		3 * sizeof(STREAM_TYPE) * stream_array_size, // SCATTER Add
-		3 * sizeof(STREAM_TYPE) * stream_array_size  // SCATTER Triad
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // SCATTER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // SCATTER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // SCATTER Add
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // SCATTER Triad
 	};
 
 	double   flops[NUM_KERNELS] = {
@@ -872,7 +862,7 @@ void print_memory_usage(int stream_array_size) {
 	printf(HLINE);
 }
 
-void parse_opts(int argc, char **argv, int *stream_array_size) {
+void parse_opts(int argc, char **argv, ssize_t *stream_array_size) {
     int option;
     while( (option = getopt(argc, argv, "n:t:h")) != -1 ) {
         switch (option) {
