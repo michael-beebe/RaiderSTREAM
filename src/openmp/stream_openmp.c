@@ -92,9 +92,9 @@
 // - Initialize the STREAM arrays used in the kernels
 // - Some compilers require an extra keyword to recognize the "restrict" qualifier.
 // --------------------------------------------------------------------------------------*/
-static STREAM_TYPE * restrict a;
-static STREAM_TYPE * restrict b;
-static STREAM_TYPE * restrict c;
+STREAM_TYPE * restrict a;
+STREAM_TYPE * restrict b;
+STREAM_TYPE * restrict c;
 
 /*--------------------------------------------------------------------------------------
 - Initialize IDX arrays (which will be used by gather/scatter kernels)
@@ -879,6 +879,10 @@ void parse_opts(int argc, char **argv, ssize_t *stream_array_size) {
 
 /* stubs for "tuned" versions of the kernels */
 #ifdef TUNED
+
+ssize_t stream_array_size;
+parse_opts(argc, argv, &stream_array_size);
+
 // =================================================================================
 //       				 	  ORIGINAL KERNELS
 // =================================================================================
@@ -976,3 +980,4 @@ void tuned_STREAM_Triad_Scatter(STREAM_TYPE scalar) {
 }
 /* end of stubs for the "tuned" versions of the kernels */
 #endif
+
