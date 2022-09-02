@@ -255,13 +255,6 @@ int main()
 	myrank = shmem_my_pe();
 
 /*--------------------------------------------------------------------------------------
-    - Distribute requested storage across SHMEM ranks
---------------------------------------------------------------------------------------*/
-	array_elements = STREAM_ARRAY_SIZE / numranks;		// don't worry about rounding vs truncation
-    array_alignment = 64;						// Can be modified -- provides partial support for adjusting relative alignment
-
-
-/*--------------------------------------------------------------------------------------
     - Set the average errror for each array to 0 as default, since we haven't done
       anything with the arrays yet. AvgErrByPE will be updated using an OpenSHMEM
       collective later on.
@@ -277,6 +270,12 @@ int main()
     for (int i=0;i<NUM_KERNELS;i++) {
         mintime[i] = FLT_MAX;
     }
+
+/*--------------------------------------------------------------------------------------
+    - Distribute requested storage across SHMEM ranks
+--------------------------------------------------------------------------------------*/
+	array_elements = STREAM_ARRAY_SIZE / numranks;		// don't worry about rounding vs truncation
+    array_alignment = 64;						// Can be modified -- provides partial support for adjusting relative alignment
 
 /*--------------------------------------------------------------------------------------
 	used to dynamically allocate the three arrays using "shmem_align()"

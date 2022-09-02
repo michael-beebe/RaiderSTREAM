@@ -6,15 +6,15 @@
 #  Set true only for implementations you want to run
 # -------------------------------------------------
 export RUN_ORIGINAL=false
-export RUN_OMP=true
+export RUN_OMP=false
 export RUN_MPI=true
-export RUN_SHMEM=false
+export RUN_SHMEM=true
 
 # Don't forget to set OMP_NUM_THREADS if you are using OpenMP
 export OMP_NUM_THREADS=1
 
 # Set the number of PEs/ranks if using MPI and/or OpenSHMEM implementations
-export NP_VALUE=2
+export NP_VALUE=1
 
 # Set this to true if you want this script to recompile the executables
 export COMPILE=true
@@ -23,7 +23,7 @@ export COMPILE=true
 export CLEAN=false
 
 # Set this to true if you want to be prompted to cat your output file. Good for a single run, not so good if you're running several runs at once
-export PROMPT_OUTPUT=true
+export PROMPT_OUTPUT=false
 
 # -------------------------------------------------
 #   Setting up directory to dump benchmark output

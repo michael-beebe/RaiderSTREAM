@@ -11,7 +11,7 @@ export RUN_MPI=false
 export RUN_SHMEM=false
 
 # Problem Size
-export STREAM_ARRAY_SIZE=100000
+export STREAM_ARRAY_SIZE=10000000
 
 # Don't forget to set OMP_NUM_THREADS if you are using OpenMP
 export OMP_NUM_THREADS=1
@@ -72,7 +72,7 @@ if [[ $RUN_ORIGINAL == true ]] ; then
     echo "------------------------------------" >> $OUTPUT_FILE
     echo "         'Original' STREAM"           >> $OUTPUT_FILE
     echo "------------------------------------" >> $OUTPUT_FILE
-    if $BUILD_DIR/stream_original.exe -n $STREAM_ARRAY_SIZE >> $OUTPUT_FILE; then
+    if $BUILD_DIR/stream_original.exe >> $OUTPUT_FILE; then
         echo "Original implementation finished."
     else
         echo "Original implementation failed to run!" >> $OUTPUT_FILE
