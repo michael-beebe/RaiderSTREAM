@@ -111,9 +111,6 @@
 //    16 MPI ranks per node -- only the total array size and the total
 //    cache size matter.
 //
-#ifndef STREAM_ARRAY_SIZE
-#   define STREAM_ARRAY_SIZE	10000000
-#endif
 
 /*
  *   2) STREAM runs each kernel "NTIMES" times and reports the *best* result
@@ -231,15 +228,6 @@
 --------------------------------------------------------------------------------------*/
 STREAM_TYPE * restrict a, * restrict b, * restrict c;
 
-/*--------------------------------------------------------------------------------------
-- Initialize idx arrays (which will be used by gather/scatter kernels)
---------------------------------------------------------------------------------------*/
-static int IDX1[STREAM_ARRAY_SIZE];
-static int IDX2[STREAM_ARRAY_SIZE];
-
-/*--------------------------------------------------------------------------------------
--
---------------------------------------------------------------------------------------*/
 size_t		array_elements, array_bytes, array_alignment;
 
 /*--------------------------------------------------------------------------------------
@@ -263,56 +251,18 @@ static char	*label[NUM_KERNELS] = {
 	"SCATTER Add:\t", "SCATTER Triad:\t"
 };
 
-/*--------------------------------------------------------------------------------------
-- Initialize array for storing the number of bytes that needs to be counted for
-  each benchmark kernel
---------------------------------------------------------------------------------------*/
-static double bytes[NUM_KERNELS] = {
-	// Original Kernels
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Copy
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Scale
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Add
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Triad
-	// Gather Kernels
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // GATHER Copy
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // GATHER Scale
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // GATHER Add
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // GATHER Triad
-	// Scatter Kernels
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // SCATTER Copy
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // SCATTER Scale
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // SCATTER Add
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE  // SCATTER Triad
-};
-
-static double   flops[NUM_KERNELS] = {
-	// Original Kernels
-	(int)0,                // Copy
-	1 * STREAM_ARRAY_SIZE, // Scale
-	1 * STREAM_ARRAY_SIZE, // Add
-	2 * STREAM_ARRAY_SIZE, // Triad
-	// Gather Kernels
-	(int)0,                // GATHER Copy
-	1 * STREAM_ARRAY_SIZE, // GATHER Scale
-	1 * STREAM_ARRAY_SIZE, // GATHER Add
-	2 * STREAM_ARRAY_SIZE, // GATHER Triad
-	// Scatter Kernels
-	(int)0,                // SCATTER Copy
-	1 * STREAM_ARRAY_SIZE, // SCATTER Scale
-	1 * STREAM_ARRAY_SIZE, // SCATTER Add
-	2 * STREAM_ARRAY_SIZE, // SCATTER Triad
-};
-
 extern void init_random_idx_array(int *array, int nelems);
 extern void init_read_idx_array(int *array, int nelems, char *filename);
 
-extern void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k);
+extern void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k, int STREAM_ARRAY_SIZE);
 extern void print_timer_granularity(int quantum);
 extern void print_info2(double t, double t0, double t1, int quantum);
-extern void print_memory_usage(int numranks);
+extern void print_memory_usage(int numranks, int STREAM_ARRAY_SIZE);
 
 extern void checkSTREAMresults(STREAM_TYPE *AvgErrByRank, int numranks);
 extern void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr);
+
+extern void parse_opts(int argc, char **argv, int *STREAM_ARRAY_SIZE);
 
 double mysecond();
 
@@ -330,8 +280,10 @@ extern int omp_get_num_threads();
 static double times[NUM_KERNELS][NTIMES];
 static STREAM_TYPE AvgError[NUM_ARRAYS];
 
-int main()
+int main(int argc, char *argv[])
 {
+	int STREAM_ARRAY_SIZE = 10000000; // Default STREAM_ARRAY_SIZE is 10000000
+
     int			quantum, checktick();
     int			BytesPerWord;
     int			i,k;
@@ -342,6 +294,53 @@ int main()
 	double		t0,t1,tmin;
 	int         rc, numranks, myrank;
 	STREAM_TYPE *AvgErrByRank;
+
+	parse_opts(argc, argv, &STREAM_ARRAY_SIZE);
+/*--------------------------------------------------------------------------------------
+- Initialize idx arrays (which will be used by gather/scatter kernels)
+--------------------------------------------------------------------------------------*/
+	int IDX1[STREAM_ARRAY_SIZE];
+	int IDX2[STREAM_ARRAY_SIZE];
+
+/*--------------------------------------------------------------------------------------
+- Initialize array for storing the number of bytes that needs to be counted for
+  each benchmark kernel
+--------------------------------------------------------------------------------------*/
+	double	bytes[NUM_KERNELS] = {
+		// Original Kernels
+		2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Copy
+		2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Scale
+		3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Add
+		3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Triad
+		// Gather Kernels
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * STREAM_ARRAY_SIZE), // GATHER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * STREAM_ARRAY_SIZE), // GATHER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * STREAM_ARRAY_SIZE), // GATHER Add
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * STREAM_ARRAY_SIZE), // GATHER Triad
+		// Scatter Kernels
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * STREAM_ARRAY_SIZE), // SCATTER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * STREAM_ARRAY_SIZE), // SCATTER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * STREAM_ARRAY_SIZE), // SCATTER Add
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * STREAM_ARRAY_SIZE), // SCATTER Triad
+	};
+
+	double   flops[NUM_KERNELS] = {
+		// Original Kernels
+		(int)0,                // Copy
+		1 * STREAM_ARRAY_SIZE, // Scale
+		1 * STREAM_ARRAY_SIZE, // Add
+		2 * STREAM_ARRAY_SIZE, // Triad
+		// Gather Kernels
+		(int)0,                // GATHER Copy
+		1 * STREAM_ARRAY_SIZE, // GATHER Scale
+		1 * STREAM_ARRAY_SIZE, // GATHER Add
+		2 * STREAM_ARRAY_SIZE, // GATHER Triad
+		// Scatter Kernels
+		(int)0,                // SCATTER Copy
+		1 * STREAM_ARRAY_SIZE, // SCATTER Scale
+		1 * STREAM_ARRAY_SIZE, // SCATTER Add
+		2 * STREAM_ARRAY_SIZE, // SCATTER Triad
+	};
 
 /*--------------------------------------------------------------------------------------
     - Setup MPI
@@ -421,7 +420,7 @@ int main()
 	// Initial informational printouts -- rank 0 handles all the output
 --------------------------------------------------------------------------------------*/
 	if (myrank == 0) {
-        print_info1(BytesPerWord, numranks, array_elements, k);
+        print_info1(BytesPerWord, numranks, array_elements, k, STREAM_ARRAY_SIZE);
 	}
 
 /*--------------------------------------------------------------------------------------
@@ -475,7 +474,7 @@ int main()
 
 	if (myrank == 0) {
         print_info2(t, t0, t1, quantum);
-		print_memory_usage(numranks);
+		print_memory_usage(numranks, STREAM_ARRAY_SIZE);
 	}
 
 // =================================================================================
@@ -1089,7 +1088,7 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
 
 //========================================================================================
 
-void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k) {
+void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k, int STREAM_ARRAY_SIZE) {
     printf(HLINE);
 		printf("RaiderSTREAM\n");
 		printf(HLINE);
@@ -1188,7 +1187,7 @@ void print_info2(double t, double t0, double t1, int quantum) {
 }
 
 
-void print_memory_usage(int numranks) {
+void print_memory_usage(int numranks, int STREAM_ARRAY_SIZE) {
 	unsigned long totalMemory = \
 		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// a[]
 		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// b[]
@@ -1226,10 +1225,20 @@ void print_memory_usage(int numranks) {
 	printf(HLINE);
 }
 
-
-
-
-
+void parse_opts(int argc, char **argv, int *STREAM_ARRAY_SIZE) {
+    int option;
+    while( (option = getopt(argc, argv, "n:t:h")) != -1 ) {
+        switch (option) {
+            case 'n':
+                *STREAM_ARRAY_SIZE = atoi(optarg);
+                break;
+            case 'h':
+                printf("Usage: -n <STREAM_ARRAY_SIZE>\n");
+                exit(2);
+			
+        }
+    }
+}
 
 /* stubs for "tuned" versions of the kernels */
 #ifdef TUNED
