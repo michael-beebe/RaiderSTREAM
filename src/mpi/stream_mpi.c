@@ -212,12 +212,6 @@ int main(int argc, char *argv[])
 	array_bytes = array_elements * sizeof(STREAM_TYPE);
 
 /*--------------------------------------------------------------------------------------
-- Initialize idx arrays (which will be used by gather/scatter kernels)
---------------------------------------------------------------------------------------*/
-	IDX1 = malloc(array_elements * sizeof IDX1);
-	IDX2 = malloc(array_elements * sizeof IDX2);
-
-/*--------------------------------------------------------------------------------------
 - Initialize array for storing the number of bytes that needs to be counted for
   each benchmark kernel
 --------------------------------------------------------------------------------------*/
@@ -295,6 +289,12 @@ int main(int argc, char *argv[])
 		MPI_Abort(MPI_COMM_WORLD, 2);
         exit(1);
     }
+
+/*--------------------------------------------------------------------------------------
+- Initialize idx arrays (which will be used by gather/scatter kernels)
+--------------------------------------------------------------------------------------*/
+	IDX1 = malloc(array_elements * sizeof IDX1);
+	IDX2 = malloc(array_elements * sizeof IDX2);
 
 /*--------------------------------------------------------------------------------------
     - Initialize the idx arrays on all PEs
