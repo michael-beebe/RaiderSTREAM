@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# NOTE: STREAM_ARRAY_SIZE is set in the Makefile or can be exported globally
 
 # -------------------------------------------------
 #  Set true only for implementations you want to run
@@ -14,7 +13,8 @@ export RUN_SHMEM=false
 export STREAM_ARRAY_SIZE=10000000
 
 # Don't forget to set OMP_NUM_THREADS if you are using OpenMP
-export OMP_NUM_THREADS=1
+# NOTE: OpenMP is enabled/disbled in the Makefile
+export OMP_NUM_THREADS=
 
 # Set the number of PEs/ranks if using MPI and/or OpenSHMEM implementations
 export NPES=1
