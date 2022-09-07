@@ -52,10 +52,6 @@
 # include <shmem.h>
 
 
-#ifndef STREAM_ARRAY_SIZE
-#   define STREAM_ARRAY_SIZE	10000000
-#endif
-
 #ifdef NTIMES
 #if NTIMES<=1
 #   define NTIMES	10
@@ -77,12 +73,6 @@
 #define SCALAR 0.42
 #endif
 
-
-// ----------------------- !!! NOTE CHANGE IN DEFINITION !!! ------------------
-// The OFFSET preprocessor variable is not used in this version of the benchmark.
-// The user must change the code at or after the "posix_memalign" array allocations
-//    to change the relative alignment of the pointers.
-// ----------------------- !!! NOTE CHANGE IN DEFINITION !!! ------------------
 #ifndef OFFSET
 #   define OFFSET	0
 #endif
@@ -128,8 +118,8 @@ STREAM_TYPE * restrict c;
 // /*--------------------------------------------------------------------------------------
 // - Initialize idx arrays (which will be used by gather/scatter kernels)
 // --------------------------------------------------------------------------------------*/
-int IDX1[STREAM_ARRAY_SIZE];
-int IDX2[STREAM_ARRAY_SIZE];
+ssize_t *IDX1;
+ssize_t *IDX2;
 
 /*--------------------------------------------------------------------------------------
 -
@@ -158,71 +148,41 @@ static char	*label[NUM_KERNELS] = {
 	"SCATTER Add:\t", "SCATTER Triad:\t"
 };
 
-/*--------------------------------------------------------------------------------------
-- Initialize array for storing the number of bytes that needs to be counted for
-  each benchmark kernel
---------------------------------------------------------------------------------------*/
-static double bytes[NUM_KERNELS] = {
-	// Original Kernels
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Copy
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Scale
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Add
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Triad
-	// Gather Kernels
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // GATHER Copy
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // GATHER Scale
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // GATHER Add
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // GATHER Triad
-	// Scatter Kernels
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // SCATTER Copy
-	2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // SCATTER Scale
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // SCATTER Add
-	3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE  // SCATTER Triad
-};
-
-static double   flops[NUM_KERNELS] = {
-	// Original Kernels
-	(int)0,                // Copy
-	1 * STREAM_ARRAY_SIZE, // Scale
-	1 * STREAM_ARRAY_SIZE, // Add
-	2 * STREAM_ARRAY_SIZE, // Triad
-	// Gather Kernels
-	(int)0,                // GATHER Copy
-	1 * STREAM_ARRAY_SIZE, // GATHER Scale
-	1 * STREAM_ARRAY_SIZE, // GATHER Add
-	2 * STREAM_ARRAY_SIZE, // GATHER Triad
-	// Scatter Kernels
-	(int)0,                // SCATTER Copy
-	1 * STREAM_ARRAY_SIZE, // SCATTER Scale
-	1 * STREAM_ARRAY_SIZE, // SCATTER Add
-	2 * STREAM_ARRAY_SIZE, // SCATTER Triad
-};
-
 static double times[NUM_KERNELS][NTIMES];
 static STREAM_TYPE AvgError[NUM_ARRAYS];
 static STREAM_TYPE *AvgErrByRank;
 
-extern void init_random_idx_array(int *array, int nelems);
-extern void init_read_idx_array(int *array, int nelems, char *filename);
+extern void parse_opts(int argc, char **argv, ssize_t *stream_array_size);
 
 extern double mysecond();
 
-extern void print_info1(int BytesPerWord, int numranks, ssize_t array_elements);
+extern void init_random_idx_array(ssize_t *array, ssize_t nelems);
+extern void init_read_idx_array(ssize_t *array, ssize_t nelems, char *filename);
+
+extern void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, ssize_t stream_array_size);
 extern void print_timer_granularity(int quantum);
 extern void print_info2(double t, double t0, double t1, int quantum);
-extern void print_memory_usage(int numranks);
+extern void print_memory_usage(int numranks, ssize_t stream_array_size);
 
-extern void checkSTREAMresults(STREAM_TYPE *AvgErrByRank, int numranks);
+extern void checkSTREAMresults(STREAM_TYPE *AvgErrByRank, int numranks, ssize_t stream_array_size);
 extern void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr);
 
 void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
-                  STREAM_TYPE exp_val, double epsilon, int* errors);
+                  STREAM_TYPE exp_val, double epsilon, int* errors, ssize_t stream_array_size);
 
 #ifdef TUNED
-extern void tuned_STREAM_Copy();
-extern void tuned_STREAM_Scale(STREAM_TYPE scalar);
-extern void tuned_STREAM_Add();
-extern void tuned_STREAM_Triad(STREAM_TYPE scalar);
+void tuned_STREAM_Copy();
+void tuned_STREAM_Scale(STREAM_TYPE scalar);
+void tuned_STREAM_Add();
+void tuned_STREAM_Triad(STREAM_TYPE scalar);
+void tuned_STREAM_Copy_Gather();
+void tuned_STREAM_Scale_Gather(STREAM_TYPE scalar);
+void tuned_STREAM_Add_Gather();
+void tuned_STREAM_Triad_Gather(STREAM_TYPE scalar);
+void tuned_STREAM_Copy_Scatter();
+void tuned_STREAM_Scale_Scatter(STREAM_TYPE scalar);
+void tuned_STREAM_Add_Scatter();
+void tuned_STREAM_Triad_Scatter(STREAM_TYPE scalar);
 #endif
 
 #ifdef _OPENMP
@@ -231,8 +191,10 @@ extern int omp_get_num_threads();
 
 
 
-int main()
+int main(int argc, char *argv[])
 {
+	ssize_t stream_array_size = 10000000; // Default stream_array_size is 10000000
+
     int			      quantum, checktick();
     int			      BytesPerWord;
     int			      i,k;
@@ -244,6 +206,10 @@ int main()
 	int               numranks, myrank;
 	long              *psync;
 
+	parse_opts(argc, argv, &stream_array_size);
+
+
+
 /*--------------------------------------------------------------------------------------
     - Initialize OpenSHMEM
 --------------------------------------------------------------------------------------*/
@@ -253,6 +219,45 @@ int main()
 	// if either of these fail there is something really screwed up!
 	numranks = shmem_n_pes();
 	myrank = shmem_my_pe();
+
+/*--------------------------------------------------------------------------------------
+    - 
+--------------------------------------------------------------------------------------*/
+	double	bytes[NUM_KERNELS] = {
+		// Original Kernels
+		2 * sizeof(STREAM_TYPE) * stream_array_size, // Copy
+		2 * sizeof(STREAM_TYPE) * stream_array_size, // Scale
+		3 * sizeof(STREAM_TYPE) * stream_array_size, // Add
+		3 * sizeof(STREAM_TYPE) * stream_array_size, // Triad
+		// Gather Kernels
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // GATHER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // GATHER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // GATHER Add
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // GATHER Triad
+		// Scatter Kernels
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // SCATTER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // SCATTER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // SCATTER Add
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // SCATTER Triad
+	};
+
+	double   flops[NUM_KERNELS] = {
+		// Original Kernels
+		(int)0,                // Copy
+		1 * stream_array_size, // Scale
+		1 * stream_array_size, // Add
+		2 * stream_array_size, // Triad
+		// Gather Kernels
+		(int)0,                // GATHER Copy
+		1 * stream_array_size, // GATHER Scale
+		1 * stream_array_size, // GATHER Add
+		2 * stream_array_size, // GATHER Triad
+		// Scatter Kernels
+		(int)0,                // SCATTER Copy
+		1 * stream_array_size, // SCATTER Scale
+		1 * stream_array_size, // SCATTER Add
+		2 * stream_array_size, // SCATTER Triad
+	};
 
 /*--------------------------------------------------------------------------------------
     - Set the average errror for each array to 0 as default, since we haven't done
@@ -274,7 +279,7 @@ int main()
 /*--------------------------------------------------------------------------------------
     - Distribute requested storage across SHMEM ranks
 --------------------------------------------------------------------------------------*/
-	array_elements = STREAM_ARRAY_SIZE / numranks;		// don't worry about rounding vs truncation
+	array_elements = stream_array_size / numranks;		// don't worry about rounding vs truncation
     array_alignment = 64;						// Can be modified -- provides partial support for adjusting relative alignment
 
 /*--------------------------------------------------------------------------------------
@@ -282,6 +287,7 @@ int main()
 	NOTE that the OFFSET parameter is not used in this version of the code!
 --------------------------------------------------------------------------------------*/
     array_bytes = array_elements * sizeof(STREAM_TYPE);
+	BytesPerWord = sizeof(STREAM_TYPE);
 
 /*--------------------------------------------------------------------------------------
 	Allocate arrays in memory
@@ -305,7 +311,11 @@ int main()
 		exit(1);
 	}
 
-	BytesPerWord = sizeof(STREAM_TYPE);
+/*--------------------------------------------------------------------------------------
+- Initialize idx arrays (which will be used by gather/scatter kernels)
+--------------------------------------------------------------------------------------*/
+	IDX1 = malloc(array_elements * sizeof IDX1);
+	IDX2 = malloc(array_elements * sizeof IDX2);
 
 /*--------------------------------------------------------------------------------------
 	- Initialize the idx arrays on all PEs
@@ -325,7 +335,7 @@ int main()
 	// Initial informational printouts -- rank 0 handles all the output
 --------------------------------------------------------------------------------------*/
 	if (myrank == 0) {
-		print_info1(BytesPerWord, numranks, array_elements);
+		print_info1(BytesPerWord, numranks, array_elements, stream_array_size);
         #ifdef _OPENMP
         		printf(HLINE);
         #pragma omp parallel
@@ -419,7 +429,7 @@ int main()
 
 	if (myrank == 0) {
         print_info2(t, t0, t1, quantum);
-		print_memory_usage(numranks);
+		print_memory_usage(numranks, stream_array_size);
 	}
 
 
@@ -759,7 +769,7 @@ int main()
 				AvgErrByRank[3*k+1],AvgErrByRank[3*k+2]);
 		}
 #endif
-		checkSTREAMresults(AvgErrByRank,numranks);
+		checkSTREAMresults(AvgErrByRank,numranks, stream_array_size);
 		printf(HLINE);
 	}
 
@@ -783,7 +793,7 @@ double mysecond()
 {
     struct timeval tp;
 
-    gettimeofday(&tp,NULL);
+    gettimeofday(&tp, NULL);
     return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6 );
 }
 
@@ -874,7 +884,7 @@ void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE
 }
 
 
-void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks) {
+void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks, ssize_t stream_array_size) {
 	STREAM_TYPE aj,bj,cj,scalar;
 	STREAM_TYPE aSumErr,bSumErr,cSumErr;
 	STREAM_TYPE aAvgErr,bAvgErr,cAvgErr;
@@ -943,9 +953,9 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks) {
 
 
  // Check errors on each array
-	check_errors("a[]", a, aAvgErr, aj, epsilon, &err);
-	check_errors("b[]", b, bAvgErr, bj, epsilon, &err);
-	check_errors("c[]", c, cAvgErr, cj, epsilon, &err);
+	check_errors("a[]", a, aAvgErr, aj, epsilon, &err, stream_array_size);
+	check_errors("b[]", b, bAvgErr, bj, epsilon, &err, stream_array_size);
+	check_errors("c[]", c, cAvgErr, cj, epsilon, &err, stream_array_size);
 
 	if (err == 0) {
 		printf ("Solution Validates: avg error less than %e on all three arrays\n",epsilon);
@@ -959,7 +969,7 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks) {
 }
 
 void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
-                  STREAM_TYPE exp_val, double epsilon, int* errors)
+                  STREAM_TYPE exp_val, double epsilon, int* errors, ssize_t stream_array_size)
 {
 	int i;
   	int ierr = 0;
@@ -969,7 +979,7 @@ void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
 		printf ("Failed Validation on array %s, AvgRelAbsErr > epsilon (%e)\n", label, epsilon);
 		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n", exp_val, avg_err, abs(avg_err/exp_val));
 		ierr = 0;
-		for (i=0; i<STREAM_ARRAY_SIZE; i++) {
+		for (i=0; i<stream_array_size; i++) {
 			if (abs(array[i]/exp_val-1.0) > epsilon) {
 				ierr++;
 #ifdef VERBOSE
@@ -992,7 +1002,7 @@ void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
     to utilized indices in index array. This simplifies the scatter kernel
     verification process and precludes the need for atomic operations.
 --------------------------------------------------------------------------------------*/
-void init_random_idx_array(int *array, int nelems)
+void init_random_idx_array(ssize_t *array, ssize_t nelems)
 {
 	int i, success, idx;
 
@@ -1020,7 +1030,7 @@ void init_random_idx_array(int *array, int nelems)
 /*--------------------------------------------------------------------------------------
  - Initializes the IDX arrays with the contents of IDX1.txt and IDX2.txt, respectively
 --------------------------------------------------------------------------------------*/
-void init_read_idx_array(int *array, int nelems, char *filename) {
+void init_read_idx_array(ssize_t *array, ssize_t nelems, char *filename) {
     FILE *file;
     file = fopen(filename, "r");
     if (!file) {
@@ -1029,13 +1039,13 @@ void init_read_idx_array(int *array, int nelems, char *filename) {
     }
 
     for (int i=0; i < nelems; i++) {
-        fscanf(file, "%d", &array[i]);
+        fscanf(file, "%zd", &array[i]);
     }
 
     fclose(file);
 }
 
-void print_info1(int BytesPerWord, int numranks, ssize_t array_elements) {
+void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, ssize_t stream_array_size) {
 		printf(HLINE);
 		printf("RaiderSTREAM\n");
 		printf(HLINE);
@@ -1048,8 +1058,8 @@ void print_info1(int BytesPerWord, int numranks, ssize_t array_elements) {
         #ifdef N
         		printf("*****  WARNING: ******\n");
         		printf("      It appears that you set the preprocessor variable N when compiling this code.\n");
-        		printf("      This version of the code uses the preprocesor variable STREAM_ARRAY_SIZE to control the array size\n");
-        		printf("      Reverting to default value of STREAM_ARRAY_SIZE=%llu\n",(unsigned long long) STREAM_ARRAY_SIZE);
+        		printf("      This version of the code uses the preprocesor variable stream_array_size to control the array size\n");
+        		printf("      Reverting to default value of stream_array_size=%llu\n",(unsigned long long) stream_array_size);
         		printf("*****  WARNING: ******\n");
         #endif
 
@@ -1059,13 +1069,13 @@ void print_info1(int BytesPerWord, int numranks, ssize_t array_elements) {
 			printf("*****  WARNING: ******\n");
 		}
 
-		printf("Total Aggregate Array size = %llu (elements)\n" , (unsigned long long) STREAM_ARRAY_SIZE);
+		printf("Total Aggregate Array size = %llu (elements)\n" , (unsigned long long) stream_array_size);
 		printf("Total Aggregate Memory per array = %.1f MiB (= %.1f GiB).\n",
-			BytesPerWord * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.0),
-			BytesPerWord * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.0/1024.0));
+			BytesPerWord * ( (double) stream_array_size / 1024.0/1024.0),
+			BytesPerWord * ( (double) stream_array_size / 1024.0/1024.0/1024.0));
 		printf("Total Aggregate memory required = %.1f MiB (= %.1f GiB).\n",
-			(3.0 * BytesPerWord) * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.),
-			(3.0 * BytesPerWord) * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024./1024.));
+			(3.0 * BytesPerWord) * ( (double) stream_array_size / 1024.0/1024.),
+			(3.0 * BytesPerWord) * ( (double) stream_array_size / 1024.0/1024./1024.));
 		printf("Data is distributed across %d SHMEM ranks\n",numranks);
 		printf("   Array size per SHMEM rank = %llu (elements)\n" , (unsigned long long) array_elements);
 		printf("   Memory per array per SHMEM rank = %.1f MiB (= %.1f GiB).\n",
@@ -1114,14 +1124,14 @@ void print_info2(double t, double t0, double t1, int quantum) {
     #endif
 }
 
-void print_memory_usage(int numranks) {
+void print_memory_usage(int numranks, ssize_t stream_array_size) {
 	unsigned long totalMemory = \
-		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// a[]
-		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// b[]
-		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// c[]
-		((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) + 			// a_idx[]
-		((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) + 			// b_idx[]
-		((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) + 			// c_idx[]
+		((sizeof(STREAM_TYPE) * (stream_array_size)) * numranks) + 	// a[]
+		((sizeof(STREAM_TYPE) * (stream_array_size)) * numranks) + 	// b[]
+		((sizeof(STREAM_TYPE) * (stream_array_size)) * numranks) + 	// c[]
+		((sizeof(int) * (stream_array_size)) * numranks) + 			// a_idx[]
+		((sizeof(int) * (stream_array_size)) * numranks) + 			// b_idx[]
+		((sizeof(int) * (stream_array_size)) * numranks) + 			// c_idx[]
 		((sizeof(double) * NUM_KERNELS) * numranks) + 				// avgtime[]
 		((sizeof(double) * NUM_KERNELS) * numranks) + 				// maxtime[]
 		((sizeof(double) * NUM_KERNELS) * numranks) + 				// mintime[]
@@ -1132,12 +1142,12 @@ void print_memory_usage(int numranks) {
 	printf("-----------------------------------------\n");
 	printf("     VERBOSE Memory Breakdown\n");
 	printf("-----------------------------------------\n");
-	printf("a[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("b[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("c[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("a_idx[]:\t%.2f MB\n", ((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("b_idx[]:\t%.2f MB\n", ((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("c_idx[]:\t%.2f MB\n", ((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
+	printf("a[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (stream_array_size)) * numranks) / 1024.0 / 1024.0);
+	printf("b[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (stream_array_size)) * numranks) / 1024.0 / 1024.0);
+	printf("c[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (stream_array_size)) * numranks) / 1024.0 / 1024.0);
+	printf("a_idx[]:\t%.2f MB\n", ((sizeof(int) * (stream_array_size)) * numranks) / 1024.0 / 1024.0);
+	printf("b_idx[]:\t%.2f MB\n", ((sizeof(int) * (stream_array_size)) * numranks) / 1024.0 / 1024.0);
+	printf("c_idx[]:\t%.2f MB\n", ((sizeof(int) * (stream_array_size)) * numranks) / 1024.0 / 1024.0);
 	printf("avgtime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
 	printf("maxtime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
 	printf("mintime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
@@ -1153,7 +1163,20 @@ void print_memory_usage(int numranks) {
 }
 
 
-
+void parse_opts(int argc, char **argv, ssize_t *stream_array_size) {
+    int option;
+    while( (option = getopt(argc, argv, "n:t:h")) != -1 ) {
+        switch (option) {
+            case 'n':
+                *stream_array_size = atoi(optarg);
+                break;
+            case 'h':
+                printf("Usage: -n <stream_array_size>\n");
+                exit(2);
+			
+        }
+    }
+}
 
 
 
@@ -1168,7 +1191,7 @@ void tuned_STREAM_Copy()
 {
 	ssize_t j;
 #pragma omp parallel for
-    for (j=0; j<STREAM_ARRAY_SIZE; j++)
+    for (j=0; j<stream_array_size; j++)
         c[j] = a[j];
 }
 
@@ -1176,7 +1199,7 @@ void tuned_STREAM_Scale(STREAM_TYPE scalar)
 {
 	ssize_t j;
 #pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+	for (j=0; j<stream_array_size; j++)
 	    b[j] = scalar*c[j];
 }
 
@@ -1184,7 +1207,7 @@ void tuned_STREAM_Add()
 {
 	ssize_t j;
 #pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+	for (j=0; j<stream_array_size; j++)
 	    c[j] = a[j]+b[j];
 }
 
@@ -1192,7 +1215,7 @@ void tuned_STREAM_Triad(STREAM_TYPE scalar)
 {
 	ssize_t j;
 #pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+	for (j=0; j<stream_array_size; j++)
 	    a[j] = b[j]+scalar*c[j];
 }
 // =================================================================================
@@ -1201,28 +1224,28 @@ void tuned_STREAM_Triad(STREAM_TYPE scalar)
 void tuned_STREAM_Copy_Gather() {
 	ssize_t j;
 #pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+	for (j=0; j<stream_array_size; j++)
 		c[j] = a[a_idx[j]];
 }
 
 void tuned_STREAM_Scale_Gather(STREAM_TYPE scalar) {
 	ssize_t j;
 #pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+	for (j=0; j<stream_array_size; j++)
 		b[j] = scalar * c[c_idx[j]];
 }
 
 void tuned_STREAM_Add_Gather() {
 	ssize_t j;
 #pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+	for (j=0; j<stream_array_size; j++)
 		c[j] = a[a_idx[j]] + b[b_idx[j]];
 }
 
 void tuned_STREAM_Triad_Gather(STREAM_TYPE scalar) {
 	ssize_t j;
 #pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+	for (j=0; j<stream_array_size; j++)
 		a[j] = b[b_idx[j]] + scalar * c[c_idx[j]];
 }
 
@@ -1232,28 +1255,28 @@ void tuned_STREAM_Triad_Gather(STREAM_TYPE scalar) {
 void tuned_STREAM_Copy_Scatter() {
 	ssize_t j;
 #pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+	for (j=0; j<stream_array_size; j++)
 		c[c_idx[j]] = a[j];
 }
 
 void tuned_STREAM_Scale_Scatter(STREAM_TYPE scalar) {
 	ssize_t j;
 #pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+	for (j=0; j<stream_array_size; j++)
 		b[b_idx[j]] = scalar * c[j];
 }
 
 void tuned_STREAM_Add_Scatter() {
 	ssize_t j;
 #pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+	for (j=0; j<stream_array_size; j++)
 		c[a_idx[j]] = a[j] + b[j];
 }
 
 void tuned_STREAM_Triad_Scatter(STREAM_TYPE scalar) {
 	ssize_t j;
 #pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+	for (j=0; j<stream_array_size; j++)
 		a[a_idx[j]] = b[j] + scalar * c[j];
 }
 /* end of stubs for the "tuned" versions of the kernels */
