@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
         init_random_idx_array(IDX1, array_elements);
         init_random_idx_array(IDX2, array_elements);
     #endif
-
+	
 /*--------------------------------------------------------------------------------------
 	// Initial informational printouts -- rank 0 handles all the output
 --------------------------------------------------------------------------------------*/
