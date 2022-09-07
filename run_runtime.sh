@@ -22,7 +22,8 @@ export NPES=1
 # Set this to true if you want this script to recompile the executables
 export COMPILE=true
 
-# Set this to true if you want to be prompted to cat your output file. Good for a single run, not so good if you're running several runs at once
+# Set this to true if you want to be prompted to cat your output file. Good for a single 
+# run, not so good if you're running several runs at once
 export PROMPT_OUTPUT=false
 
 # -------------------------------------------------

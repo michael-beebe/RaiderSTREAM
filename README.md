@@ -15,6 +15,7 @@ With RaiderSTREAM, we address these two limitations by:
 <!-- ### Table of Contents -->
 
 ### Benchmark Kernels
+<!-- TODO: change bytes/iter column to reflect the new bytes array -->
 ![Benchmark Kernels](readme_images/kernels.png)
 
 ### How are bytes and FLOP/s counted?
@@ -23,6 +24,14 @@ With RaiderSTREAM, we address these two limitations by:
 * $\alpha$ = number of memory accesses per iteration of the main STREAM loops
 * $\gamma$ = size in bytes of `STREAM_TYPE` (8 bytes for doubles)
 * $\lambda$ = `STREAM_ARRAY_SIZE`
+
+### Setting Problem Size (STREAM_ARRAY_SIZE)
+Different from the original STREAM implementation, we allow users to set the problem size at runtime to make RaiderSTREAM more suitable for automating the testing of scalability using different problem size. The easiest way to run RaiderSTREAM is using and modifying the run script to meet your use cases. You can change the `STREAM_ARRAY_SIZE` variable to set the problem size at runtime.
+
+If you insist on compiling files individually, you can set the problem size using the `-n` flag at runtime. For example:
+```
+mpirun -np 2 a.out -n 10000000
+```
 
 ### Build
 Running 
@@ -72,13 +81,7 @@ Empty IDX1.txt and IDX2.txt:
 make clean_inputs
 ```
 
-<!-- TODO: Talk about setting STREAM_ARRAY_SIZE at runtime -->
-
 ##### Compiler Flags and Environment Variables
-<!-- * `STREAM_ARRAY_SIZE`: the problem size, or the size of the STREAM arrays
-    * Ex: `-DSTREAM_ARRAY_SIZE=10000000`
-<br/> -->
-
 * `NTIMES`: the kernels are run on each element of the STREAM arrays `NTIMES` times. The best MB/s for each kernel amongst all `NTIMES` runs is reported in the benchmark's output.
     * Ex: `-DNTIMES=10`
 <br/>
@@ -122,7 +125,7 @@ The gather and scatter benchmark kernels are similar in that they both provide i
 ![Gather Scatter](readme_images/gather_scatter.png)
 
 ### Multi-Node Support
-RadierSTREAM does not currently use any inter-process communication routines such as MPI_SEND or SHMEM_PUT within the benchmark kernels. Instead, the programming models are essentially leveraged as a <b>resource allocator</b>. The STREAM arrays are distributed evenly across a user-specified number of processing elements (PEs), each PE computes the kernel and writes the result back to its own array segment.
+RadierSTREAM does not currently use any inter-process communication routines such as MPI_SEND or SHMEM_PUT within the benchmark kernels. Instead, the programming models are essentially leveraged as a <b>resource allocator</b>. It is worth noting that for the multi-node implementations, each processing element DOES NOT get its own copy of the STREAM arrays. The STREAM arrays are distributed evenly across a user-specified number of processing elements (PEs), each PE computes the kernel and writes the result back to its own array segment.
 
 ![Multi-Node Support](readme_images/oshrun.png)
 

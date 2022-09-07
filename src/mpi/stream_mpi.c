@@ -1087,9 +1087,8 @@ void print_memory_usage(int numranks, ssize_t STREAM_ARRAY_SIZE) {
 		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// a[]
 		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// b[]
 		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// c[]
-		((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) + 			// a_idx[]
-		((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) + 			// b_idx[]
-		((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) + 			// c_idx[]
+		((sizeof(ssize_t) * (STREAM_ARRAY_SIZE)) * numranks) + 			// IDX1[]
+		((sizeof(ssize_t) * (STREAM_ARRAY_SIZE)) * numranks) + 			// IDX2[]
 		((sizeof(double) * NUM_KERNELS) * numranks) + 				// avgtime[]
 		((sizeof(double) * NUM_KERNELS) * numranks) + 				// maxtime[]
 		((sizeof(double) * NUM_KERNELS) * numranks) + 				// mintime[]
@@ -1103,9 +1102,8 @@ void print_memory_usage(int numranks, ssize_t STREAM_ARRAY_SIZE) {
 	printf("a[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
 	printf("b[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
 	printf("c[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("a_idx[]:\t%.2f MB\n", ((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("b_idx[]:\t%.2f MB\n", ((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("c_idx[]:\t%.2f MB\n", ((sizeof(int) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
+	printf("IDX1[]:\t%.2f MB\n", ((sizeof(ssize_t) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
+	printf("IDX2[]:\t%.2f MB\n", ((sizeof(ssize_t) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
 	printf("avgtime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
 	printf("maxtime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
 	printf("mintime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
