@@ -15,6 +15,7 @@ With RaiderSTREAM, we address these two limitations by:
 <!-- ### Table of Contents -->
 
 ### Benchmark Kernels
+<!-- TODO: change bytes/iter column to reflect the new bytes array -->
 ![Benchmark Kernels](readme_images/kernels.png)
 
 ### How are bytes and FLOP/s counted?
@@ -23,6 +24,14 @@ With RaiderSTREAM, we address these two limitations by:
 * $\alpha$ = number of memory accesses per iteration of the main STREAM loops
 * $\gamma$ = size in bytes of `STREAM_TYPE` (8 bytes for doubles)
 * $\lambda$ = `STREAM_ARRAY_SIZE`
+
+### Setting Problem Size (STREAM_ARRAY_SIZE)
+Different from the original STREAM implementation, we allow users to set the problem size at runtime to make RaiderSTREAM more suitable for automating the testing of scalability using different problem size. The easiest way to run RaiderSTREAM is using and modifying the run script to meet your use cases. You can change the `STREAM_ARRAY_SIZE` variable to set the problem size at runtime.
+
+If you insist on compiling files individually, you can set the problem size using the `-n` flag at runtime. For example:
+```
+mpirun -np 2 a.out -n 10000000
+```
 
 ### Build
 Running 
@@ -58,25 +67,21 @@ make stream_mpi
 make stream_oshmem
 ```
 
-##### Clean
-Running
+##### Cleaning
+Clean build directory:
 ```
-make clean
+make clean_build
 ```
-will delete the executables and delete the build directory.
-
+Clean output directory:
 ```
 make clean_outputs
 ```
-will delete the `outputs` directory and its contents.
-
-
+Empty IDX1.txt and IDX2.txt:
+```
+make clean_inputs
+```
 
 ##### Compiler Flags and Environment Variables
-* `STREAM_ARRAY_SIZE`: the problem size, or the size of the STREAM arrays
-    * Ex: `-DSTREAM_ARRAY_SIZE=10000000`
-<br/>
-
 * `NTIMES`: the kernels are run on each element of the STREAM arrays `NTIMES` times. The best MB/s for each kernel amongst all `NTIMES` runs is reported in the benchmark's output.
     * Ex: `-DNTIMES=10`
 <br/>
@@ -92,6 +97,23 @@ will delete the `outputs` directory and its contents.
 * `TUNED`: if you look at the bottom of the .c source files, there are additional blank functions that users can write in their own custom kernels. If you want to run your custom kernels, pass in this flag.
     * Ex: `-DTUNED`
 
+* `CUSTOM`: enable this flag to use your own IDX arrays for the scatter/gather kernels. The source code will read inputs from IDX1.txt and IDX2.txt.
+    * Ex: `-DTUNED`
+
+### Custom Memory Access Patterns
+To make RaiderSTREAM more configurable. We have added a simple way to input your own IDX array indices. If `-DCUSTOM` is enabled at compile time, the source code will read in the contents of IDX1.txt and IDX2.txt to the respective IDX arrays used simulate irregularity in the scatter/gather kernels.
+
+For the OpenMP implementation, the number of array indices must match the user-specified STREAM_ARRAY_SIZE, and each array index must be on its own line in the file, otherwise an error will occur.
+
+For the MPI and OpenSHMEM implementations, the number of indices in the IDX files only needs to match STREAM_ARRAY_SIZE/numbPEs. 
+
+To make it easier to populate these input files, we have included a file called arraygen.c, where you can write your own function for producing the indices in a way that matches your use case of interest. If that is done properly, you can populate the IDX files like so:
+```
+gcc arraygen.c -o arraygen.exe
+./arraygen.exe > IDX1.txt
+./arraygen.exe > IDX2.txt
+```
+
 ### Run Rules
 STREAM is intended to measure the bandwidth from main memory. However, it can be used to measure cache bandwidth as well by the adjusting the environment variable STREAM_ARRAY_SIZE such that the memory needed to allocate the arrays can fit in the cache level of interest. The general rule for STREAM_ARRAY_SIZE is that each array must be at least 4x the size of the sum of all the lastlevel caches, or 1 million elements – whichever is larger
 
@@ -103,7 +125,7 @@ The gather and scatter benchmark kernels are similar in that they both provide i
 ![Gather Scatter](readme_images/gather_scatter.png)
 
 ### Multi-Node Support
-RadierSTREAM does not currently use any inter-process communication routines such as MPI_SEND or SHMEM_PUT within the benchmark kernels. Instead, the programming models are essentially leveraged as a <b>resource allocator</b>. The STREAM arrays are distributed evenly across a user-specified number of processing elements (PEs), each PE computes the kernel and writes the result back to its own array segment.
+RadierSTREAM does not currently use any inter-process communication routines such as MPI_SEND or SHMEM_PUT within the benchmark kernels. Instead, the programming models are essentially leveraged as a <b>resource allocator</b>. It is worth noting that for the multi-node implementations, each processing element DOES NOT get its own copy of the STREAM arrays. The STREAM arrays are distributed evenly across a user-specified number of processing elements (PEs), each PE computes the kernel and writes the result back to its own array segment.
 
 ![Multi-Node Support](readme_images/oshrun.png)
 
