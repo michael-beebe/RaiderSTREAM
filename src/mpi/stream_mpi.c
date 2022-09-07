@@ -118,7 +118,10 @@
 --------------------------------------------------------------------------------------*/
 STREAM_TYPE * restrict a, * restrict b, * restrict c;
 
-size_t		array_elements, array_bytes, array_alignment;
+static ssize_t *IDX1;
+static ssize_t *IDX2;
+
+ssize_t		array_elements, array_bytes, array_alignment;
 
 /*--------------------------------------------------------------------------------------
 - Initialize arrays to store avgtime, maxime, and mintime metrics for each kernel.
@@ -141,18 +144,18 @@ static char	*label[NUM_KERNELS] = {
 	"SCATTER Add:\t", "SCATTER Triad:\t"
 };
 
-extern void init_random_idx_array(int *array, int nelems);
-extern void init_read_idx_array(int *array, int nelems, char *filename);
+extern void init_random_idx_array(ssize_t *array, ssize_t nelems);
+extern void init_read_idx_array(ssize_t *array, ssize_t nelems, char *filename);
 
-extern void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k, int STREAM_ARRAY_SIZE);
+extern void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k, ssize_t STREAM_ARRAY_SIZE);
 extern void print_timer_granularity(int quantum);
 extern void print_info2(double t, double t0, double t1, int quantum);
-extern void print_memory_usage(int numranks, int STREAM_ARRAY_SIZE);
+extern void print_memory_usage(int numranks, ssize_t STREAM_ARRAY_SIZE);
 
 extern void checkSTREAMresults(STREAM_TYPE *AvgErrByRank, int numranks);
 extern void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr);
 
-extern void parse_opts(int argc, char **argv, int *STREAM_ARRAY_SIZE);
+extern void parse_opts(int argc, char **argv, ssize_t *STREAM_ARRAY_SIZE);
 
 double mysecond();
 
@@ -172,7 +175,7 @@ static STREAM_TYPE AvgError[NUM_ARRAYS];
 
 int main(int argc, char *argv[])
 {
-	int STREAM_ARRAY_SIZE = 10000000; // Default STREAM_ARRAY_SIZE is 10000000
+	ssize_t STREAM_ARRAY_SIZE = 10000000; // Default STREAM_ARRAY_SIZE is 10000000
 
     int			quantum, checktick();
     int			BytesPerWord;
@@ -186,11 +189,33 @@ int main(int argc, char *argv[])
 	STREAM_TYPE *AvgErrByRank;
 
 	parse_opts(argc, argv, &STREAM_ARRAY_SIZE);
+
+/*--------------------------------------------------------------------------------------
+    - Setup MPI
+--------------------------------------------------------------------------------------*/
+    rc = MPI_Init(NULL, NULL);
+	t0 = MPI_Wtime();
+    if (rc != MPI_SUCCESS) {
+       printf("ERROR: MPI Initialization failed with return code %d\n",rc);
+       exit(1);
+    }
+	// if either of these fail there is something really screwed up!
+	MPI_Comm_size(MPI_COMM_WORLD, &numranks);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+
+/* --- NEW FEATURE --- distribute requested storage across MPI ranks --- */
+	array_elements = STREAM_ARRAY_SIZE / numranks;		// don't worry about rounding vs truncation
+	array_alignment = 64;						// Can be modified -- provides partial support for adjusting relative alignment
+
+// Dynamically allocate the arrays using "posix_memalign()"
+// NOTE that the OFFSET parameter is not used in this version of the code!
+	array_bytes = array_elements * sizeof(STREAM_TYPE);
+
 /*--------------------------------------------------------------------------------------
 - Initialize idx arrays (which will be used by gather/scatter kernels)
 --------------------------------------------------------------------------------------*/
-	int IDX1[STREAM_ARRAY_SIZE];
-	int IDX2[STREAM_ARRAY_SIZE];
+	IDX1 = malloc(array_elements * sizeof IDX1);
+	IDX2 = malloc(array_elements * sizeof IDX2);
 
 /*--------------------------------------------------------------------------------------
 - Initialize array for storing the number of bytes that needs to be counted for
@@ -233,19 +258,6 @@ int main(int argc, char *argv[])
 	};
 
 /*--------------------------------------------------------------------------------------
-    - Setup MPI
---------------------------------------------------------------------------------------*/
-    rc = MPI_Init(NULL, NULL);
-	t0 = MPI_Wtime();
-    if (rc != MPI_SUCCESS) {
-       printf("ERROR: MPI Initialization failed with return code %d\n",rc);
-       exit(1);
-    }
-	// if either of these fail there is something really screwed up!
-	MPI_Comm_size(MPI_COMM_WORLD, &numranks);
-	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-
-/*--------------------------------------------------------------------------------------
     - Set the average errror for each array to 0 as default, since we haven't done
         anything with the arrays yet. AvgErrByPE will be updated using an OpenSHMEM
         collective later on.
@@ -261,14 +273,6 @@ int main(int argc, char *argv[])
     for (int i=0;i<NUM_KERNELS;i++) {
         mintime[i] = FLT_MAX;
     }
-
-    /* --- NEW FEATURE --- distribute requested storage across MPI ranks --- */
-	array_elements = STREAM_ARRAY_SIZE / numranks;		// don't worry about rounding vs truncation
-    array_alignment = 64;						// Can be modified -- provides partial support for adjusting relative alignment
-
-	// Dynamically allocate the arrays using "posix_memalign()"
-	// NOTE that the OFFSET parameter is not used in this version of the code!
-    array_bytes = array_elements * sizeof(STREAM_TYPE);
 
 /*--------------------------------------------------------------------------------------
 	- Allocate memory for the STREAM arrays
@@ -749,8 +753,9 @@ checktick() {
     to utilized indices in index array. This simplifies the scatter kernel
     verification process and precludes the need for atomic operations.
 --------------------------------------------------------------------------------------*/
-void init_random_idx_array(int *array, int nelems) {
-	int i, success, idx;
+void init_random_idx_array(ssize_t *array, ssize_t nelems) {
+	ssize_t i, idx;
+	int success = 0;
 
 	// Array to track used indices
 	char* flags = (char*) malloc(sizeof(char)*nelems);
@@ -776,7 +781,7 @@ void init_random_idx_array(int *array, int nelems) {
 /*--------------------------------------------------------------------------------------
  - Initializes the IDX arrays with the contents of IDX1.txt and IDX2.txt, respectively
 --------------------------------------------------------------------------------------*/
-void init_read_idx_array(int *array, int nelems, char *filename) {
+void init_read_idx_array(ssize_t *array, ssize_t nelems, char *filename) {
     FILE *file;
     file = fopen(filename, "r");
     if (!file) {
@@ -784,8 +789,8 @@ void init_read_idx_array(int *array, int nelems, char *filename) {
         exit(1);
     }
 
-    for (int i=0; i < nelems; i++) {
-        fscanf(file, "%d", &array[i]);
+    for (ssize_t i=0; i < nelems; i++) {
+        fscanf(file, "%zd", &array[i]);
     }
 
     fclose(file);
@@ -978,7 +983,7 @@ void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
 
 //========================================================================================
 
-void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k, int STREAM_ARRAY_SIZE) {
+void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k, ssize_t STREAM_ARRAY_SIZE) {
     printf(HLINE);
 		printf("RaiderSTREAM\n");
 		printf(HLINE);
@@ -1077,7 +1082,7 @@ void print_info2(double t, double t0, double t1, int quantum) {
 }
 
 
-void print_memory_usage(int numranks, int STREAM_ARRAY_SIZE) {
+void print_memory_usage(int numranks, ssize_t STREAM_ARRAY_SIZE) {
 	unsigned long totalMemory = \
 		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// a[]
 		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// b[]
@@ -1115,7 +1120,7 @@ void print_memory_usage(int numranks, int STREAM_ARRAY_SIZE) {
 	printf(HLINE);
 }
 
-void parse_opts(int argc, char **argv, int *STREAM_ARRAY_SIZE) {
+void parse_opts(int argc, char **argv, ssize_t *STREAM_ARRAY_SIZE) {
     int option;
     while( (option = getopt(argc, argv, "n:t:h")) != -1 ) {
         switch (option) {
