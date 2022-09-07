@@ -99,8 +99,8 @@ STREAM_TYPE * restrict c;
 /*--------------------------------------------------------------------------------------
 - Initialize IDX arrays (which will be used by gather/scatter kernels)
 --------------------------------------------------------------------------------------*/
-static int *IDX1;
-static int *IDX2;
+static ssize_t *IDX1;
+static ssize_t *IDX2;
 
 /*--------------------------------------------------------------------------------------
 - Initialize arrays to store avgtime, maxime, and mintime metrics for each kernel.
@@ -127,18 +127,18 @@ extern void parse_opts(int argc, char **argv, ssize_t *stream_array_size);
 
 extern double mysecond();
 
-extern void init_random_idx_array(int *array, int nelems);
-extern void init_read_idx_array(int *array, int nelems, char *filename);
-extern void init_stream_array(STREAM_TYPE *array, size_t array_elements, STREAM_TYPE value);
+extern void init_random_idx_array(ssize_t *array, ssize_t nelems);
+extern void init_read_idx_array(ssize_t *array, ssize_t nelems, char *filename);
+extern void init_stream_array(STREAM_TYPE *array, ssize_t array_elements, STREAM_TYPE value);
 
-extern void checkSTREAMresults(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int stream_array_size);
+extern void checkSTREAMresults(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t stream_array_size);
 extern void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
-                  STREAM_TYPE exp_val, double epsilon, int* errors, int stream_array_size);
+                  STREAM_TYPE exp_val, double epsilon, int* errors, ssize_t stream_array_size);
 
-extern void print_info1(int BytesPerWord, int stream_array_size);
+extern void print_info1(int BytesPerWord, ssize_t stream_array_size);
 extern void print_timer_granularity(int quantum);
 extern void print_info2(double t, int quantum);
-extern void print_memory_usage(int stream_array_size);
+extern void print_memory_usage(ssize_t stream_array_size);
 
 #ifdef TUNED
 void tuned_STREAM_Copy();
@@ -179,8 +179,8 @@ int main(int argc, char *argv[])
 	c = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
 
 
-	IDX1 = (int *) malloc(sizeof(int) * stream_array_size+OFFSET);
-	IDX2 = (int *) malloc(sizeof(int) * stream_array_size+OFFSET);
+	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size+OFFSET);
+	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size+OFFSET);
 
 
 	double	bytes[NUM_KERNELS] = {
@@ -588,8 +588,9 @@ double mysecond()
     to utilized indices in index array. This simplifies the scatter kernel
     verification process and precludes the need for atomic operations.
 --------------------------------------------------------------------------------------*/
-void init_random_idx_array(int *array, int nelems) {
-	int i, success, idx;
+void init_random_idx_array(ssize_t *array, ssize_t nelems) {
+	int success;
+	ssize_t i, idx;
 
 	// Array to track used indices
 	char* flags = (char*) malloc(sizeof(char)*nelems);
@@ -601,7 +602,7 @@ void init_random_idx_array(int *array, int nelems) {
 	for (i = 0; i < nelems; i++) {
 		success = 0;
 		while(success == 0){
-			idx = ((int) rand()) % nelems;
+			idx = ((ssize_t) rand()) % nelems;
 			if(flags[idx] == 0){
 				array[i] = idx;
 				flags[idx] = -1;
@@ -609,13 +610,14 @@ void init_random_idx_array(int *array, int nelems) {
 			}
 		}
 	}
+
 	free(flags);
 }
 
 /*--------------------------------------------------------------------------------------
  - Initializes the IDX arrays with the contents of IDX1.txt and IDX2.txt, respectively
 --------------------------------------------------------------------------------------*/
-void init_read_idx_array(int *array, int nelems, char *filename) {
+void init_read_idx_array(ssize_t *array, ssize_t nelems, char *filename) {
     FILE *file;
     file = fopen(filename, "r");
     if (!file) {
@@ -623,8 +625,8 @@ void init_read_idx_array(int *array, int nelems, char *filename) {
         exit(1);
     }
 
-    for (int i=0; i < nelems; i++) {
-        fscanf(file, "%d", &array[i]);
+    for (ssize_t i=0; i < nelems; i++) {
+        fscanf(file, "%zd", &array[i]);
     }
 
     fclose(file);
@@ -633,9 +635,9 @@ void init_read_idx_array(int *array, int nelems, char *filename) {
 /*--------------------------------------------------------------------------------------
  - Populate specified array with the specified value
 --------------------------------------------------------------------------------------*/
-void init_stream_array(STREAM_TYPE *array, size_t array_elements, STREAM_TYPE value) {
+void init_stream_array(STREAM_TYPE *array, ssize_t array_elements, STREAM_TYPE value) {
     #pragma omp parallel for
-    for (int i = 0; i < array_elements; i++) {
+    for (ssize_t i = 0; i < array_elements; i++) {
         array[i] = value;
     }
 }
@@ -648,7 +650,7 @@ void init_stream_array(STREAM_TYPE *array, size_t array_elements, STREAM_TYPE va
 #define abs(a) ((a) >= 0 ? (a) : -(a))
 #endif
 
-void checkSTREAMresults(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int stream_array_size)
+void checkSTREAMresults(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t stream_array_size)
 {
 	STREAM_TYPE aj,bj,cj;
 	STREAM_TYPE aSumErr, bSumErr, cSumErr;
@@ -740,8 +742,8 @@ void checkSTREAMresults(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int stre
 
 /* Checks error results against epsilon and prints debug info */
 void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
-                  STREAM_TYPE exp_val, double epsilon, int* errors, int stream_array_size) {
-  int i;
+                  STREAM_TYPE exp_val, double epsilon, int* errors, ssize_t stream_array_size) {
+  ssize_t i;
   int ierr = 0;
 
 	if (abs(avg_err/exp_val) > epsilon) {
@@ -767,7 +769,7 @@ void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
 /*--------------------------------------------------------------------------------------
  - Functions for printing initial system information and so forth
 --------------------------------------------------------------------------------------*/
-void print_info1(int BytesPerWord, int stream_array_size) {
+void print_info1(int BytesPerWord, ssize_t stream_array_size) {
     printf(HLINE);
     printf("RaiderSTREAM\n");
     printf(HLINE);
@@ -824,7 +826,7 @@ void print_info2(double t, int quantum) {
     printf(HLINE);
 }
 
-void print_memory_usage(int stream_array_size) {
+void print_memory_usage(ssize_t stream_array_size) {
 	unsigned long totalMemory = \
 		(sizeof(STREAM_TYPE) * (stream_array_size)) + 	// a[]
 		(sizeof(STREAM_TYPE) * (stream_array_size)) + 	// b[]
