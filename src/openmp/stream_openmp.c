@@ -831,9 +831,8 @@ void print_memory_usage(ssize_t stream_array_size) {
 		(sizeof(STREAM_TYPE) * (stream_array_size)) + 	// a[]
 		(sizeof(STREAM_TYPE) * (stream_array_size)) + 	// b[]
 		(sizeof(STREAM_TYPE) * (stream_array_size)) + 	// c[]
-		(sizeof(ssize_t) * (stream_array_size)) + 			// a_idx[]
-		(sizeof(ssize_t) * (stream_array_size)) + 			// b_idx[]
-		(sizeof(ssize_t) * (stream_array_size)) + 			// c_idx[]
+		(sizeof(ssize_t) * (stream_array_size)) + 			// IDX1[]
+		(sizeof(ssize_t) * (stream_array_size)) + 			// IDX2[]
 		(sizeof(double) * NUM_KERNELS) + 				// avgtime[]
 		(sizeof(double) * NUM_KERNELS) + 				// maxtime[]
 		(sizeof(double) * NUM_KERNELS) + 				// mintime[]
@@ -847,9 +846,8 @@ void print_memory_usage(ssize_t stream_array_size) {
 	printf("a[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (stream_array_size)) / 1024.0 / 1024.0);
 	printf("b[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (stream_array_size)) / 1024.0 / 1024.0);
 	printf("c[]:\t\t%.2f MB\n", (sizeof(STREAM_TYPE) * (stream_array_size)) / 1024.0 / 1024.0);
-	printf("a_idx[]:\t%.2f MB\n", (sizeof(int) * (stream_array_size)) / 1024.0 / 1024.0);
-	printf("b_idx[]:\t%.2f MB\n", (sizeof(int) * (stream_array_size)) / 1024.0 / 1024.0);
-	printf("c_idx[]:\t%.2f MB\n", (sizeof(int) * (stream_array_size)) / 1024.0 / 1024.0);
+	printf("IDX1:\t%.2f MB\n", (sizeof(int) * (stream_array_size)) / 1024.0 / 1024.0);
+	printf("IDX2:\t%.2f MB\n", (sizeof(int) * (stream_array_size)) / 1024.0 / 1024.0);
 	printf("avgtime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
 	printf("maxtime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
 	printf("mintime[]:\t%lu B\n", (sizeof(double) * NUM_KERNELS));
