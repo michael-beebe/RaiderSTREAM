@@ -222,15 +222,15 @@ int main(int argc, char *argv[])
 		3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Add
 		3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Triad
 		// Gather Kernels
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * STREAM_ARRAY_SIZE), // GATHER copy
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * STREAM_ARRAY_SIZE), // GATHER Scale
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * STREAM_ARRAY_SIZE), // GATHER Add
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * STREAM_ARRAY_SIZE), // GATHER Triad
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // GATHER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // GATHER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // GATHER Add
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // GATHER Triad
 		// Scatter Kernels
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * STREAM_ARRAY_SIZE), // SCATTER copy
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * STREAM_ARRAY_SIZE), // SCATTER Scale
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * STREAM_ARRAY_SIZE), // SCATTER Add
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * STREAM_ARRAY_SIZE), // SCATTER Triad
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER Add
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER Triad
 	};
 
 	double   flops[NUM_KERNELS] = {
