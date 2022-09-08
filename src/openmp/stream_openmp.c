@@ -238,6 +238,9 @@ void scatter_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES],
 	times[SCATTER_TRIAD][k] = t1 - t0;
 }
 
+#ifdef _OPENMP
+extern int omp_get_num_threads();
+#endif
 
 int main(int argc, char *argv[]) {
 	ssize_t stream_array_size = 10000000; // Default stream_array_size is 10000000
@@ -268,15 +271,15 @@ int main(int argc, char *argv[]) {
 		3 * sizeof(STREAM_TYPE) * stream_array_size, // Add
 		3 * sizeof(STREAM_TYPE) * stream_array_size, // Triad
 		// Gather Kernels
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // GATHER copy
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // GATHER Scale
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // GATHER Add
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // GATHER Triad
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // GATHER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // GATHER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // GATHER Add
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // GATHER Triad
 		// Scatter Kernels
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // SCATTER copy
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(int))) * stream_array_size), // SCATTER Scale
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // SCATTER Add
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(int))) * stream_array_size), // SCATTER Triad
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // SCATTER Add
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // SCATTER Triad
 	};
 
 	double   flops[NUM_KERNELS] = {

@@ -3,6 +3,32 @@
 
 #include "stream_openmp.h"
 
+/* Checks error results against epsilon and prints debug info */
+void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
+                  STREAM_TYPE exp_val, double epsilon, int* errors, ssize_t stream_array_size) {
+  ssize_t i;
+  int ierr = 0;
+
+	if (abs(avg_err/exp_val) > epsilon) {
+		(*errors)++;
+		printf ("Failed Validation on array %s, AvgRelAbsErr > epsilon (%e)\n", label, epsilon);
+		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n", exp_val, avg_err, abs(avg_err/exp_val));
+		ierr = 0;
+		for (i=0; i<stream_array_size; i++) {
+			if (abs(array[i]/exp_val-1.0) > epsilon) {
+				ierr++;
+#ifdef VERBOSE
+				if (ierr < 10) {
+					printf("         array %s: index: %ld, expected: %e, observed: %e, relative error: %e\n",
+						label, i, exp_val, array[i], abs((exp_val-array[i])/avg_err));
+				}
+#endif
+			}
+		}
+		printf("     For array %s, %d errors were found.\n", label, ierr);
+	}
+}
+
 double validate_values(STREAM_TYPE aj, STREAM_TYPE bj, STREAM_TYPE cj, ssize_t stream_array_size, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c) {
 	STREAM_TYPE aSumErr, bSumErr, cSumErr;
 	STREAM_TYPE aAvgErr, bAvgErr, cAvgErr;
@@ -165,6 +191,38 @@ void scatter_validation(ssize_t stream_array_size, STREAM_TYPE scalar, int *is_v
 	printf ("    Observed a(1), b(1), c(1): %f %f %f \n",a[1],b[1],c[1]);
 	printf ("    Rel Errors on a, b, c:     %e %e %e \n",abs(aAvgErr/aj),abs(bAvgErr/bj),abs(cAvgErr/cj));
 #endif
+}
+
+/*--------------------------------------------------------------------------------------
+ - Check STREAM results to ensure acuracy
+--------------------------------------------------------------------------------------*/
+
+void checkSTREAMresults(int *is_validated)
+{
+	int incorrect = 0;
+	double epsilon;
+
+	if (sizeof(STREAM_TYPE) == 4) {
+		epsilon = 1.e-6;
+	}
+	else if (sizeof(STREAM_TYPE) == 8) {
+		epsilon = 1.e-13;
+	}
+	else {
+		printf("WEIRD: sizeof(STREAM_TYPE) = %lu\n",sizeof(STREAM_TYPE));
+		epsilon = 1.e-6;
+	}
+
+	for(int i = 0; i < NUM_KERNELS; i++) {
+		if(is_validated[i] != 1) {
+			printf("Kernel %s validation not correct\n", kernel_map[i]);
+			incorrect++;
+		}
+	}
+
+	if(incorrect == 0) {
+		printf ("Solution Validates: avg error less than %e on all arrays\n", 	epsilon);
+	}
 }
 
 #endif
