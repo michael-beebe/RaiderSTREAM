@@ -657,14 +657,6 @@ int main(int argc, char *argv[])
 /*--------------------------------------------------------------------------------------
 	// Validate the results
 --------------------------------------------------------------------------------------*/
-// #ifdef INJECTERROR
-// 	a[11] = 100.0 * a[11];
-// #endif
-// 	/* --- Collect the Average Errors for Each Array on Rank 0 --- */
-// 	computeSTREAMerrors(&AvgError[0], &AvgError[1], &AvgError[2]);
-// 	MPI_Gather(AvgError, NUM_ARRAYS, MPI_DOUBLE, AvgErrByRank, NUM_ARRAYS, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-	/* -- Combined averaged errors and report on Rank 0 only --- */
 	if (myrank == 0) {
 #ifdef VERBOSE
 		for (k=0; k<numranks; k++) {
@@ -693,56 +685,4 @@ int main(int argc, char *argv[])
 
     MPI_Finalize();
 	return(0);
-}
-
-
-//========================================================================================
-// 				VALIDATION PIECE
-//========================================================================================
-void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr)
-{
-	STREAM_TYPE aj,bj,cj,scalar;
-	STREAM_TYPE aSumErr,bSumErr,cSumErr;
-	ssize_t	j;
-	int	k;
-
-    /* reproduce initialization */
-	aj = 1.0;
-	bj = 2.0;
-	cj = 0.0;
-    /* a[] is modified during timing check */
-	aj = 2.0E0 * aj;
-
-    /* now execute timing loop */
-	scalar = SCALAR;
-	for (k=0; k<NTIMES; k++)
-        {
-            cj = aj;
-            bj = scalar*cj;
-            cj = aj+bj;
-            aj = bj+scalar*cj;
-
-            cj = aj;
-            bj = scalar*cj;
-            cj = aj+bj;
-            aj = bj+scalar*cj;
-
-            cj = aj;
-            bj = scalar*cj;
-            cj = aj+bj;
-            aj = bj+scalar*cj;
-        }
-
-    /* accumulate deltas between observed and expected results */
-	aSumErr = 0.0;
-	bSumErr = 0.0;
-	cSumErr = 0.0;
-	for (j=0; j<array_elements; j++) {
-		aSumErr += abs(a[j] - aj);
-		bSumErr += abs(b[j] - bj);
-		cSumErr += abs(c[j] - cj);
-	}
-	*aAvgErr = aSumErr / (STREAM_TYPE) array_elements;
-	*bAvgErr = bSumErr / (STREAM_TYPE) array_elements;
-	*cAvgErr = cSumErr / (STREAM_TYPE) array_elements;
 }
