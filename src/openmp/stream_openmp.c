@@ -3,6 +3,7 @@
 /* Original STREAM code developed by John D. McCalpin                    */
 /* Programmers: Michael Beebe                                            */
 /*              Brody Williams                                           */
+/*              Pedro DaSilva                                            */
 /*              Stephen Devaney                                          */
 /* This program measures memory transfer rates in MB/s for simple        */
 /* computational kernels coded in C.                                     */
@@ -13,30 +14,11 @@
 /*  2. You are free to modify this program for your own use,             */
 /*     including commercial use, subject to the publication              */
 /*     restrictions in item 3.                                           */
-/*  3. You are free to publish results obtained from running this        */
-/*     program, or from works that you derive from this program,         */
-/*     with the following limitations:                                   */
-/*     3a. In order to be referred to as "STREAM benchmark results",     */
-/*         published results must be in conformance to the STREAM        */
-/*         Run Rules, (briefly reviewed below) published at              */
-/*         http://www.cs.virginia.edu/stream/ref.html                    */
-/*         and incorporated herein by reference.                         */
-/*         As the copyright holder, John McCalpin retains the            */
-/*         right to determine conformity with the Run Rules.             */
-/*     3b. Results based on modified source code or on runs not in       */
-/*         accordance with the STREAM Run Rules must be clearly          */
-/*         labelled whenever they are published.  Examples of            */
-/*         proper labelling include:                                     */
-/*           "tuned STREAM benchmark results"                            */
-/*           "based on a variant of the STREAM benchmark code"           */
-/*         Other comparable, clear, and reasonable labelling is          */
-/*         acceptable.                                                   */
-/*     3c. Submission of results to the STREAM benchmark web site        */
-/*         is encouraged, but not required.                              */
-/*  4. Use of this program or creation of derived works based on this    */
+/*  3. Use of this program or creation of derived works based on this    */
 /*     program constitutes acceptance of these licensing restrictions.   */
-/*  5. Absolutely no warranty is expressed or implied.                   */
+/*  4. Absolutely no warranty is expressed or implied.                   */
 /*-----------------------------------------------------------------------*/
+
 # include <stdio.h>
 # include <stdlib.h>
 # include <unistd.h>
