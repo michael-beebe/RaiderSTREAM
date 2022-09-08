@@ -156,13 +156,13 @@ int main(int argc, char *argv[])
 
 	parse_opts(argc, argv, &stream_array_size);
 
-	a = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
-	b = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
-	c = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
+	a = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * (stream_array_size+OFFSET));
+	b = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * (stream_array_size+OFFSET));
+	c = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * (stream_array_size+OFFSET));
 
 
-	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size+OFFSET);
-	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size+OFFSET);
+	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * (stream_array_size+OFFSET));
+	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * (stream_array_size+OFFSET));
 
 
 	double	bytes[NUM_KERNELS] = {
