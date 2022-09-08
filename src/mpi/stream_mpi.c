@@ -19,79 +19,9 @@
 /*  4. Absolutely no warranty is expressed or implied.                   */
 /*-----------------------------------------------------------------------*/
 
-# define _XOPEN_SOURCE 600
-
-# include <stdio.h>
-# include <stdlib.h>
-# include <unistd.h>
-# include <math.h>
-# include <float.h>
-# include <string.h>
-# include <limits.h>
-# include <sys/time.h>
-# include <time.h>
-
-# include "mpi.h"
-
-#ifdef NTIMES
-#if NTIMES<=1
-#   define NTIMES	10
-#endif
-#endif
-#ifndef NTIMES
-#   define NTIMES	10
-#endif
-
-
-// Make the scalar coefficient modifiable at compile time.
-// The old value of 3.0 cause floating-point overflows after a relatively small
-// number of iterations.  The new default of 0.42 allows over 2000 iterations for
-// 32-bit IEEE arithmetic and over 18000 iterations for 64-bit IEEE arithmetic.
-// The growth in the solution can be eliminated (almost) completely by setting
-// the scalar value to 0.41421445, but this also means that the error checking
-// code no longer triggers an error if the code does not actually execute the
-// correct number of iterations!
-#ifndef SCALAR
-#define SCALAR 0.42
-#endif
-
-
-// ----------------------- !!! NOTE CHANGE IN DEFINITION !!! ------------------
-// The OFFSET preprocessor variable is not used in this version of the benchmark.
-// The user must change the code at or after the "posix_memalign" array allocations
-//    to change the relative alignment of the pointers.
-// ----------------------- !!! NOTE CHANGE IN DEFINITION !!! ------------------
-#ifndef OFFSET
-#   define OFFSET	0
-#endif
-
-# define HLINE "-------------------------------------------------------------\n"
-
-# ifndef MIN
-# define MIN(x,y) ((x)<(y)?(x):(y))
-# endif
-# ifndef MAX
-# define MAX(x,y) ((x)>(y)?(x):(y))
-# endif
-
-#ifndef STREAM_TYPE
-#define STREAM_TYPE double
-#endif
-
-/*--------------------------------------------------------------------------------------
-- Specifies the total number of benchmark kernels
-- This is important as it is used throughout the benchmark code
---------------------------------------------------------------------------------------*/
-# ifndef NUM_KERNELS
-# define NUM_KERNELS 12
-# endif
-
-/*--------------------------------------------------------------------------------------
-- Specifies the total number of stream arrays used in the main loop
---------------------------------------------------------------------------------------*/
-# ifndef NUM_ARRAYS
-# define NUM_ARRAYS 3
-# endif
+#include "stream_mpi_output.h"
+#include "stream_mpi_tuned.h"
+#include "stream_mpi_validation.h"
 
 /*--------------------------------------------------------------------------------------
 - Initialize the STREAM arrays used in the kernels
@@ -112,47 +42,250 @@ ssize_t		array_elements, array_bytes, array_alignment;
 static double avgtime[NUM_KERNELS] = {0};
 static double maxtime[NUM_KERNELS] = {0};
 static double mintime[NUM_KERNELS];
-
-/*--------------------------------------------------------------------------------------
-- Initialize array to store labels for the benchmark kernels.
---------------------------------------------------------------------------------------*/
-static char	*label[NUM_KERNELS] = {
-    "Copy:\t\t", "Scale:\t\t",
-    "Add:\t\t", "Triad:\t\t",
-	"GATHER Copy:\t", "GATHER Scale:\t",
-	"GATHER Add:\t", "GATHER Triad:\t",
-	"SCATTER Copy:\t", "SCATTER Scale:\t",
-	"SCATTER Add:\t", "SCATTER Triad:\t"
-};
-
-extern void init_random_idx_array(ssize_t *array, ssize_t nelems);
-extern void init_read_idx_array(ssize_t *array, ssize_t nelems, char *filename);
-
-extern void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k, ssize_t STREAM_ARRAY_SIZE);
-extern void print_timer_granularity(int quantum);
-extern void print_info2(double t, double t0, double t1, int quantum);
-extern void print_memory_usage(int numranks, ssize_t STREAM_ARRAY_SIZE);
-
-extern void checkSTREAMresults(STREAM_TYPE *AvgErrByRank, int numranks);
-extern void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr);
-
-extern void parse_opts(int argc, char **argv, ssize_t *STREAM_ARRAY_SIZE);
-
-double mysecond();
-
-#ifdef TUNED
-extern void tuned_STREAM_Copy();
-extern void tuned_STREAM_Scale(STREAM_TYPE scalar);
-extern void tuned_STREAM_Add();
-extern void tuned_STREAM_Triad(STREAM_TYPE scalar);
-#endif
+static double times[NUM_KERNELS][NTIMES];
+static STREAM_TYPE AvgError[NUM_ARRAYS];
+static int is_validated[NUM_KERNELS] = {0};
 
 #ifdef _OPENMP
 extern int omp_get_num_threads();
 #endif
 
-static double times[NUM_KERNELS][NTIMES];
-static STREAM_TYPE AvgError[NUM_ARRAYS];
+void init_arrays(ssize_t stream_array_size) {
+	#pragma omp parallel for
+    for (ssize_t j = 0; j < stream_array_size; j++) {
+		a[j] = 2.0; // 1 or 2? since we are changing the validation we could discuss
+		b[j] = 2.0;
+		c[j] = 0.0;
+    }
+}
+
+void stream_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Copy();
+#else
+#pragma omp parallel for
+		for ( j = 0; j < array_elements; j++)
+			c[j] = a[j];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[COPY][k] = t1 - t0;
+}
+
+void stream_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Scale(scalar);
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			b[j] = scalar * c[j];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[SCALE][k] = t1 - t0;
+}
+
+void stream_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Add();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			c[j] = a[j] + b[j];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[SUM][k] = t1 - t0;
+}
+
+void stream_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+#ifdef TUNED
+        tuned_STREAM_Triad(scalar);
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			a[j] = b[j] + scalar * c[j];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[TRIAD][k] = t1 - t0;
+}
+
+
+void gather_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Copy_Gather();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			c[j] = a[IDX1[j]];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[GATHER_COPY][k] = t1 - t0;
+}
+
+void gather_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Scale_Gather();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			b[j] = scalar * c[IDX2[j]];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[GATHER_SCALE][k] = t1 - t0;
+}
+
+void gather_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Add_Gather();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			c[j] = a[IDX1[j]] + b[IDX2[j]];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[GATHER_SUM][k] = t1 - t0;
+}
+
+void gather_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+#ifdef TUNED
+        tuned_STREAM_Triad(scalar);
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			a[j] = b[j] + scalar * c[j];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[GATHER_TRIAD][k] = t1 - t0;
+}
+
+
+void scatter_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Copy_Scatter();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			c[IDX1[j]] = a[j];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[SCATTER_COPY][k] = t1 - t0;
+}
+
+void scatter_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Scale_Scatter();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			b[IDX2[j]] = scalar * c[j];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[SCATTER_SCALE][k] = t1 - t0;
+}
+
+void scatter_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Add_Scatter();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			c[IDX1[j]] = a[j] + b[j];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[SCATTER_SUM][k] = t1 - t0;
+}
+
+void scatter_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+#ifdef TUNED
+        tuned_STREAM_Triad_Scatter();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			a[IDX2[j]] = b[j] + scalar * c[j];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[SCATTER_TRIAD][k] = t1 - t0;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -274,8 +407,8 @@ int main(int argc, char *argv[])
 /*--------------------------------------------------------------------------------------
 - Initialize idx arrays (which will be used by gather/scatter kernels)
 --------------------------------------------------------------------------------------*/
-	IDX1 = malloc(array_elements * sizeof IDX1);
-	IDX2 = malloc(array_elements * sizeof IDX2);
+	IDX1 = malloc(array_elements * sizeof(ssize_t));
+	IDX2 = malloc(array_elements * sizeof(ssize_t));
 
 /*--------------------------------------------------------------------------------------
     - Initialize the idx arrays on all PEs
@@ -364,216 +497,95 @@ int main(int argc, char *argv[])
     //
 
     scalar = SCALAR;
-    for (k=0; k<NTIMES; k++)
-	{
 // =================================================================================
 //       				 	  ORIGINAL KERNELS
 // =================================================================================
-// ----------------------------------------------
-// 				  COPY KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		// t0 = mysecond();
-		MPI_Barrier(MPI_COMM_WORLD);
+	for(int k = 0; k < NTIMES; k++) {
+	// ----------------------------------------------
+	// 				  COPY KERNEL
+	// ----------------------------------------------
+		stream_copy(STREAM_ARRAY_SIZE, times, k);
+	// ----------------------------------------------
+	// 		 	     SCALE KERNEL
+	// ----------------------------------------------
+		stream_scale(STREAM_ARRAY_SIZE, times, k, scalar);
+	// ----------------------------------------------
+	// 				 ADD KERNEL
+	// ----------------------------------------------
+		stream_sum(STREAM_ARRAY_SIZE, times, k, scalar);
+	// ----------------------------------------------
+	//				TRIAD KERNEL
+	// ----------------------------------------------
+		stream_triad(STREAM_ARRAY_SIZE, times, k, scalar);
+	}
 
-#ifdef TUNED
-        tuned_STREAM_Copy();
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			c[j] = a[j];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		// t1 = mysecond();
-		t1 = MPI_Wtime();
-		times[0][k] = t1 - t0;
-
-// ----------------------------------------------
-// 		 	     SCALE KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef TUNED
-        tuned_STREAM_Scale(scalar);
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			b[j] = scalar*c[j];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		t1 = MPI_Wtime();
-		times[1][k] = t1-t0;
-
-// ----------------------------------------------
-// 				 ADD KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef TUNED
-        tuned_STREAM_Add();
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			c[j] = a[j]+b[j];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		t1 = MPI_Wtime();
-		times[2][k] = t1-t0;
-
-// ----------------------------------------------
-//				TRIAD KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef TUNED
-        tuned_STREAM_Triad(scalar);
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			a[j] = b[j]+scalar*c[j];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		t1 = MPI_Wtime();
-		times[3][k] = t1-t0;
-
+	// ----------------------------------------------
+	//				VALIDATION
+	// ----------------------------------------------
+	if(myrank == 0)
+		stream_validation(STREAM_ARRAY_SIZE, scalar, is_validated, a, b, c, myrank, numranks);
+	
+	MPI_Barrier(MPI_COMM_WORLD);
 // =================================================================================
 //       				 GATHER VERSIONS OF THE KERNELS
 // =================================================================================
-// ----------------------------------------------
-// 				GATHER COPY KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef TUNED
-		tuned_STREAM_Copy_Gather();
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			c[j] = a[IDX1[j]];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		t1 = MPI_Wtime();
-		times[4][k] = t1 - t0;
+	init_arrays(STREAM_ARRAY_SIZE);
+	for(int k = 0; k < NTIMES; k++) {
+	// ----------------------------------------------
+	// 				GATHER COPY KERNEL
+	// ----------------------------------------------
+		gather_copy(STREAM_ARRAY_SIZE, times, k);
+	// ----------------------------------------------
+	// 				GATHER SCALE KERNEL
+	// ----------------------------------------------
+		gather_scale(STREAM_ARRAY_SIZE, times, k, scalar);
+	// ----------------------------------------------
+	// 				GATHER ADD KERNEL
+	// ----------------------------------------------
+		gather_sum(STREAM_ARRAY_SIZE, times, k, scalar);
+	// ----------------------------------------------
+	// 				GATHER TRIAD KERNEL
+	// ----------------------------------------------
+		gather_triad(STREAM_ARRAY_SIZE, times, k, scalar);
+	}
 
-// ----------------------------------------------
-// 				GATHER SCALE KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef TUNED
-		tuned_STREAM_Scale_Gather();
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			b[j] = scalar * c[IDX2[j]];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		t1 = MPI_Wtime();
-		times[5][k] = t1 - t0;
-
-// ----------------------------------------------
-// 				GATHER ADD KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef TUNED
-		tuned_STREAM_Add_Gather();
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			c[j] = a[IDX1[j]] + b[IDX2[j]];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		t1 = MPI_Wtime();
-		times[6][k] = t1 - t0;
-
-// ----------------------------------------------
-// 			   GATHER TRIAD KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef TUNED
-		tuned_STREAM_Triad_Gather();
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			a[j] = b[IDX1[j]] + scalar * c[IDX2[j]];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		t1 = MPI_Wtime();
-		times[7][k] = t1 - t0;
-
+	if(myrank == 0)
+		gather_validation(STREAM_ARRAY_SIZE, scalar, is_validated, a, b, c, myrank, numranks);
+	
+	MPI_Barrier(MPI_COMM_WORLD);
 // =================================================================================
 //						SCATTER VERSIONS OF THE KERNELS
 // =================================================================================
-// ----------------------------------------------
-// 				SCATTER COPY KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef TUNED
-		tuned_STREAM_Copy_Scatter();
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			c[IDX1[j]] = a[j];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		t1 = MPI_Wtime();
-		times[8][k] = t1 - t0;
-
-// ----------------------------------------------
-// 				SCATTER SCALE KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef TUNED
-		tuned_STREAM_Scale_Scatter();
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			b[IDX2[j]] = scalar * c[j];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		t1 = MPI_Wtime();
-		times[9][k] = t1 - t0;
-
-// ----------------------------------------------
-// 				SCATTER ADD KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef TUNED
-		tuned_STREAM_Add_Scatter();
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			c[IDX1[j]] = a[j] + b[j];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		t1 = MPI_Wtime();
-		times[10][k] = t1 - t0;
-
-// ----------------------------------------------
-// 				SCATTER TRIAD KERNEL
-// ----------------------------------------------
-		t0 = MPI_Wtime();
-		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef TUNED
-		tuned_STREAM_Triad_Scatter();
-#else
-#pragma omp parallel for
-		for (j=0; j<array_elements; j++)
-			a[IDX2[j]] = b[j] + scalar * c[j];
-#endif
-		MPI_Barrier(MPI_COMM_WORLD);
-		t1 = MPI_Wtime();
-		times[11][k] = t1 - t0;
+	init_arrays(STREAM_ARRAY_SIZE);
+	for(int k = 0; k < NTIMES; k++) {
+	// ----------------------------------------------
+	// 				SCATTER COPY KERNEL
+	// ----------------------------------------------
+		scatter_copy(STREAM_ARRAY_SIZE, times, k);
+	// ----------------------------------------------
+	// 				SCATTER SCALE KERNEL
+	// ----------------------------------------------
+		scatter_scale(STREAM_ARRAY_SIZE, times, k, scalar);
+	// ----------------------------------------------
+	// 				SCATTER ADD KERNEL
+	// ----------------------------------------------
+		scatter_sum(STREAM_ARRAY_SIZE, times, k, scalar);
+	// ----------------------------------------------
+	// 				SCATTER TRIAD KERNEL
+	// ----------------------------------------------
+		scatter_triad(STREAM_ARRAY_SIZE, times, k, scalar);
 	}
+	
+	if(myrank == 0)
+		scatter_validation(STREAM_ARRAY_SIZE, scalar, is_validated, a, b, c, myrank, numranks);
+	
+	MPI_Barrier(MPI_COMM_WORLD);
 
+#ifdef VERBOSE
 	t0 = MPI_Wtime();
+#endif
 
-    /*	--- SUMMARY --- */
+	/*	--- SUMMARY --- */
 
 	// Because of the MPI_Barrier() calls, the timings from any thread are equally valid.
     // The best estimate of the maximum performance is the minimum of the "outside the barrier"
@@ -591,10 +603,10 @@ int main(int argc, char *argv[])
 		// for each iteration and each kernel, collect the minimum time across all MPI ranks
 		// and overwrite the rank 0 "times" variable with the minimum so the original post-
 		// processing code can still be used.
-		for (k=0; k<NTIMES; k++) {
-			for (j=0; j<NUM_KERNELS; j++) {
+		for (k = 0; k < NTIMES; k++) {
+			for (j = 0; j < NUM_KERNELS; j++) {
 				tmin = 1.0e36;
-				for (i=0; i<numranks; i++) {
+				for (i = 0; i < numranks; i++) {
 					// printf("DEBUG: Timing: iter %d, kernel %lu, rank %d, tmin %f, TbyRank %f\n",k,j,i,tmin,TimesByRank[NUM_KERNELS*NTIMES*i+j*NTIMES+k]);
 					tmin = MIN(tmin, TimesByRank[NUM_KERNELS*NTIMES*i+j*NTIMES+k]);
 				}
@@ -606,8 +618,8 @@ int main(int argc, char *argv[])
 /*--------------------------------------------------------------------------------------
 	Back to the original code, but now using the minimum global timing across all ranks
 --------------------------------------------------------------------------------------*/
-		for (k=1; k<NTIMES; k++) { /* note -- skip first iteration */
-            for (j=0; j<NUM_KERNELS; j++) {
+		for (k = 1; k < NTIMES; k++) { /* note -- skip first iteration */
+            for (j = 0; j < NUM_KERNELS; j++) {
                 avgtime[j] = avgtime[j] + times[j][k];
                 mintime[j] = MIN(mintime[j], times[j][k]);
                 maxtime[j] = MAX(maxtime[j], times[j][k]);
@@ -645,12 +657,12 @@ int main(int argc, char *argv[])
 /*--------------------------------------------------------------------------------------
 	// Validate the results
 --------------------------------------------------------------------------------------*/
-#ifdef INJECTERROR
-	a[11] = 100.0 * a[11];
-#endif
-	/* --- Collect the Average Errors for Each Array on Rank 0 --- */
-	computeSTREAMerrors(&AvgError[0], &AvgError[1], &AvgError[2]);
-	MPI_Gather(AvgError, NUM_ARRAYS, MPI_DOUBLE, AvgErrByRank, NUM_ARRAYS, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+// #ifdef INJECTERROR
+// 	a[11] = 100.0 * a[11];
+// #endif
+// 	/* --- Collect the Average Errors for Each Array on Rank 0 --- */
+// 	computeSTREAMerrors(&AvgError[0], &AvgError[1], &AvgError[2]);
+// 	MPI_Gather(AvgError, NUM_ARRAYS, MPI_DOUBLE, AvgErrByRank, NUM_ARRAYS, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 	/* -- Combined averaged errors and report on Rank 0 only --- */
 	if (myrank == 0) {
@@ -660,7 +672,7 @@ int main(int argc, char *argv[])
 				AvgErrByRank[3*k+1],AvgErrByRank[3*k+2]);
 		}
 #endif
-		checkSTREAMresults(AvgErrByRank,numranks);
+		checkSTREAMresults(is_validated);
 		printf(HLINE);
 	}
 //------------------------------------------------------------------------------------
@@ -684,106 +696,9 @@ int main(int argc, char *argv[])
 }
 
 
-
-
-double mysecond()
-{
-        struct timeval tp;
-        // struct timezone tzp;
-        int i;
-
-        i = gettimeofday(&tp, NULL);
-        return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6 );
-}
-
-
-# define	M	20
-int
-checktick() {
-    int		i, minDelta, Delta;
-    double	t1, t2, timesfound[M];
-
-/*  Collect a sequence of M unique time values from the system. */
-
-    for (i = 0; i < M; i++) {
-	t1 = MPI_Wtime();
-	while( ((t2=MPI_Wtime()) - t1) < 1.0E-6 )
-	    ;
-	timesfound[i] = t1 = t2;
-	}
-
-/*
- * Determine the minimum difference between these M values.
- * This result will be our estimate (in microseconds) for the
- * clock granularity.
- */
-
-    minDelta = 1000000;
-    for (i = 1; i < M; i++) {
-		Delta = (int)( 1.0E6 * (timesfound[i]-timesfound[i-1]));
-		minDelta = MIN(minDelta, MAX(Delta,0));
-	}
-
-   return(minDelta);
-}
-
-
-/*--------------------------------------------------------------------------------------
- - Initializes provided array with random indices within data array
-    bounds. Forces a one-to-one mapping from available data array indices
-    to utilized indices in index array. This simplifies the scatter kernel
-    verification process and precludes the need for atomic operations.
---------------------------------------------------------------------------------------*/
-void init_random_idx_array(ssize_t *array, ssize_t nelems) {
-	ssize_t i, idx;
-	int success = 0;
-
-	// Array to track used indices
-	char* flags = (char*) malloc(sizeof(char)*nelems);
-	for(i = 0; i < nelems; i++){
-		flags[i] = 0;
-	}
-
-	// Iterate and fill each element of the idx array
-	for (i = 0; i < nelems; i++) {
-		success = 0;
-		while(success == 0){
-			idx = ((int) rand()) % nelems;
-			if(flags[idx] == 0){
-				array[i] = idx;
-				flags[idx] = -1;
-				success = 1;
-			}
-		}
-	}
-	free(flags);
-}
-
-/*--------------------------------------------------------------------------------------
- - Initializes the IDX arrays with the contents of IDX1.txt and IDX2.txt, respectively
---------------------------------------------------------------------------------------*/
-void init_read_idx_array(ssize_t *array, ssize_t nelems, char *filename) {
-    FILE *file;
-    file = fopen(filename, "r");
-    if (!file) {
-        perror(filename);
-        exit(1);
-    }
-
-    for (ssize_t i=0; i < nelems; i++) {
-        fscanf(file, "%zd", &array[i]);
-    }
-
-    fclose(file);
-}
-
-
 //========================================================================================
 // 				VALIDATION PIECE
 //========================================================================================
-#ifndef abs
-#define abs(a) ((a) >= 0 ? (a) : -(a))
-#endif
 void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr)
 {
 	STREAM_TYPE aj,bj,cj,scalar;
@@ -831,385 +746,3 @@ void computeSTREAMerrors(STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE
 	*bAvgErr = bSumErr / (STREAM_TYPE) array_elements;
 	*cAvgErr = cSumErr / (STREAM_TYPE) array_elements;
 }
-
-
-
-void checkSTREAMresults (STREAM_TYPE *AvgErrByRank, int numranks)
-{
-	STREAM_TYPE aj,bj,cj,scalar;
-	STREAM_TYPE aSumErr,bSumErr,cSumErr;
-	STREAM_TYPE aAvgErr,bAvgErr,cAvgErr;
-	double epsilon;
-	ssize_t	j;
-	int	k,ierr,err;
-
-	// Repeat the computation of aj, bj, cj because I am lazy
-    /* reproduce initialization */
-	aj = 1.0;
-	bj = 2.0;
-	cj = 0.0;
-    /* a[] is modified during timing check */
-	aj = 2.0E0 * aj;
-    /* now execute timing loop */
-	scalar = SCALAR;
-	for (k=0; k<NTIMES; k++)
-        {
-            cj = aj;
-            bj = scalar*cj;
-            cj = aj+bj;
-            aj = bj+scalar*cj;
-
-            cj = aj;
-            bj = scalar*cj;
-            cj = aj+bj;
-            aj = bj+scalar*cj;
-
-            cj = aj;
-            bj = scalar*cj;
-            cj = aj+bj;
-            aj = bj+scalar*cj;
-        }
-
-	// Compute the average of the average errors contributed by each MPI rank
-	aSumErr = 0.0;
-	bSumErr = 0.0;
-	cSumErr = 0.0;
-	for (k=0; k<numranks; k++) {
-		aSumErr += AvgErrByRank[3*k + 0];
-		bSumErr += AvgErrByRank[3*k + 1];
-		cSumErr += AvgErrByRank[3*k + 2];
-	}
-	aAvgErr = aSumErr / (STREAM_TYPE) numranks;
-	bAvgErr = bSumErr / (STREAM_TYPE) numranks;
-	cAvgErr = cSumErr / (STREAM_TYPE) numranks;
-
-	if (sizeof(STREAM_TYPE) == 4) {
-		epsilon = 1.e-6;
-	}
-	else if (sizeof(STREAM_TYPE) == 8) {
-		epsilon = 1.e-13;
-	}
-	else {
-		printf("WEIRD: sizeof(STREAM_TYPE) = %lu\n",sizeof(STREAM_TYPE));
-		epsilon = 1.e-6;
-	}
-
-	err = 0;
-	if (abs(aAvgErr/aj) > epsilon) {
-		err++;
-		printf ("Failed Validation on array a[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
-		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",aj,aAvgErr,abs(aAvgErr)/aj);
-		ierr = 0;
-		for (j=0; j<array_elements; j++) {
-			if (abs(a[j]/aj-1.0) > epsilon) {
-				ierr++;
-#ifdef VERBOSE
-				if (ierr < 10) {
-					printf("         array a: index: %ld, expected: %e, observed: %e, relative error: %e\n",
-						j,aj,a[j],abs((aj-a[j])/aAvgErr));
-				}
-#endif
-			}
-		}
-		printf("     For array a[], %d errors were found.\n",ierr);
-	}
-	if (abs(bAvgErr/bj) > epsilon) {
-		err++;
-		printf ("Failed Validation on array b[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
-		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",bj,bAvgErr,abs(bAvgErr)/bj);
-		printf ("     AvgRelAbsErr > Epsilon (%e)\n",epsilon);
-		ierr = 0;
-		for (j=0; j<array_elements; j++) {
-			if (abs(b[j]/bj-1.0) > epsilon) {
-				ierr++;
-#ifdef VERBOSE
-				if (ierr < 10) {
-					printf("         array b: index: %ld, expected: %e, observed: %e, relative error: %e\n",
-						j,bj,b[j],abs((bj-b[j])/bAvgErr));
-				}
-#endif
-			}
-		}
-		printf("     For array b[], %d errors were found.\n",ierr);
-	}
-	if (abs(cAvgErr/cj) > epsilon) {
-		err++;
-		printf ("Failed Validation on array c[], AvgRelAbsErr > epsilon (%e)\n",epsilon);
-		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n",cj,cAvgErr,abs(cAvgErr)/cj);
-		printf ("     AvgRelAbsErr > Epsilon (%e)\n",epsilon);
-		ierr = 0;
-		for (j=0; j<array_elements; j++) {
-			if (abs(c[j]/cj-1.0) > epsilon) {
-				ierr++;
-#ifdef VERBOSE
-				if (ierr < 10) {
-					printf("         array c: index: %ld, expected: %e, observed: %e, relative error: %e\n",
-						j,cj,c[j],abs((cj-c[j])/cAvgErr));
-				}
-#endif
-			}
-		}
-		printf("     For array c[], %d errors were found.\n",ierr);
-	}
-	if (err == 0) {
-		printf ("Solution Validates: avg error less than %e on all three arrays\n",epsilon);
-	}
-#ifdef VERBOSE
-	printf ("Results Validation Verbose Results: \n");
-	printf ("    Expected a(1), b(1), c(1): %f %f %f \n",aj,bj,cj);
-	printf ("    Observed a(1), b(1), c(1): %f %f %f \n",a[1],b[1],c[1]);
-	printf ("    Rel Errors on a, b, c:     %e %e %e \n",abs(aAvgErr/aj),abs(bAvgErr/bj),abs(cAvgErr/cj));
-#endif
-}
-
-//========================================================================================
-
-void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k, ssize_t STREAM_ARRAY_SIZE) {
-    printf(HLINE);
-		printf("RaiderSTREAM\n");
-		printf(HLINE);
-		BytesPerWord = sizeof(STREAM_TYPE);
-		printf("This system uses %d bytes per array element.\n", BytesPerWord);
-
-		printf(HLINE);
-#ifdef N
-		printf("*****  WARNING: ******\n");
-		printf("      It appears that you set the preprocessor variable N when compiling this code.\n");
-		printf("      This version of the code uses the preprocesor variable STREAM_ARRAY_SIZE to control the array size\n");
-		printf("      Reverting to default value of STREAM_ARRAY_SIZE=%llu\n",(unsigned long long) STREAM_ARRAY_SIZE);
-		printf("*****  WARNING: ******\n");
-#endif
-		if (OFFSET != 0) {
-			printf("*****  WARNING: ******\n");
-			printf("   This version ignores the OFFSET parameter.\n");
-			printf("*****  WARNING: ******\n");
-		}
-
-		printf("Total Aggregate Array size = %llu (elements)\n" , (unsigned long long) STREAM_ARRAY_SIZE);
-		printf("Total Aggregate Memory per array = %.1f MiB (= %.1f GiB).\n",
-			BytesPerWord * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.0),
-			BytesPerWord * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.0/1024.0));
-		printf("Total Aggregate memory required = %.1f MiB (= %.1f GiB).\n",
-			(3.0 * BytesPerWord) * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024.),
-			(3.0 * BytesPerWord) * ( (double) STREAM_ARRAY_SIZE / 1024.0/1024./1024.));
-		printf("Data is distributed across %d MPI ranks\n",numranks);
-		printf("   Array size per MPI rank = %llu (elements)\n" , (unsigned long long) array_elements);
-		printf("   Memory per array per MPI rank = %.1f MiB (= %.1f GiB).\n",
-			BytesPerWord * ( (double) array_elements / 1024.0/1024.0),
-			BytesPerWord * ( (double) array_elements / 1024.0/1024.0/1024.0));
-		printf("   Total memory per MPI rank = %.1f MiB (= %.1f GiB).\n",
-			(3.0 * BytesPerWord) * ( (double) array_elements / 1024.0/1024.),
-			(3.0 * BytesPerWord) * ( (double) array_elements / 1024.0/1024./1024.));
-
-		printf(HLINE);
-		printf("Each kernel will be executed %d times.\n", NTIMES);
-		printf(" The *best* time for each kernel (excluding the first iteration)\n");
-		printf(" will be used to compute the reported bandwidth.\n");
-		printf("The SCALAR value used for this run is %f\n",SCALAR);
-
-#ifdef _OPENMP
-		printf(HLINE);
-#pragma omp parallel
-		{
-#pragma omp master
-		{
-			k = omp_get_num_threads();
-			printf ("Number of Threads requested for each MPI rank = %i\n",k);
-			}
-		}
-#endif
-
-#ifdef _OPENMP
-		k = 0;
-#pragma omp parallel
-#pragma omp atomic
-			k++;
-		printf ("Number of Threads counted for rank 0 = %i\n",k);
-#endif
-}
-
-void print_timer_granularity(int quantum) {
-    printf(HLINE);
-
-    if  ( (quantum = checktick()) >= 1)
-    printf("Your timer granularity/precision appears to be "
-        "%d microseconds.\n", quantum);
-    else {
-    printf("Your timer granularity appears to be "
-        "less than one microsecond.\n");
-    quantum = 1;
-    }
-}
-
-void print_info2(double t, double t0, double t1, int quantum) {
-    	printf("Each test below will take on the order"
-		" of %d microseconds.\n", (int) t  );
-		// printf("   (= %d timer ticks)\n", (int) (t/quantum) );
-		printf("   (= %d timer ticks)\n", (int) (t) );
-		printf("Increase the size of the arrays if this shows that\n");
-		printf("you are not getting at least 20 timer ticks per test.\n");
-
-		printf(HLINE);
-
-		printf("WARNING -- The above is only a rough guideline.\n");
-		printf("For best results, please be sure you know the\n");
-		printf("precision of your system timer.\n");
-		printf(HLINE);
-#ifdef VERBOSE
-		t1 = MPI_Wtime();
-		printf("VERBOSE: total setup time for rank 0 = %f seconds\n", t1 - t0);
-		printf(HLINE);
-#endif
-}
-
-
-void print_memory_usage(int numranks, ssize_t STREAM_ARRAY_SIZE) {
-	unsigned long totalMemory = \
-		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// a[]
-		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// b[]
-		((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) + 	// c[]
-		((sizeof(ssize_t) * (STREAM_ARRAY_SIZE)) * numranks) + 			// IDX1[]
-		((sizeof(ssize_t) * (STREAM_ARRAY_SIZE)) * numranks) + 			// IDX2[]
-		((sizeof(double) * NUM_KERNELS) * numranks) + 				// avgtime[]
-		((sizeof(double) * NUM_KERNELS) * numranks) + 				// maxtime[]
-		((sizeof(double) * NUM_KERNELS) * numranks) + 				// mintime[]
-		((sizeof(char) * NUM_KERNELS) * numranks) +					// label[]
-		((sizeof(double) * NUM_KERNELS) * numranks);				// bytes[]
-
-#ifdef VERBOSE // if -DVERBOSE enabled break down memory usage by each array
-	printf("-----------------------------------------\n");
-	printf("     VERBOSE Memory Breakdown\n");
-	printf("-----------------------------------------\n");
-	printf("a[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("b[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("c[]:\t\t%.2f MB\n", ((sizeof(STREAM_TYPE) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("IDX1[]:\t%.2f MB\n", ((sizeof(ssize_t) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("IDX2[]:\t%.2f MB\n", ((sizeof(ssize_t) * (STREAM_ARRAY_SIZE)) * numranks) / 1024.0 / 1024.0);
-	printf("avgtime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
-	printf("maxtime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
-	printf("mintime[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
-	printf("label[]:\t%lu B\n", ((sizeof(char) * NUM_KERNELS) * numranks));
-	printf("bytes[]:\t%lu B\n", ((sizeof(double) * NUM_KERNELS) * numranks));
-	printf("-----------------------------------------\n");
-	printf("Total Memory Allocated Across All Ranks: %.2f MB\n", totalMemory / 1024.0 / 1024.0);
-	printf("-----------------------------------------\n");
-#else
-	printf("Totaly Memory Allocated Across All Ranks: %.2f MB\n", totalMemory / 1024.0 / 1024.0);
-#endif
-	printf(HLINE);
-}
-
-void parse_opts(int argc, char **argv, ssize_t *STREAM_ARRAY_SIZE) {
-    int option;
-    while( (option = getopt(argc, argv, "n:t:h")) != -1 ) {
-        switch (option) {
-            case 'n':
-                *STREAM_ARRAY_SIZE = atoi(optarg);
-                break;
-            case 'h':
-                printf("Usage: -n <STREAM_ARRAY_SIZE>\n");
-                exit(2);
-			
-        }
-    }
-}
-
-/* stubs for "tuned" versions of the kernels */
-#ifdef TUNED
-// =================================================================================
-//       				 	  ORIGINAL KERNELS
-// =================================================================================
-void tuned_STREAM_Copy()
-{
-	ssize_t j;
-#pragma omp parallel for
-    for (j=0; j<STREAM_ARRAY_SIZE; j++)
-        c[j] = a[j];
-}
-
-void tuned_STREAM_Scale(STREAM_TYPE scalar)
-{
-	ssize_t j;
-#pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-	    b[j] = scalar*c[j];
-}
-
-void tuned_STREAM_Add()
-{
-	ssize_t j;
-#pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-	    c[j] = a[j]+b[j];
-}
-
-void tuned_STREAM_Triad(STREAM_TYPE scalar)
-{
-	ssize_t j;
-#pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-	    a[j] = b[j]+scalar*c[j];
-}
-// =================================================================================
-//       				 GATHER VERSIONS OF THE KERNELS
-// =================================================================================
-void tuned_STREAM_Copy_Gather() {
-	ssize_t j;
-#pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-		c[j] = a[a_idx[j]];
-}
-
-void tuned_STREAM_Scale_Gather(STREAM_TYPE scalar) {
-	ssize_t j;
-#pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-		b[j] = scalar * c[c_idx[j]];
-}
-
-void tuned_STREAM_Add_Gather() {
-	ssize_t j;
-#pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-		c[j] = a[a_idx[j]] + b[b_idx[j]];
-}
-
-void tuned_STREAM_Triad_Gather(STREAM_TYPE scalar) {
-	ssize_t j;
-#pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-		a[j] = b[b_idx[j]] + scalar * c[c_idx[j]];
-}
-
-// =================================================================================
-//						SCATTER VERSIONS OF THE KERNELS
-// =================================================================================
-void tuned_STREAM_Copy_Scatter() {
-	ssize_t j;
-#pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-		c[c_idx[j]] = a[j];
-}
-
-void tuned_STREAM_Scale_Scatter(STREAM_TYPE scalar) {
-	ssize_t j;
-#pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-		b[b_idx[j]] = scalar * c[j];
-}
-
-void tuned_STREAM_Add_Scatter() {
-	ssize_t j;
-#pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-		c[a_idx[j]] = a[j] + b[j];
-}
-
-void tuned_STREAM_Triad_Scatter(STREAM_TYPE scalar) {
-	ssize_t j;
-#pragma omp parallel for
-	for (j=0; j<STREAM_ARRAY_SIZE; j++)
-		a[a_idx[j]] = b[j] + scalar * c[j];
-}
-/* end of stubs for the "tuned" versions of the kernels */
-#endif
