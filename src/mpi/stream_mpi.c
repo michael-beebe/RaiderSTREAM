@@ -203,7 +203,7 @@ void gather_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 #else
 #pragma omp parallel for
 		for (j = 0; j < array_elements; j++)
-			a[j] = b[j] + scalar * c[j];
+			a[j] = b[IDX1[j]] + scalar * c[IDX2[j]];
 #endif
 		MPI_Barrier(MPI_COMM_WORLD);
 		t1 = MPI_Wtime();
