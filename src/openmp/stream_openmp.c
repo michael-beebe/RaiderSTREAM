@@ -59,13 +59,14 @@ void init_arrays(ssize_t stream_array_size) {
 
 void stream_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
+	ssize_t j;
 
 	t0 = mysecond();
 #ifdef TUNED
     	tuned_STREAM_Copy();
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 		c[j] = a[j];
 #endif
 	t1 = mysecond();
@@ -74,13 +75,14 @@ void stream_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], i
 
 void stream_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
+	ssize_t j;
 
 	t0 = mysecond();
 #ifdef TUNED
         tuned_STREAM_Scale(scalar);
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 	    b[j] = scalar * c[j];
 #endif
 	t1 = mysecond();
@@ -89,13 +91,14 @@ void stream_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 
 void stream_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
+	ssize_t j;
 
 	t0 = mysecond();
 #ifdef TUNED
         tuned_STREAM_Add();
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 	    c[j] = a[j] + b[j];
 #endif
 	t1 = mysecond();
@@ -104,13 +107,14 @@ void stream_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], in
 
 void stream_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
+	ssize_t j;
 	
 	t0 = mysecond();
 #ifdef TUNED
         tuned_STREAM_Triad(scalar);
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 	    a[j] = b[j] + scalar * c[j];
 #endif
 	t1 = mysecond();
@@ -120,13 +124,14 @@ void stream_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 
 void gather_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
+	ssize_t j;
 
 	t0 = mysecond();
 #ifdef TUNED
 	tuned_STREAM_Copy_Gather(scalar);
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 		c[j] = a[IDX1[j]];
 #endif
 	t1 = mysecond();
@@ -135,13 +140,14 @@ void gather_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], i
 
 void gather_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
+	ssize_t j;
 
 	t0 = mysecond();
 #ifdef TUNED
 		tuned_STREAM_Scale_Gather(scalar);
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 		b[j] = scalar * c[IDX2[j]];
 #endif
 	t1 = mysecond();
@@ -150,13 +156,14 @@ void gather_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 
 void gather_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) { // sum or add ?
 	double t0, t1;
+	ssize_t j;
 
 	t0 = mysecond();
 #ifdef TUNED
 		tuned_STREAM_Add_Gather();
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 		c[j] = a[IDX1[j]] + b[IDX2[j]];
 #endif
 	t1 = mysecond();
@@ -165,13 +172,14 @@ void gather_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], in
 
 void gather_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
+	ssize_t j;
 
 	t0 = mysecond();
 #ifdef TUNED
 		tuned_STREAM_Triad_Gather(scalar);
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 		a[j] = b[IDX1[j]] + scalar * c[IDX2[j]];
 #endif
 	t1 = mysecond();
@@ -180,13 +188,14 @@ void gather_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 
 void scatter_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
+	ssize_t j;
 
 	t0 = mysecond();
 #ifdef TUNED
 	tuned_STREAM_Copy_Gather(scalar);
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 		c[IDX1[j]] = a[j];
 #endif
 	t1 = mysecond();
@@ -195,13 +204,14 @@ void scatter_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 
 void scatter_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
+	ssize_t j;
 
 	t0 = mysecond();
 #ifdef TUNED
 		tuned_STREAM_Scale_Gather(scalar);
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 		b[IDX2[j]] = scalar * c[j];
 #endif
 	t1 = mysecond();
@@ -210,13 +220,14 @@ void scatter_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES],
 
 void scatter_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) { // sum or add ?
 	double t0, t1;
+	ssize_t j;
 
 	t0 = mysecond();
 #ifdef TUNED
 		tuned_STREAM_Add_Gather();
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 		c[IDX1[j]] = a[j] + b[j];
 #endif
 	t1 = mysecond();
@@ -225,13 +236,14 @@ void scatter_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], i
 
 void scatter_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
+	ssize_t j;
 
 	t0 = mysecond();
 #ifdef TUNED
 		tuned_STREAM_Triad_Gather(scalar);
 #else
 #pragma omp parallel for
-	for (ssize_t j = 0; j < stream_array_size; j++)
+	for (j = 0; j < stream_array_size; j++)
 		a[IDX2[j]] = b[j] + scalar * c[j];
 #endif
 	t1 = mysecond();
