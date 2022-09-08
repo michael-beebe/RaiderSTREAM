@@ -14,7 +14,7 @@ export STREAM_ARRAY_SIZE=10000000
 
 # Don't forget to set OMP_NUM_THREADS if you are using OpenMP
 # NOTE: OpenMP is enabled/disbled in the Makefile
-export OMP_NUM_THREADS=
+export OMP_NUM_THREADS=4
 
 # Set the number of PEs/ranks if using MPI and/or OpenSHMEM implementations
 export NPES=1
