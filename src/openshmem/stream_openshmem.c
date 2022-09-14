@@ -19,7 +19,7 @@
 /*  4. Absolutely no warranty is expressed or implied.                   */
 /*-----------------------------------------------------------------------*/
 
-#include "stream_openmp_output.h"
+#include "stream_openshmem_output.h"
 #include "stream_openshmem_tuned.h"
 #include "stream_openshmem_validation.h"
 
