@@ -854,7 +854,6 @@ void parse_opts(int argc, char **argv, ssize_t *stream_array_size) {
             case 'h':
                 printf("Usage: -n <stream_array_size>\n");
                 exit(2);
-			
         }
     }
 }
