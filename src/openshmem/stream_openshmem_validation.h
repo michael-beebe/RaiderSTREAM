@@ -115,7 +115,7 @@ void validate_values(ssize_t array_elements, STREAM_TYPE AvgErr[NUM_ARRAYS], STR
 	AvgErr[2] = cSumErr / (STREAM_TYPE) array_elements;
 }
 
-void stream_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_validated, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int myrank, int numranks) {
+void stream_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_validated, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int myrank, int numranks, long psync[SHMEM_COLLECT_SYNC_SIZE]) {
     STREAM_TYPE aj,bj,cj;
     STREAM_TYPE AvgErr[NUM_ARRAYS], AvgErrByRank[NUM_ARRAYS * numranks];
     int BytesPerWord = sizeof(STREAM_TYPE);
@@ -163,7 +163,7 @@ void stream_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_valid
     }
 }
 
-void gather_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_validated, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int myrank, int numranks) {
+void gather_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_validated, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int myrank, int numranks, long psync[SHMEM_COLLECT_SYNC_SIZE]) {
     STREAM_TYPE aj,bj,cj;
     STREAM_TYPE AvgErr[NUM_ARRAYS], AvgErrByRank[NUM_ARRAYS * numranks];
     int BytesPerWord = sizeof(STREAM_TYPE);
@@ -211,7 +211,7 @@ void gather_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_valid
     }    
 }
 
-void scatter_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_validated, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int myrank, int numranks) {
+void scatter_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_validated, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int myrank, int numranks, long psync[SHMEM_COLLECT_SYNC_SIZE]) {
     STREAM_TYPE aj,bj,cj;
     STREAM_TYPE AvgErr[NUM_ARRAYS], AvgErrByRank[NUM_ARRAYS * numranks];
     int BytesPerWord = sizeof(STREAM_TYPE);

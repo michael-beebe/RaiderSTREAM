@@ -561,10 +561,10 @@ int main(int argc, char *argv[])
 		stream_triad(stream_array_size, times, k, scalar);
 	}
 
-	shmem_barrier_all();
-
 	if(myrank == 0)
-		stream_validation();
+		stream_validation(stream_array_size, scalar, is_validated, a, b, c, myrank, numranks);
+
+	shmem_barrier_all();
 // =================================================================================
 //       				 GATHER VERSIONS OF THE KERNELS
 // =================================================================================
@@ -589,10 +589,10 @@ int main(int argc, char *argv[])
 		gather_triad(stream_array_size, times, k, scalar);
 	}
 
-	shmem_barrier_all();
-
 	if(myrank == 0)
-		validation();
+		gather_validation(stream_array_size, scalar, is_validated, a, b, c, myrank, numranks);
+
+	shmem_barrier_all();
 // =================================================================================
 //						SCATTER VERSIONS OF THE KERNELS
 // =================================================================================
@@ -617,10 +617,10 @@ int main(int argc, char *argv[])
 		scatter_triad(stream_array_size, times, k, scalar);
 	}
 
-	shmem_barrier_all();
-
 	if(myrank == 0)
-		validation();
+		scatter_validation(stream_array_size, scalar, is_validated, a, b, c, myrank, numranks);
+
+	shmem_barrier_all();
 
 	t0 = mysecond();
 
