@@ -480,6 +480,7 @@ int main(int argc, char *argv[])
 		psync[i] = SHMEM_SYNC_VALUE;
 	}
 
+
 /*--------------------------------------------------------------------------------------
         There are NUM_ARRAYS average error values for each rank (using STREAM_TYPE).
 --------------------------------------------------------------------------------------*/
@@ -561,8 +562,9 @@ int main(int argc, char *argv[])
 		stream_triad(stream_array_size, times, k, scalar);
 	}
 
-	if(myrank == 0)
-		stream_validation(stream_array_size, scalar, is_validated, a, b, c, myrank, numranks);
+	if(myrank == 0){
+		stream_validation(stream_array_size, scalar, is_validated, a, b, c, myrank, numranks, psync, AvgErrByRank, AvgError);
+	}
 
 	shmem_barrier_all();
 // =================================================================================
@@ -590,7 +592,7 @@ int main(int argc, char *argv[])
 	}
 
 	if(myrank == 0)
-		gather_validation(stream_array_size, scalar, is_validated, a, b, c, myrank, numranks);
+		gather_validation(stream_array_size, scalar, is_validated, a, b, c, myrank, numranks, psync, AvgErrByRank, AvgError);
 
 	shmem_barrier_all();
 // =================================================================================
@@ -618,7 +620,7 @@ int main(int argc, char *argv[])
 	}
 
 	if(myrank == 0)
-		scatter_validation(stream_array_size, scalar, is_validated, a, b, c, myrank, numranks);
+		scatter_validation(stream_array_size, scalar, is_validated, a, b, c, myrank, numranks, psync, AvgErrByRank, AvgError);
 
 	shmem_barrier_all();
 
