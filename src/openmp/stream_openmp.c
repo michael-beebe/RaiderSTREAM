@@ -48,8 +48,10 @@ static double mintime[NUM_KERNELS];
 static int is_validated[NUM_KERNELS] = {0};
 
 void init_arrays(ssize_t stream_array_size) {
+	ssize_t j;
+	
 	#pragma omp parallel for private (j)
-    for (ssize_t j = 0; j < stream_array_size; j++) {
+    for (j = 0; j < stream_array_size; j++) {
 		a[j] = 2.0; // 1 or 2? since we are changing the validation we could discuss
 		b[j] = 2.0;
 		c[j] = 0.0;
