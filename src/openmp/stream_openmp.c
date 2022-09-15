@@ -252,6 +252,70 @@ void scatter_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES],
 	times[SCATTER_TRIAD][k] = t1 - t0;
 }
 
+void central_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = mysecond();
+#ifdef TUNED
+    	tuned_STREAM_Copy();
+#else
+#pragma omp parallel for
+	for (j = 0; j < stream_array_size; j++)
+		c[0] = a[0];
+#endif
+	t1 = mysecond();
+	times[CENTRAL_COPY][k] = t1 - t0;
+}
+
+void central_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = mysecond();
+#ifdef TUNED
+        tuned_STREAM_Scale(scalar);
+#else
+#pragma omp parallel for
+	for (j = 0; j < stream_array_size; j++)
+	    b[0] = scalar * c[0];
+#endif
+	t1 = mysecond();
+	times[CENTRAL_SCALE][k] = t1 - t0;
+}
+
+void central_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = mysecond();
+#ifdef TUNED
+        tuned_STREAM_Add();
+#else
+#pragma omp parallel for
+	for (j = 0; j < stream_array_size; j++)
+	    c[0] = a[0] + b[0];
+#endif
+	t1 = mysecond();
+	times[CENTRAL_SUM][k] = t1 - t0;
+}
+
+void central_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = mysecond();
+#ifdef TUNED
+        tuned_STREAM_Triad(scalar);
+#else
+#pragma omp parallel for
+	for (j = 0; j < stream_array_size; j++)
+	    a[0] = b[0] + scalar * c[0];
+#endif
+	t1 = mysecond();
+	times[CENTRAL_TRIAD][k] = t1 - t0;
+}
+
 #ifdef _OPENMP
 extern int omp_get_num_threads();
 #endif
@@ -294,6 +358,11 @@ int main(int argc, char *argv[]) {
 		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER Scale
 		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // SCATTER Add
 		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // SCATTER Triad
+		// Central Kernels
+		2 * sizeof(STREAM_TYPE) * stream_array_size, // CENTRAL Copy
+		2 * sizeof(STREAM_TYPE) * stream_array_size, // CENTRAL Scale
+		3 * sizeof(STREAM_TYPE) * stream_array_size, // CENTRAL Add
+		3 * sizeof(STREAM_TYPE) * stream_array_size, // CENTRAL Triad
 	};
 
 	double   flops[NUM_KERNELS] = {
@@ -312,6 +381,11 @@ int main(int argc, char *argv[]) {
 		1 * stream_array_size, // SCATTER Scale
 		1 * stream_array_size, // SCATTER Add
 		2 * stream_array_size, // SCATTER Triad
+		// Central Kernels
+		(int)0,                // CENTRAL Copy
+		1 * stream_array_size, // CENTRAL Scale
+		1 * stream_array_size, // CENTRAL Add
+		2 * stream_array_size, // CENTRAL Triad
 	};
 
 /*--------------------------------------------------------------------------------------
@@ -472,6 +546,35 @@ int main(int argc, char *argv[]) {
 	// 				SCATTER VALIDATION
 	// ----------------------------------------------
 	scatter_validation(stream_array_size, scalar, is_validated, a, b, c);
+
+// =================================================================================
+//						CENTRAL VERSIONS OF THE KERNELS
+// =================================================================================
+	init_arrays(stream_array_size);
+
+	for(int k = 0; k < NTIMES; k++) {
+	// ----------------------------------------------
+	// 				CENTRAL COPY KERNEL
+	// ----------------------------------------------
+		central_copy(stream_array_size, times, k, scalar);
+	// ----------------------------------------------
+	// 				CENTRAL SCALE KERNEL
+	// ----------------------------------------------
+		central_scale(stream_array_size, times, k, scalar);
+	// ----------------------------------------------
+	// 				CENTRAL ADD KERNEL
+	// ----------------------------------------------
+		central_sum(stream_array_size, times, k, scalar);
+	// ----------------------------------------------
+	// 				CENTRAL TRIAD KERNEL
+	// ----------------------------------------------
+		central_triad(stream_array_size, times, k, scalar);
+	}
+	
+	// ----------------------------------------------
+	// 				CENTRAL VALIDATION
+	// ----------------------------------------------
+	central_validation(stream_array_size, scalar, is_validated, a, b, c);
 /*--------------------------------------------------------------------------------------
 	// Calculate results
 --------------------------------------------------------------------------------------*/
