@@ -59,7 +59,7 @@ void init_arrays(ssize_t stream_array_size) {
     }
 }
 
-void stream_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k) {
+void stream_copy(double times[NUM_KERNELS][NTIMES], int k) {
 	double t0, t1;
 	ssize_t j;
 
@@ -78,7 +78,7 @@ void stream_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], i
 		times[COPY][k] = t1 - t0;
 }
 
-void stream_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+void stream_scale(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	double t0, t1;
 	ssize_t j;
 
@@ -97,7 +97,7 @@ void stream_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 		times[SCALE][k] = t1 - t0;
 }
 
-void stream_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+void stream_sum(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	double t0, t1;
 	ssize_t j;
 	
@@ -116,7 +116,7 @@ void stream_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], in
 		times[SUM][k] = t1 - t0;
 }
 
-void stream_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+void stream_triad(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	double t0, t1;
 	ssize_t j;
 	
@@ -135,7 +135,7 @@ void stream_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 }
 
 
-void gather_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k) {
+void gather_copy(double times[NUM_KERNELS][NTIMES], int k) {
 	double t0, t1;
 	ssize_t j;
 
@@ -154,7 +154,7 @@ void gather_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], i
 		times[GATHER_COPY][k] = t1 - t0;
 }
 
-void gather_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+void gather_scale(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	double t0, t1;
 	ssize_t j;
 
@@ -173,7 +173,7 @@ void gather_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 		times[GATHER_SCALE][k] = t1 - t0;
 }
 
-void gather_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+void gather_sum(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	double t0, t1;
 	ssize_t j;
 	
@@ -192,7 +192,7 @@ void gather_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], in
 		times[GATHER_SUM][k] = t1 - t0;
 }
 
-void gather_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+void gather_triad(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	double t0, t1;
 	ssize_t j;
 	
@@ -211,7 +211,7 @@ void gather_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 }
 
 
-void scatter_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k) {
+void scatter_copy(double times[NUM_KERNELS][NTIMES], int k) {
 	double t0, t1;
 	ssize_t j;
 
@@ -230,7 +230,7 @@ void scatter_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 		times[SCATTER_COPY][k] = t1 - t0;
 }
 
-void scatter_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+void scatter_scale(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	double t0, t1;
 	ssize_t j;
 
@@ -249,7 +249,7 @@ void scatter_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES],
 		times[SCATTER_SCALE][k] = t1 - t0;
 }
 
-void scatter_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+void scatter_sum(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	double t0, t1;
 	ssize_t j;
 	
@@ -268,7 +268,7 @@ void scatter_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], i
 		times[SCATTER_SUM][k] = t1 - t0;
 }
 
-void scatter_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+void scatter_triad(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	double t0, t1;
 	ssize_t j;
 	
@@ -504,80 +504,77 @@ int main(int argc, char *argv[])
 	// ----------------------------------------------
 	// 				  COPY KERNEL
 	// ----------------------------------------------
-		stream_copy(STREAM_ARRAY_SIZE, times, k);
+		stream_copy(times, k);
 	// ----------------------------------------------
 	// 		 	     SCALE KERNEL
 	// ----------------------------------------------
-		stream_scale(STREAM_ARRAY_SIZE, times, k, scalar);
+		stream_scale(times, k, scalar);
 	// ----------------------------------------------
 	// 				 ADD KERNEL
 	// ----------------------------------------------
-		stream_sum(STREAM_ARRAY_SIZE, times, k, scalar);
+		stream_sum(times, k, scalar);
 	// ----------------------------------------------
 	//				TRIAD KERNEL
 	// ----------------------------------------------
-		stream_triad(STREAM_ARRAY_SIZE, times, k, scalar);
+		stream_triad(times, k, scalar);
 	}
 
 	// ----------------------------------------------
 	//				VALIDATION
 	// ----------------------------------------------
-	if(myrank == 0)
-		stream_validation(STREAM_ARRAY_SIZE, scalar, is_validated, a, b, c, myrank, numranks);
+	stream_validation(array_elements, scalar, is_validated, a, b, c, myrank, numranks);
 	
 	MPI_Barrier(MPI_COMM_WORLD);
 // =================================================================================
 //       				 GATHER VERSIONS OF THE KERNELS
 // =================================================================================
-	init_arrays(STREAM_ARRAY_SIZE);
+	init_arrays(array_elements);
 	for(int k = 0; k < NTIMES; k++) {
 	// ----------------------------------------------
 	// 				GATHER COPY KERNEL
 	// ----------------------------------------------
-		gather_copy(STREAM_ARRAY_SIZE, times, k);
+		gather_copy(times, k);
 	// ----------------------------------------------
 	// 				GATHER SCALE KERNEL
 	// ----------------------------------------------
-		gather_scale(STREAM_ARRAY_SIZE, times, k, scalar);
+		gather_scale(times, k, scalar);
 	// ----------------------------------------------
 	// 				GATHER ADD KERNEL
 	// ----------------------------------------------
-		gather_sum(STREAM_ARRAY_SIZE, times, k, scalar);
+		gather_sum(times, k, scalar);
 	// ----------------------------------------------
 	// 				GATHER TRIAD KERNEL
 	// ----------------------------------------------
-		gather_triad(STREAM_ARRAY_SIZE, times, k, scalar);
+		gather_triad(times, k, scalar);
 	}
 
-	if(myrank == 0)
-		gather_validation(STREAM_ARRAY_SIZE, scalar, is_validated, a, b, c, myrank, numranks);
+	gather_validation(array_elements, scalar, is_validated, a, b, c, myrank, numranks);
 	
 	MPI_Barrier(MPI_COMM_WORLD);
 // =================================================================================
 //						SCATTER VERSIONS OF THE KERNELS
 // =================================================================================
-	init_arrays(STREAM_ARRAY_SIZE);
+	init_arrays(array_elements);
 	for(int k = 0; k < NTIMES; k++) {
 	// ----------------------------------------------
 	// 				SCATTER COPY KERNEL
 	// ----------------------------------------------
-		scatter_copy(STREAM_ARRAY_SIZE, times, k);
+		scatter_copy(times, k);
 	// ----------------------------------------------
 	// 				SCATTER SCALE KERNEL
 	// ----------------------------------------------
-		scatter_scale(STREAM_ARRAY_SIZE, times, k, scalar);
+		scatter_scale(times, k, scalar);
 	// ----------------------------------------------
 	// 				SCATTER ADD KERNEL
 	// ----------------------------------------------
-		scatter_sum(STREAM_ARRAY_SIZE, times, k, scalar);
+		scatter_sum(times, k, scalar);
 	// ----------------------------------------------
 	// 				SCATTER TRIAD KERNEL
 	// ----------------------------------------------
-		scatter_triad(STREAM_ARRAY_SIZE, times, k, scalar);
+		scatter_triad(times, k, scalar);
 	}
-	
-	if(myrank == 0)
-		scatter_validation(STREAM_ARRAY_SIZE, scalar, is_validated, a, b, c, myrank, numranks);
+
+	scatter_validation(array_elements, scalar, is_validated, a, b, c, myrank, numranks);
 	
 	MPI_Barrier(MPI_COMM_WORLD);
 
