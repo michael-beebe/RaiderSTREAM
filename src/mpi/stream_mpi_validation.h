@@ -118,18 +118,6 @@ void central_errors(STREAM_TYPE aj, STREAM_TYPE bj, STREAM_TYPE cj, ssize_t arra
 
 double validate_values(STREAM_TYPE aj, STREAM_TYPE bj, STREAM_TYPE cj, ssize_t array_elements, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int myrank, int numranks, STREAM_TYPE *AvgErr, KernelGroup group) {
 	STREAM_TYPE SumErr[NUM_ARRAYS];
-	double epsilon;
-
-	if (sizeof(STREAM_TYPE) == 4) {
-		epsilon = 1.e-6;
-	}
-	else if (sizeof(STREAM_TYPE) == 8) {
-		epsilon = 1.e-13;
-	}
-	else {
-		printf("WEIRD: sizeof(STREAM_TYPE) = %lu\n",sizeof(STREAM_TYPE));
-		epsilon = 1.e-6;
-	}
 
 	switch (group)
 	{
