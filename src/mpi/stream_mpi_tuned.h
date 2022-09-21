@@ -100,6 +100,37 @@ void tuned_STREAM_Triad_Scatter(STREAM_TYPE scalar) {
 	for (j=0; j<STREAM_ARRAY_SIZE; j++)
 		a[a_idx[j]] = b[j] + scalar * c[j];
 }
+
+// =================================================================================
+//						CENTRAL VERSIONS OF THE KERNELS
+// =================================================================================
+void tuned_STREAM_Copy_Central() {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+		c[0] = a[0];
+}
+
+void tuned_STREAM_Scale_Central(STREAM_TYPE scalar) {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+		b[0] = scalar * c[0];
+}
+
+void tuned_STREAM_Add_Central() {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+		c[0] = a[0] + b[0];
+}
+
+void tuned_STREAM_Triad_Central(STREAM_TYPE scalar) {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+		a[0] = b[0] + scalar * c[0];
+}
 /* end of stubs for the "tuned" versions of the kernels */
 #endif // TUNED
 

@@ -293,7 +293,7 @@ void central_copy(double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) 
 	t0 = MPI_Wtime();
 	MPI_Barrier(MPI_COMM_WORLD);
 #ifdef TUNED
-    	tuned_STREAM_Copy();
+    	tuned_STREAM_Copy_Central();
 #else
 #pragma omp parallel for
 	for (j = 0; j < array_elements; j++)
@@ -311,7 +311,7 @@ void central_scale(double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar)
 	t0 = MPI_Wtime();
 	MPI_Barrier(MPI_COMM_WORLD);
 #ifdef TUNED
-        tuned_STREAM_Scale(scalar);
+        tuned_STREAM_Scale_Central(scalar);
 #else
 #pragma omp parallel for
 	for (j = 0; j < array_elements; j++)
@@ -329,7 +329,7 @@ void central_sum(double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	t0 = MPI_Wtime();
 	MPI_Barrier(MPI_COMM_WORLD);
 #ifdef TUNED
-        tuned_STREAM_Add();
+        tuned_STREAM_Add_Central();
 #else
 #pragma omp parallel for
 	for (j = 0; j < array_elements; j++)
@@ -347,7 +347,7 @@ void central_triad(double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar)
 	t0 = MPI_Wtime();
 	MPI_Barrier(MPI_COMM_WORLD);
 #ifdef TUNED
-        tuned_STREAM_Triad(scalar);
+        tuned_STREAM_Triad_Central(scalar);
 #else
 #pragma omp parallel for
 	for (j = 0; j < array_elements; j++)
