@@ -294,7 +294,7 @@ void central_copy(double times[NUM_KERNELS][NTIMES], int k) {
 	shmem_barrier_all();
 
 #ifdef TUNED
-        tuned_STREAM_Copy_Scatter();
+        tuned_STREAM_Copy_Central();
 #else
 #pragma omp parallel for
 		for (j = 0; j < array_elements; j++)
@@ -313,7 +313,7 @@ void central_scale(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	shmem_barrier_all();
 
 #ifdef TUNED
-        tuned_STREAM_Scale_Scatter();
+        tuned_STREAM_Scale_Central(scalar);
 #else
 #pragma omp parallel for
 		for (j = 0; j < array_elements; j++)
@@ -332,7 +332,7 @@ void central_sum(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	shmem_barrier_all();
 
 #ifdef TUNED
-        tuned_STREAM_Add_Scatter();
+        tuned_STREAM_Add_Central();
 #else
 #pragma omp parallel for
 		for (j = 0; j < array_elements; j++)
@@ -350,7 +350,7 @@ void central_triad(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 	t0 = mysecond();
 	shmem_barrier_all();
 #ifdef TUNED
-        tuned_STREAM_Triad_Scatter();
+        tuned_STREAM_Triad_Central(scalar);
 #else
 #pragma omp parallel for
 		for (j = 0; j < array_elements; j++)
