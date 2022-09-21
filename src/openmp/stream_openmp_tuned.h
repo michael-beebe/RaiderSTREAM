@@ -3,21 +3,6 @@
 
 #include "stream_openmp.h"
 
-#ifdef TUNED
-void tuned_STREAM_Copy();
-void tuned_STREAM_Scale(STREAM_TYPE scalar);
-void tuned_STREAM_Add();
-void tuned_STREAM_Triad(STREAM_TYPE scalar);
-void tuned_STREAM_Copy_Gather();
-void tuned_STREAM_Scale_Gather(STREAM_TYPE scalar);
-void tuned_STREAM_Add_Gather();
-void tuned_STREAM_Triad_Gather(STREAM_TYPE scalar);
-void tuned_STREAM_Copy_Scatter();
-void tuned_STREAM_Scale_Scatter(STREAM_TYPE scalar);
-void tuned_STREAM_Add_Scatter();
-void tuned_STREAM_Triad_Scatter(STREAM_TYPE scalar);
-#endif // TUNED
-
 /* stubs for "tuned" versions of the kernels */
 #ifdef TUNED
 
@@ -119,6 +104,38 @@ void tuned_STREAM_Triad_Scatter(STREAM_TYPE scalar) {
 	for (j=0; j<stream_array_size; j++)
 		a[a_idx[j]] = b[j] + scalar * c[j];
 }
+
+// =================================================================================
+//						CENTRAL VERSIONS OF THE KERNELS
+// =================================================================================
+void tuned_STREAM_Copy_Central() {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<stream_array_size; j++)
+		c[0] = a[0];
+}
+
+void tuned_STREAM_Scale_Central(STREAM_TYPE scalar) {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<stream_array_size; j++)
+		b[0] = scalar * c[0];
+}
+
+void tuned_STREAM_Add_Central() {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<stream_array_size; j++)
+		c[0] = a[0] + b[0];
+}
+
+void tuned_STREAM_Triad_Central(STREAM_TYPE scalar) {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<stream_array_size; j++)
+		a[0] = b[0] + scalar * c[0];
+}
+
 /* end of stubs for the "tuned" versions of the kernels */
 #endif
 

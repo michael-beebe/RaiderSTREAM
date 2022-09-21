@@ -220,7 +220,7 @@ void scatter_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES],
 	times[SCATTER_SCALE][k] = t1 - t0;	
 }
 
-void scatter_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) { // sum or add ?
+void scatter_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
 	ssize_t j;
 
@@ -258,7 +258,7 @@ void central_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], 
 
 	t0 = mysecond();
 #ifdef TUNED
-    	tuned_STREAM_Copy();
+    	tuned_STREAM_Copy_Central();
 #else
 #pragma omp parallel for
 	for (j = 0; j < stream_array_size; j++)
@@ -274,7 +274,7 @@ void central_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES],
 
 	t0 = mysecond();
 #ifdef TUNED
-        tuned_STREAM_Scale(scalar);
+        tuned_STREAM_Scale_Central(scalar);
 #else
 #pragma omp parallel for
 	for (j = 0; j < stream_array_size; j++)
@@ -290,7 +290,7 @@ void central_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], i
 
 	t0 = mysecond();
 #ifdef TUNED
-        tuned_STREAM_Add();
+        tuned_STREAM_Add_Central();
 #else
 #pragma omp parallel for
 	for (j = 0; j < stream_array_size; j++)
@@ -306,7 +306,7 @@ void central_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES],
 	
 	t0 = mysecond();
 #ifdef TUNED
-        tuned_STREAM_Triad(scalar);
+        tuned_STREAM_Triad_Central(scalar);
 #else
 #pragma omp parallel for
 	for (j = 0; j < stream_array_size; j++)
