@@ -286,6 +286,78 @@ void scatter_triad(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 		times[SCATTER_TRIAD][k] = t1 - t0;
 }
 
+void central_copy(double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+#ifdef TUNED
+    	tuned_STREAM_Copy_Central();
+#else
+#pragma omp parallel for
+	for (j = 0; j < array_elements; j++)
+		c[0] = a[0];
+#endif
+	MPI_Barrier(MPI_COMM_WORLD);
+	t1 = MPI_Wtime();
+	times[CENTRAL_COPY][k] = t1 - t0;
+}
+
+void central_scale(double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+#ifdef TUNED
+        tuned_STREAM_Scale_Central(scalar);
+#else
+#pragma omp parallel for
+	for (j = 0; j < array_elements; j++)
+	    b[0] = scalar * c[0];
+#endif
+	MPI_Barrier(MPI_COMM_WORLD);
+	t1 = MPI_Wtime();
+	times[CENTRAL_SCALE][k] = t1 - t0;
+}
+
+void central_sum(double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+#ifdef TUNED
+        tuned_STREAM_Add_Central();
+#else
+#pragma omp parallel for
+	for (j = 0; j < array_elements; j++)
+	    c[0] = a[0] + b[0];
+#endif
+	MPI_Barrier(MPI_COMM_WORLD);
+	t1 = MPI_Wtime();
+	times[CENTRAL_SUM][k] = t1 - t0;
+}
+
+void central_triad(double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+#ifdef TUNED
+        tuned_STREAM_Triad_Central(scalar);
+#else
+#pragma omp parallel for
+	for (j = 0; j < array_elements; j++)
+	    a[0] = b[0] + scalar * c[0];
+#endif
+	MPI_Barrier(MPI_COMM_WORLD);
+	t1 = MPI_Wtime();
+	times[CENTRAL_TRIAD][k] = t1 - t0;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -345,6 +417,11 @@ int main(int argc, char *argv[])
 		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER Scale
 		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER Add
 		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER Triad
+		// Central Kernels
+		2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // CENTRAL Copy
+		2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // CENTRAL Scale
+		3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // CENTRAL Add
+		3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // CENTRAL Triad
 	};
 
 	double   flops[NUM_KERNELS] = {
@@ -363,6 +440,11 @@ int main(int argc, char *argv[])
 		1 * STREAM_ARRAY_SIZE, // SCATTER Scale
 		1 * STREAM_ARRAY_SIZE, // SCATTER Add
 		2 * STREAM_ARRAY_SIZE, // SCATTER Triad
+		// Central Kernels
+		(int)0,                // CENTRAL Copy
+		1 * STREAM_ARRAY_SIZE, // CENTRAL Scale
+		1 * STREAM_ARRAY_SIZE, // CENTRAL Add
+		2 * STREAM_ARRAY_SIZE, // CENTRAL Triad
 	};
 
 /*--------------------------------------------------------------------------------------
@@ -578,6 +660,34 @@ int main(int argc, char *argv[])
 	
 	MPI_Barrier(MPI_COMM_WORLD);
 
+// =================================================================================
+//						CENTRAL VERSIONS OF THE KERNELS
+// =================================================================================
+	init_arrays(array_elements);
+
+	for(int k = 0; k < NTIMES; k++) {
+	// ----------------------------------------------
+	// 				CENTRAL COPY KERNEL
+	// ----------------------------------------------
+		central_copy(times, k, scalar);
+	// ----------------------------------------------
+	// 				CENTRAL SCALE KERNEL
+	// ----------------------------------------------
+		central_scale(times, k, scalar);
+	// ----------------------------------------------
+	// 				CENTRAL ADD KERNEL
+	// ----------------------------------------------
+		central_sum(times, k, scalar);
+	// ----------------------------------------------
+	// 				CENTRAL TRIAD KERNEL
+	// ----------------------------------------------
+		central_triad(times, k, scalar);
+	}
+
+	central_validation(array_elements, scalar, is_validated, a, b, c, myrank, numranks);
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
 #ifdef VERBOSE
 	t0 = MPI_Wtime();
 #endif
@@ -627,6 +737,10 @@ int main(int argc, char *argv[])
 		printf("Function\tBest Rate MB/s      Best FLOP/s\t   Avg time\t   Min time\t   Max time\n");
 		for (j=0; j<NUM_KERNELS; j++) {
 			avgtime[j] = avgtime[j]/(double)(NTIMES-1);
+
+			if (j % 4 == 0) {
+				printf(HLINE);
+			}
 
 			if (flops[j] == 0) {
 				printf("%s%12.1f\t\t%s\t%11.6f\t%11.6f\t%11.6f\n",

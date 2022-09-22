@@ -11,7 +11,7 @@
 # include <time.h>
 # include <getopt.h>
 
-# define HLINE "---------------------------------------------------------------------------------------\n"
+# define HLINE "------------------------------------------------------------------------------------------------\n"
 
 #ifdef NTIMES
 #if NTIMES<=1
@@ -91,6 +91,10 @@ static char *kernel_map[NUM_KERNELS] = {
 	"GATHER_SCALE",
 	"GATHER_SUM",
 	"GATHER_TRIAD",
+	"SCATTER_COPY",
+	"SCATTER_SCALE",
+	"SCATTER_SUM",
+	"SCATTER_TRIAD",
 	"CENTRAL_COPY",
 	"CENTRAL_SCALE",
 	"CENTRAL_SUM",

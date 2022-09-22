@@ -47,7 +47,7 @@
 #   define OFFSET	0
 #endif
 
-# define HLINE "-------------------------------------------------------------\n"
+# define HLINE "------------------------------------------------------------------------------------------------\n"
 
 # ifndef MIN
 # define MIN(x,y) ((x)<(y)?(x):(y))
@@ -65,7 +65,7 @@
 - This is important as it is used throughout the benchmark code
 --------------------------------------------------------------------------------------*/
 # ifndef NUM_KERNELS
-# define NUM_KERNELS 12
+# define NUM_KERNELS 16
 # endif
 
 #ifndef abs
@@ -91,8 +91,19 @@ enum Kernels {
 	SCATTER_COPY,
 	SCATTER_SCALE,
 	SCATTER_SUM,
-	SCATTER_TRIAD
+	SCATTER_TRIAD,
+	CENTRAL_COPY,
+	CENTRAL_SCALE,
+	CENTRAL_SUM,
+	CENTRAL_TRIAD
 };
+
+typedef enum {
+	STREAM,
+	GATHER,
+	SCATTER,
+	CENTRAL
+} KernelGroup;
 
 static char *kernel_map[NUM_KERNELS] = {
 	"COPY",
@@ -106,7 +117,11 @@ static char *kernel_map[NUM_KERNELS] = {
 	"SCATTER_COPY",
 	"SCATTER_SCALE",
 	"SCATTER_SUM",
-	"SCATTER_TRIAD"
+	"SCATTER_TRIAD",
+	"CENTRAL_COPY",
+	"CENTRAL_SCALE",
+	"CENTRAL_SUM",
+	"CENTRAL_TRIAD"
 };
 
 

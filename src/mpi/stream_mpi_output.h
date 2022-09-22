@@ -12,7 +12,9 @@ static char	*label[NUM_KERNELS] = {
 	"GATHER Copy:\t", "GATHER Scale:\t",
 	"GATHER Add:\t", "GATHER Triad:\t",
 	"SCATTER Copy:\t", "SCATTER Scale:\t",
-	"SCATTER Add:\t", "SCATTER Triad:\t"
+	"SCATTER Add:\t", "SCATTER Triad:\t",
+	"CENTRAL Copy:\t", "CENTRAL Scale:\t",
+	"CENTRAL Add:\t", "CENTRAL Triad:\t"
 };
 
 void print_info1(int BytesPerWord, int numranks, ssize_t array_elements, int k, ssize_t STREAM_ARRAY_SIZE) {

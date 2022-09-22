@@ -29,6 +29,17 @@ void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
 	}
 }
 
+void central_check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
+                  STREAM_TYPE exp_val, double epsilon, int* errors, ssize_t stream_array_size) {
+  ssize_t i;
+
+	if (abs(avg_err/exp_val) > epsilon) {
+		(*errors)++;
+		printf ("Failed Validation on array %s, AvgRelAbsErr > epsilon (%e)\n", label, epsilon);
+		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n", exp_val, avg_err, abs(avg_err/exp_val));
+	}
+}
+
 void standard_errors(STREAM_TYPE aj, STREAM_TYPE bj, STREAM_TYPE cj, ssize_t stream_array_size, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, STREAM_TYPE *aSumErr, STREAM_TYPE *bSumErr, STREAM_TYPE *cSumErr, STREAM_TYPE *aAvgErr, STREAM_TYPE *bAvgErr, STREAM_TYPE *cAvgErr) {
 	*aSumErr = 0.0, *bSumErr = 0.0, *cSumErr = 0.0;
 	for (ssize_t j = 0; j < stream_array_size; j++) {
@@ -76,6 +87,9 @@ double validate_values(STREAM_TYPE aj, STREAM_TYPE bj, STREAM_TYPE cj, ssize_t s
 	{
 	case CENTRAL:
 		central_errors(aj, bj, cj, stream_array_size, a, b, c, &aSumErr, &bSumErr, &cSumErr, &aAvgErr, &bAvgErr, &cAvgErr);
+		central_check_errors("a[]", a, aAvgErr, aj, epsilon, &err, stream_array_size);
+		central_check_errors("b[]", b, bAvgErr, bj, epsilon, &err, stream_array_size);
+		central_check_errors("c[]", c, cAvgErr, cj, epsilon, &err, stream_array_size);
 		break;
 	
 	default:
