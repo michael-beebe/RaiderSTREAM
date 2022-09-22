@@ -101,6 +101,34 @@ void tuned_STREAM_Triad_Scatter(STREAM_TYPE scalar) {
 		a[a_idx[j]] = b[j] + scalar * c[j];
 }
 
+void tuned_STREAM_Copy_ScatterGather() {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+		c[c_idx[j]] = a[a_idx[j]];
+}
+
+void tuned_STREAM_Scale_ScatterGather(STREAM_TYPE scalar) {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+		b[b_idx[j]] = scalar * c[c_idx[j]];
+}
+
+void tuned_STREAM_Add_ScatterGather() {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+		c[a_idx[j]] = a[a_idx[j]] + b[b_idx[j]];
+}
+
+void tuned_STREAM_Triad_ScatterGather(STREAM_TYPE scalar) {
+	ssize_t j;
+#pragma omp parallel for
+	for (j=0; j<STREAM_ARRAY_SIZE; j++)
+		a[a_idx[j]] = b[b_idx[j]] + scalar * c[c_idx[j]];
+}
+
 // =================================================================================
 //						CENTRAL VERSIONS OF THE KERNELS
 // =================================================================================
