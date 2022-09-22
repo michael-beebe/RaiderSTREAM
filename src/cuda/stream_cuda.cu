@@ -302,22 +302,22 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 
 	for(auto k = 0; k < NTIMES; k++) {
 		cudaEventRecord(t0);
-		sg_copy<<< (stream_array_size + 255)/256, 256 >>>(d_a, d_b, d_c, d_IDX1, d_IDX2, stream_array_size);
+		sg_copy<<< (stream_array_size + 255)/256, 256 >>>(d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, stream_array_size);
 		cudaEventRecord(t1);
 		calculateTime(t0, t1, times, k, SG_COPY);
 
 		cudaEventRecord(t0);
-		sg_scale<<< (stream_array_size + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, d_IDX1, d_IDX2, stream_array_size);
+		sg_scale<<< (stream_array_size + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, d_IDX1, d_IDX2, d_IDX3, stream_array_size);
 		cudaEventRecord(t1);
 		calculateTime(t0, t1, times, k, SG_SCALE);
 
 		cudaEventRecord(t0);
-		sg_sum<<< (stream_array_size + 255)/256, 256 >>>(d_a, d_b, d_c, d_IDX1, d_IDX2, stream_array_size);
+		sg_sum<<< (stream_array_size + 255)/256, 256 >>>(d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, stream_array_size);
 		cudaEventRecord(t1);
 		calculateTime(t0, t1, times, k, SG_SUM);
 
 		cudaEventRecord(t0);
-		sg_triad<<< (stream_array_size + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, d_IDX1, d_IDX2, stream_array_size);
+		sg_triad<<< (stream_array_size + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, d_IDX1, d_IDX2, d_IDX3, stream_array_size);
 		cudaEventRecord(t1);
 		calculateTime(t0, t1, times, k, SG_TRIAD);
 	}
@@ -562,6 +562,10 @@ int main(int argc, char *argv[]) {
 	print_memory_usage(stream_array_size);
 
 	executeSTREAM(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, scalar, is_validated);
+	executeGATHER(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, scalar, is_validated);
+	executeSCATTER(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, scalar, is_validated);
+	executeSG(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, scalar, is_validated);
+	executeCENTRAL(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, scalar, is_validated);
 
 /*--------------------------------------------------------------------------------------
 	// Calculate results
@@ -589,7 +593,7 @@ int main(int argc, char *argv[]) {
 
         if (flops[j] == 0) {
             printf("%s%12.1f\t\t%s\t%11.6f\t%11.6f\t%11.6f\n",
-                label[j],                           // Kernel
+                label[j].c_str(),                           // Kernel
                 1.0E-06 * bytes[j]/mintime[j],      // MB/s
                 "-",      // FLOP/s
                 avgtime[j],                         // Avg Time
@@ -598,7 +602,7 @@ int main(int argc, char *argv[]) {
         }
         else {
             printf("%s%12.1f\t%12.1f\t%11.6f\t%11.6f\t%11.6f\n",
-                label[j],                           // Kernel
+                label[j].c_str(),                           // Kernel
                 1.0E-06 * bytes[j]/mintime[j],      // MB/s
                 1.0E-06 * flops[j]/mintime[j],      // FLOP/s
                 avgtime[j],                         // Avg Time

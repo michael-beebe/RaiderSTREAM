@@ -325,7 +325,7 @@ void checkSTREAMresults(int *is_validated)
 
 	for(int i = 0; i < NUM_KERNELS; i++) {
 		if(is_validated[i] != 1) {
-			printf("Kernel %s validation not correct\n", kernel_map[i]);
+			printf("Kernel %s validation not correct\n", kernel_map[i].c_str());
 			incorrect++;
 		}
 	}
