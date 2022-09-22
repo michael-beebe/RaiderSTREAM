@@ -6,8 +6,8 @@
 # -------------------------------------------------
 export RUN_ORIGINAL=false
 export RUN_OMP=true
-export RUN_MPI=false
-export RUN_SHMEM=false
+export RUN_MPI=true
+export RUN_SHMEM=true
 
 # Problem Size
 export STREAM_ARRAY_SIZE=10000000
