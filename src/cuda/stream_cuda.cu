@@ -92,6 +92,7 @@ __global__ void stream_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restr
 
 void calculateTime(const cudaEvent_t& t0, const cudaEvent_t& t1, double times[NUM_KERNELS][NTIMES], int round, Kernels kernel) {
 	float ms = 0.0;
+	cudaEventSynchronize(t1);
 	cudaEventElapsedTime(&ms, t0, t1);
 	times[kernel][round] = ms * 1E-3;
 }
