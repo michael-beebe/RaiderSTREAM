@@ -36,6 +36,7 @@ STREAM_TYPE * restrict c;
 --------------------------------------------------------------------------------------*/
 static ssize_t *IDX1;
 static ssize_t *IDX2;
+static ssize_t *IDX3;
 
 /*--------------------------------------------------------------------------------------
 - Initialize arrays to store avgtime, maxime, and mintime metrics for each kernel.
@@ -252,6 +253,72 @@ void scatter_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES],
 	times[SCATTER_TRIAD][k] = t1 - t0;
 }
 
+
+void sg_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = mysecond();
+#ifdef TUNED
+	tuned_STREAM_Copy_Gather(scalar);
+#else
+#pragma omp parallel for
+	for (j = 0; j < stream_array_size; j++)
+		c[IDX1[j]] = a[IDX2[j]];
+#endif
+	t1 = mysecond();
+	times[SG_COPY][k] = t1 - t0;
+}
+
+void sg_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = mysecond();
+#ifdef TUNED
+		tuned_STREAM_Scale_Gather(scalar);
+#else
+#pragma omp parallel for
+	for (j = 0; j < stream_array_size; j++)
+		b[IDX2[j]] = scalar * c[IDX1[j]];
+#endif
+	t1 = mysecond();
+	times[SG_SCALE][k] = t1 - t0;	
+}
+
+void sg_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = mysecond();
+#ifdef TUNED
+		tuned_STREAM_Add_Gather();
+#else
+#pragma omp parallel for
+	for (j = 0; j < stream_array_size; j++)
+		c[IDX1[j]] = a[IDX2[j]] + b[IDX3[j]];
+#endif
+	t1 = mysecond();
+	times[SG_SUM][k] = t1 - t0;
+}
+
+void sg_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = mysecond();
+#ifdef TUNED
+		tuned_STREAM_Triad_Gather(scalar);
+#else
+#pragma omp parallel for
+	for (j = 0; j < stream_array_size; j++)
+		a[IDX2[j]] = b[IDX3[j]] + scalar * c[IDX1[j]];
+#endif
+	t1 = mysecond();
+	times[SG_TRIAD][k] = t1 - t0;
+}
+
+
 void central_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
 	ssize_t j;
@@ -333,13 +400,14 @@ int main(int argc, char *argv[]) {
 
 	parse_opts(argc, argv, &stream_array_size);
 
-	a = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
-	b = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
-	c = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size+OFFSET);
+	a = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * (stream_array_size+OFFSET));
+	b = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * (stream_array_size+OFFSET));
+	c = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * (stream_array_size+OFFSET));
 
 
-	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size+OFFSET);
-	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size+OFFSET);
+	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * (stream_array_size+OFFSET));
+	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * (stream_array_size+OFFSET));
+	IDX3 = (ssize_t *) malloc(sizeof(ssize_t) * (stream_array_size+OFFSET));
 
 
 	double	bytes[NUM_KERNELS] = {
@@ -356,8 +424,13 @@ int main(int argc, char *argv[]) {
 		// Scatter Kernels
 		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER copy
 		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER Scale
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // SCATTER Add
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // SCATTER Triad
+		(((3 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER Add
+		(((3 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER Triad
+		// Scatter-Gather Kernels
+		(((2 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // SG copy
+		(((2 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // SG Scale
+		(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t))) * stream_array_size), // SG Add
+		(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t))) * stream_array_size), // SG Triad
 		// Central Kernels
 		2 * sizeof(STREAM_TYPE) * stream_array_size, // CENTRAL Copy
 		2 * sizeof(STREAM_TYPE) * stream_array_size, // CENTRAL Scale
@@ -381,6 +454,11 @@ int main(int argc, char *argv[]) {
 		1 * stream_array_size, // SCATTER Scale
 		1 * stream_array_size, // SCATTER Add
 		2 * stream_array_size, // SCATTER Triad
+		// Scatter-Gather Kernels
+		(int)0,                // SG Copy
+		1 * stream_array_size, // SG Scale
+		1 * stream_array_size, // SG Add
+		2 * stream_array_size, // SG Triad
 		// Central Kernels
 		(int)0,                // CENTRAL Copy
 		1 * stream_array_size, // CENTRAL Scale
@@ -404,10 +482,12 @@ int main(int argc, char *argv[]) {
 #ifdef CUSTOM
 	init_read_idx_array(IDX1, stream_array_size, "IDX1.txt");
 	init_read_idx_array(IDX2, stream_array_size, "IDX2.txt");
+	init_read_idx_array(IDX3, stream_array_size, "IDX3.txt");
 #else
     srand(time(0));
     init_random_idx_array(IDX1, stream_array_size);
     init_random_idx_array(IDX2, stream_array_size);
+	init_random_idx_array(IDX3, stream_array_size);
 #endif
 
 /*--------------------------------------------------------------------------------------
@@ -546,6 +626,35 @@ int main(int argc, char *argv[]) {
 	// 				SCATTER VALIDATION
 	// ----------------------------------------------
 	scatter_validation(stream_array_size, scalar, is_validated, a, b, c);
+
+// =================================================================================
+//						SCATTER VERSIONS OF THE KERNELS
+// =================================================================================
+	init_arrays(stream_array_size);
+
+	for(int k = 0; k < NTIMES; k++) {
+	// ----------------------------------------------
+	// 				SCATTER-GATHER COPY KERNEL
+	// ----------------------------------------------
+		sg_copy(stream_array_size, times, k, scalar);
+	// ----------------------------------------------
+	// 				SCATTER-GATHER SCALE KERNEL
+	// ----------------------------------------------
+		sg_scale(stream_array_size, times, k, scalar);
+	// ----------------------------------------------
+	// 				SCATTER-GATHER ADD KERNEL
+	// ----------------------------------------------
+		sg_sum(stream_array_size, times, k, scalar);
+	// ----------------------------------------------
+	// 				SCATTER-GATHER TRIAD KERNEL
+	// ----------------------------------------------
+		sg_triad(stream_array_size, times, k, scalar);
+	}
+	
+	// ----------------------------------------------
+	// 				SCATTER-GATHER VALIDATION
+	// ----------------------------------------------
+	sg_validation(stream_array_size, scalar, is_validated, a, b, c);
 
 // =================================================================================
 //						CENTRAL VERSIONS OF THE KERNELS
