@@ -286,6 +286,81 @@ void scatter_triad(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 		times[SCATTER_TRIAD][k] = t1 - t0;
 }
 
+void central_copy(double times[NUM_KERNELS][NTIMES], int k) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = mysecond();
+	shmem_barrier_all();
+
+#ifdef TUNED
+        tuned_STREAM_Copy_Central();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			c[0] = a[0];
+#endif
+		shmem_barrier_all();
+		t1 = mysecond();
+		times[CENTRAL_COPY][k] = t1 - t0;
+}
+
+void central_scale(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = mysecond();
+	shmem_barrier_all();
+
+#ifdef TUNED
+        tuned_STREAM_Scale_Central(scalar);
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			b[0] = scalar * c[0];
+#endif
+		shmem_barrier_all();
+		t1 = mysecond();
+		times[CENTRAL_SCALE][k] = t1 - t0;
+}
+
+void central_sum(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = mysecond();
+	shmem_barrier_all();
+
+#ifdef TUNED
+        tuned_STREAM_Add_Central();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			c[0] = a[0] + b[0];
+#endif
+		shmem_barrier_all();
+		t1 = mysecond();
+		times[CENTRAL_SUM][k] = t1 - t0;
+}
+
+void central_triad(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = mysecond();
+	shmem_barrier_all();
+#ifdef TUNED
+        tuned_STREAM_Triad_Central(scalar);
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			a[0] = b[0] + scalar * c[0];
+#endif
+		shmem_barrier_all();
+		t1 = mysecond();
+		times[CENTRAL_TRIAD][k] = t1 - t0;
+}
+
 int main(int argc, char *argv[])
 {
 	ssize_t stream_array_size = 10000000; // Default stream_array_size is 10000000
@@ -332,6 +407,11 @@ int main(int argc, char *argv[])
 		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER Scale
 		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // SCATTER Add
 		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // SCATTER Triad
+		// Central Kernels
+		2 * sizeof(STREAM_TYPE) * stream_array_size, // Central Copy
+		2 * sizeof(STREAM_TYPE) * stream_array_size, // Central Scale
+		3 * sizeof(STREAM_TYPE) * stream_array_size, // Central Add
+		3 * sizeof(STREAM_TYPE) * stream_array_size, // Central Triad
 	};
 
 	double   flops[NUM_KERNELS] = {
@@ -350,6 +430,11 @@ int main(int argc, char *argv[])
 		1 * stream_array_size, // SCATTER Scale
 		1 * stream_array_size, // SCATTER Add
 		2 * stream_array_size, // SCATTER Triad
+		// Central Kernels
+		(int)0,                // CENTRAL Copy
+		1 * stream_array_size, // CENTRAL Scale
+		1 * stream_array_size, // CENTRAL Add
+		2 * stream_array_size, // CENTRAL Triad
 	};
 
 /*--------------------------------------------------------------------------------------
@@ -620,7 +705,37 @@ int main(int argc, char *argv[])
 
 	shmem_barrier_all();
 
+// =================================================================================
+//						CENTRAL VERSIONS OF THE KERNELS
+// =================================================================================
+	init_arrays(array_elements);
+
+	for(int k = 0; k < NTIMES; k++) {
+	// ----------------------------------------------
+	// 				CENTRAL COPY KERNEL
+	// ----------------------------------------------
+		central_copy(times, k);
+	// ----------------------------------------------
+	// 				CENTRAL SCALE KERNEL
+	// ----------------------------------------------
+		central_scale(times, k, scalar);
+	// ----------------------------------------------
+	// 				CENTRAL ADD KERNEL
+	// ----------------------------------------------
+		central_sum(times, k, scalar);
+	// ----------------------------------------------
+	// 				CENTRAL TRIAD KERNEL
+	// ----------------------------------------------
+		central_triad(times, k, scalar);
+	}
+
+	central_validation(array_elements, scalar, is_validated, a, b, c, myrank, numranks, psync, AvgErrByRank, AvgError);
+
+	shmem_barrier_all();
+
+#ifdef VERBOSE
 	t0 = mysecond();
+#endif
 
 // =====================================================================================================
 
