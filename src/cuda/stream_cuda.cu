@@ -27,9 +27,12 @@
 // - Initialize the STREAM arrays used in the kernels
 // - Some compilers require an extra keyword to recognize the "restrict" qualifier.
 // --------------------------------------------------------------------------------------*/
-STREAM_TYPE * restrict a;
-STREAM_TYPE * restrict b;
-STREAM_TYPE * restrict c;
+STREAM_TYPE __restrict__ *a;
+STREAM_TYPE __restrict__ *b;
+STREAM_TYPE __restrict__ *c;
+STREAM_TYPE __restrict__ *d_a;
+STREAM_TYPE __restrict__ *d_b;
+STREAM_TYPE __restrict__ *d_c;
 
 /*--------------------------------------------------------------------------------------
 - Initialize IDX arrays (which will be used by gather/scatter kernels)
@@ -37,6 +40,9 @@ STREAM_TYPE * restrict c;
 static ssize_t *IDX1;
 static ssize_t *IDX2;
 static ssize_t *IDX3;
+static ssize_t *d_IDX1;
+static ssize_t *d_IDX2;
+static ssize_t *d_IDX3;
 
 /*--------------------------------------------------------------------------------------
 - Initialize arrays to store avgtime, maxime, and mintime metrics for each kernel.
@@ -56,100 +62,146 @@ void init_arrays(ssize_t stream_array_size) {
 	
 	#pragma omp parallel for private (j)
     for (j = 0; j < stream_array_size; j++) {
-		a[j] = 2.0; // 1 or 2? since we are changing the validation we could discuss
+		a[j] = 2.0;
 		b[j] = 2.0;
 		c[j] = 0.0;
     }
 }
 
-//////////////////////////////////////////////////////////////////////////////
-
-__global__ void stream_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
-    
+__global__ void stream_copy(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, ssize_t stream_array_size) {
+	ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_c[j] = d_a[j];
 }
 
-__global__ void stream_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void stream_scale(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, STREAM_TYPE scalar, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_b[j] = scalar * d_c[j];
 }
 
-__global__ void stream_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void stream_sum(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_c[j] = d_a[j] + d_b[j];
 }
 
-__global__ void stream_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void stream_triad(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, STREAM_TYPE scalar, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_a[j] = d_b[j] + scalar * d_c[j];
 }
 
-
-__global__ void gather_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+void calculateTime(const cudaEvent_t& t0, const cudaEvent_t& t1, double& times[NUM_KERNELS][NTIMES], int round, Kernels kernel) {
+	float ms = 0.0;
+	cudaEventElapsedTime(&ms, t0, t1);
+	times[kernel][round] = ms * 1E-3;
 }
 
-__global__ void gather_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+void executeSTREAM(STREAM_TYPE __restrict__   *a, STREAM_TYPE __restrict__   *b, STREAM_TYPE __restrict__   *c,
+				   STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c,
+				   ssize_t __restrict__  *d_IDX1, ssize_t __restrict__  *d_IDX2, ssize_t __restrict__  *d_IDX3,
+				   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size)
+{
+	init_arrays(stream_array_size);
+	cudaEvent_t t0, t1;
+	cudaEventCreate(&t0);
+	cudaEventCreate(&t1);
+
+	for(auto k = 0; k < NTIMES; k++) {
+		cudaEventRecord(t0);
+		stream_copy<<<stream_array_size + 255/256, 256>>>>(d_a, d_b, d_c, stream_array_size);
+		cudaEventRecord(t1);
+		calculateTime(t0, t1, times, k, COPY);
+
+		cudaEventRecord(t0);
+		stream_scale<<<stream_array_size + 255/256, 256>>>>(d_a, d_b, d_c, scalar, stream_array_size);
+		cudaEventRecord(t1);
+		calculateTime(t0, t1, times, k, SCALE);
+
+		cudaEventRecord(t0);
+		stream_sum<<<stream_array_size + 255/256, 256>>>>(d_a, d_b, d_c, stream_array_size);
+		cudaEventRecord(t1);
+		calculateTime(t0, t1, times, k, SUM);
+
+		cudaEventRecord(t0);
+		stream_triad<<<stream_array_size + 255/256, 256>>>>(d_a, d_b, d_c, scalar, stream_array_size);
+		cudaEventRecord(t1);
+		calculateTime(t0, t1, times, k, TRIAD);
+	}
 }
 
-__global__ void gather_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void gather_copy(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_c[j] = d_a[d_IDX1[j]];
 }
 
-__global__ void gather_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void gather_scale(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, STREAM_TYPE scalar, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_b[j] = scalar * d_c[d_IDX2[j]];
 }
 
-
-__global__ void scatter_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void gather_sum(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_c[j] = d_a[d_IDX1[j]] + d_b[d_IDX2[j]];
 }
 
-__global__ void scatter_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void gather_triad(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, STREAM_TYPE scalar, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_a[j] = d_b[d_IDX1[j]] + scalar * d_c[d_IDX2[j]];
 }
 
-__global__ void scatter_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void scatter_copy(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_c[d_IDX1[j]] = d_a[j];
 }
 
-__global__ void scatter_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void scatter_scale(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, STREAM_TYPE scalar, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_b[d_IDX2[j]] = scalar * d_c[j];
 }
 
-
-__global__ void sg_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void scatter_sum(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_c[d_IDX1[j]] = d_a[j] + d_b[j];
 }
 
-__global__ void sg_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void scatter_triad(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, STREAM_TYPE scalar, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_a[d_IDX2[j]] = d_b[j] + scalar * d_c[j];
 }
 
-__global__ void sg_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void sg_copy(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t __restrict__ *d_IDX3, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_c[d_IDX1[j]] = d_a[d_IDX2[j]];
 }
 
-__global__ void sg_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void sg_scale(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, STREAM_TYPE scalar, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t __restrict__ *d_IDX3, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_b[d_IDX2[j]] = scalar * d_c[d_IDX1[j]];
 }
 
-
-__global__ void central_copy(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void sg_sum(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t __restrict__ *d_IDX3, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_c[d_IDX1[j]] = d_a[d_IDX2[j]] + d_b[d_IDX3[j]];
 }
 
-__global__ void central_scale(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void sg_triad(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, STREAM_TYPE scalar, ssize_t __restrict__ *d_IDX1, ssize_t __restrict__ *d_IDX2, ssize_t __restrict__ *d_IDX3, ssize_t stream_array_size) {
+    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+	if(j < stream_array_size) d_a[d_IDX2[j]] = d_b[d_IDX3[j]] + scalar * d_c[d_IDX1[j]];
 }
 
-__global__ void central_sum(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void central_copy(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, ssize_t stream_array_size) {
+	if(j < stream_array_size) d_c[0] = d_a[0];
 }
 
-__global__ void central_triad(ssize_t stream_array_size, double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
-    //TODO:
+__global__ void central_scale(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, STREAM_TYPE scalar, ssize_t stream_array_size) {
+	if(j < stream_array_size) d_b[0] = scalar * d_c[0];
 }
 
-//////////////////////////////////////////////////////////////////////////////
+__global__ void central_sum(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, ssize_t stream_array_size) {
+	if(j < stream_array_size) d_c[0] = d_a[0] + d_b[0];
+}
+
+__global__ void central_triad(STREAM_TYPE __restrict__ *d_a, STREAM_TYPE __restrict__ *d_b, STREAM_TYPE __restrict__ *d_c, STREAM_TYPE scalar, ssize_t stream_array_size) {
+	if(j < stream_array_size) d_a[0] = d_b[0] + scalar * d_c[0];
+}
 
 #ifdef _OPENMP
 extern int omp_get_num_threads();
@@ -180,6 +232,14 @@ int main(int argc, char *argv[]) {
 	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size+OFFSET);
 	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size+OFFSET);
     IDX3 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size+OFFSET);
+
+	cudaMalloc(&d_a, sizeof(STREAM_TYPE) * stream_array_size);
+	cudaMalloc(&d_b, sizeof(STREAM_TYPE) * stream_array_size);
+	cudaMalloc(&d_c, sizeof(STREAM_TYPE) * stream_array_size);
+
+	cudaMalloc(&d_IDX1, sizeof(ssize_t) * stream_array_size);
+	cudaMalloc(&d_IDX2, sizeof(ssize_t) * stream_array_size);
+	cudaMalloc(&d_IDX3, sizeof(ssize_t) * stream_array_size);
 
 	double	bytes[NUM_KERNELS] = {
 		// Original Kernels
@@ -261,6 +321,10 @@ int main(int argc, char *argv[]) {
     init_random_idx_array(IDX3, stream_array_size);
 #endif
 
+	cudaMemcpy(d_IDX1, IDX1, sizeof(ssize_t) * stream_array_size);
+	cudaMemcpy(d_IDX2, IDX2, sizeof(ssize_t) * stream_array_size);
+	cudaMemcpy(d_IDX3, IDX3, sizeof(ssize_t) * stream_array_size);
+
 /*--------------------------------------------------------------------------------------
     - Print initial info
 --------------------------------------------------------------------------------------*/
@@ -297,6 +361,7 @@ int main(int argc, char *argv[]) {
 
 // TODO: copy necessary data to device
 
+
 /*--------------------------------------------------------------------------------------
     // Estimate precision and granularity of timer
 --------------------------------------------------------------------------------------*/
@@ -315,7 +380,5 @@ int main(int argc, char *argv[]) {
 
     scalar = 3.0;
 
-
-// TODO: kernels
-
+	executeSTREAM(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size);
 }

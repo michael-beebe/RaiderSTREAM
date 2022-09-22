@@ -59,7 +59,7 @@
 # define NUM_ARRAYS 3
 # endif
 
-enum Kernels {
+typedef enum {
 	COPY,
 	SCALE,
 	SUM,
@@ -84,7 +84,7 @@ enum Kernels {
 	CENTRAL_SCALE,
 	CENTRAL_SUM,
 	CENTRAL_TRIAD
-};
+} Kernels;
 
 typedef enum {
 	STREAM,
