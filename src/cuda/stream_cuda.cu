@@ -330,19 +330,19 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 }
 
 __global__ void central_copy(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c, ssize_t stream_array_size) {
-	if(j < stream_array_size) d_c[0] = d_a[0];
+	d_c[0] = d_a[0];
 }
 
 __global__ void central_scale(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c, STREAM_TYPE scalar, ssize_t stream_array_size) {
-	if(j < stream_array_size) d_b[0] = scalar * d_c[0];
+	d_b[0] = scalar * d_c[0];
 }
 
 __global__ void central_sum(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c, ssize_t stream_array_size) {
-	if(j < stream_array_size) d_c[0] = d_a[0] + d_b[0];
+	d_c[0] = d_a[0] + d_b[0];
 }
 
 __global__ void central_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c, STREAM_TYPE scalar, ssize_t stream_array_size) {
-	if(j < stream_array_size) d_a[0] = d_b[0] + scalar * d_c[0];
+	d_a[0] = d_b[0] + scalar * d_c[0];
 }
 
 void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
