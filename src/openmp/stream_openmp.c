@@ -52,7 +52,7 @@ void init_arrays(ssize_t stream_array_size) {
 	
 	#pragma omp parallel for private (j)
     for (j = 0; j < stream_array_size; j++) {
-		a[j] = 2.0; // 1 or 2? since we are changing the validation we could discuss
+		a[j] = 2.0;
 		b[j] = 2.0;
 		c[j] = 0.0;
     }
