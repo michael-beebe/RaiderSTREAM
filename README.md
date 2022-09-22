@@ -15,8 +15,24 @@ With RaiderSTREAM, we address these two limitations by:
 <!-- ### Table of Contents -->
 
 ### Benchmark Kernels
-<!-- TODO: change bytes/iter column to reflect the new bytes array -->
-![Benchmark Kernels](readme_images/kernels.png)
+| Name | Kernel  | Bytes/Iter | FLOPs/Iter |
+| ---- | ------- | ---------- | ---------- |
+| STREAM Copy    | a[i] = b[i]            | 16 | 0 |
+| STREAM Scale   | a[i] = q * b[i]        | 16 | 1 |
+| STREAM Sum     | a[i] = b[i] + c[i]     | 24 | 1 |
+| STREAM Triad   | a[i] = b[i] + q * c[i] | 24 | 2 |
+| GATHER Copy    | a[i] = b[IDX[i]]       | 16 + sizeof(ssize_t) | 0 |
+| GATHER Scale   | a[i] = q * b[IDX[i]]   | 16 + sizeof(ssize_t) | 1 |
+| GATHER Sum     | a[i] = b[IDX[i]] + c[IDX[i]] | 16 + 2 * sizeof(ssize_t) | 1 |
+| GATHER Triad   | a[j] = b[IDX1[j]] + q * c[IDX[j]] | 16 + 2 * sizeof(ssize_t) | 2 |
+| SCATTER Copy   | a[IDX[i]] = b[i] | 16 + sizeof(ssize_t) | 0 |
+| SCATTER Scale  | a[IDX[i]] = q * b[i] | 16 + sizeof(ssize_t) | 1 |
+| SCATTER Sum    | a[IDX[i]] = b[i] + c[i]  | 16 + 2 * sizeof(ssize_t) | 1 |
+| SCATTER Triad  | a[IDX[i]] = b[i] + q * c[i] | 16 + 2 * sizeof(ssize_t) | 2 |
+| CENTRAL Copy   | a[0] = b[0] | 16 | 0 |
+| CENTRAL Scale  | a[0] = q * b[0] | 16 | 1 |
+| CENTRAL Sum    | a[0] = b[0] + c[0] | 24 | 1 |
+| CENTRAL Triad  | a[0] = b[0] + q * c[0] | 24 | 2 |
 
 ### How are bytes and FLOP/s counted?
 ![Benchmark Kernels](readme_images/mbps_formula.png)
