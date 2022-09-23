@@ -53,7 +53,7 @@ void init_arrays(ssize_t stream_array_size) {
 	
 	#pragma omp parallel for private (j)
     for (j = 0; j < stream_array_size; j++) {
-		a[j] = 2.0; // 1 or 2? since we are changing the validation we could discuss
+		a[j] = 2.0;
 		b[j] = 2.0;
 		c[j] = 0.0;
     }
@@ -432,10 +432,10 @@ int main(int argc, char *argv[]) {
 		(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t))) * stream_array_size), // SG Add
 		(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t))) * stream_array_size), // SG Triad
 		// Central Kernels
-		2 * sizeof(STREAM_TYPE) * stream_array_size, // CENTRAL Copy
-		2 * sizeof(STREAM_TYPE) * stream_array_size, // CENTRAL Scale
-		3 * sizeof(STREAM_TYPE) * stream_array_size, // CENTRAL Add
-		3 * sizeof(STREAM_TYPE) * stream_array_size, // CENTRAL Triad
+		2 * sizeof(STREAM_TYPE) * stream_array_size, // Central Copy
+		2 * sizeof(STREAM_TYPE) * stream_array_size, // Central Scale
+		3 * sizeof(STREAM_TYPE) * stream_array_size, // Central Add
+		3 * sizeof(STREAM_TYPE) * stream_array_size, // Central Triad
 	};
 
 	double   flops[NUM_KERNELS] = {

@@ -27,8 +27,8 @@ With RaiderSTREAM, we address these two limitations by:
 | GATHER Triad   | a[j] = b[IDX1[j]] + q * c[IDX[j]] | 16 + 2 * sizeof(ssize_t) | 2 |
 | SCATTER Copy   | a[IDX[i]] = b[i] | 16 + sizeof(ssize_t) | 0 |
 | SCATTER Scale  | a[IDX[i]] = q * b[i] | 16 + sizeof(ssize_t) | 1 |
-| SCATTER Sum    | a[IDX[i]] = b[i] + c[i]  | 16 + 2 * sizeof(ssize_t) | 1 |
-| SCATTER Triad  | a[IDX[i]] = b[i] + q * c[i] | 16 + 2 * sizeof(ssize_t) | 2 |
+| SCATTER Sum    | a[IDX[i]] = b[i] + c[i]  | 16 + sizeof(ssize_t) | 1 |
+| SCATTER Triad  | a[IDX[i]] = b[i] + q * c[i] | 16 + sizeof(ssize_t) | 2 |
 | CENTRAL Copy   | a[0] = b[0] | 16 | 0 |
 | CENTRAL Scale  | a[0] = q * b[0] | 16 | 1 |
 | CENTRAL Sum    | a[0] = b[0] + c[0] | 24 | 1 |
