@@ -10,6 +10,7 @@
 # include <sys/time.h>
 # include <time.h>
 # include <getopt.h>
+# include <string>
 
 // # include <cuda_runtime.h>
 #include "/usr/local/cuda-11.0/include/cuda_runtime.h"
@@ -59,7 +60,7 @@
 # define NUM_ARRAYS 3
 # endif
 
-enum Kernels {
+typedef enum {
 	COPY,
 	SCALE,
 	SUM,
@@ -84,7 +85,7 @@ enum Kernels {
 	CENTRAL_SCALE,
 	CENTRAL_SUM,
 	CENTRAL_TRIAD
-};
+} Kernels;
 
 typedef enum {
 	STREAM,
@@ -94,7 +95,7 @@ typedef enum {
 	CENTRAL
 } KernelGroup;
 
-static char *kernel_map[NUM_KERNELS] = {
+static std::string kernel_map[NUM_KERNELS] = {
 	"COPY",
 	"SCALE",
 	"SUM",
@@ -127,9 +128,8 @@ double mysecond()
 {
         struct timeval tp;
         struct timezone tzp;
-        int i;
-
-        i = gettimeofday(&tp,&tzp);
+        
+        gettimeofday(&tp,&tzp);
         return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6 );
 }
 
@@ -238,4 +238,4 @@ void init_stream_array(STREAM_TYPE *array, ssize_t array_elements, STREAM_TYPE v
     }
 }
 
-#endif STREAM_CUDA_CUH
+#endif

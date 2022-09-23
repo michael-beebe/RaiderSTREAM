@@ -1,6 +1,5 @@
 #ifndef STREAM_CUDA_TUNED_CUH
 #define STREAM_CUDA_TUNED_CUH
-
 #include "stream_cuda.cuh"
 
 // =================================================================================
@@ -99,6 +98,4 @@ void tuned_STREAM_Triad_Central(STREAM_TYPE scalar) {
 }
 
 /* end of stubs for the "tuned" versions of the kernels */
-#endif
-
 #endif

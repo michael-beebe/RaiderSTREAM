@@ -6,7 +6,7 @@
 /*--------------------------------------------------------------------------------------
 - Initialize array to store labels for the benchmark kernels.
 --------------------------------------------------------------------------------------*/
-static char	*label[NUM_KERNELS] = {
+static std::string label[NUM_KERNELS] = {
     "Copy:\t\t", "Scale:\t\t",
     "Add:\t\t", "Triad:\t\t",
 	"GATHER Copy:\t", "GATHER Scale:\t",
@@ -22,11 +22,11 @@ static char	*label[NUM_KERNELS] = {
 /*--------------------------------------------------------------------------------------
  - Functions for printing initial system information and so forth
 --------------------------------------------------------------------------------------*/
-void print_info1(int BytesPerWord, ssize_t stream_array_size) {
-    printf(HLINE);
+void print_info1(ssize_t stream_array_size) {
+    int BytesPerWord = sizeof(STREAM_TYPE);
+	printf(HLINE);
     printf("RaiderSTREAM\n");
     printf(HLINE);
-    BytesPerWord = sizeof(STREAM_TYPE);
     printf("This system uses %d bytes per array element.\n",
 	BytesPerWord);
 

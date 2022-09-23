@@ -5,9 +5,10 @@
 #  Set true only for implementations you want to run
 # -------------------------------------------------
 export RUN_ORIGINAL=false
-export RUN_OMP=true
+export RUN_OMP=false
 export RUN_MPI=false
 export RUN_SHMEM=false
+export RUN_CUDA=true
 
 # Problem Size
 export STREAM_ARRAY_SIZE=10000000
@@ -63,6 +64,9 @@ if [[ $COMPILE == true ]] ; then
 
     if [[ $RUN_SHMEM == true ]] ; then
         make stream_oshmem
+    fi
+    fi [[ $RUN_CUDA == true ]] ; then
+        make stream_cuda
     fi
 fi
 
@@ -120,6 +124,20 @@ if [[ $RUN_SHMEM == true ]] ; then
     else
         echo "OpenSHMEM implementation failed to run!" >> $OUTPUT_FILE
         echo "OpenSHMEM implementation failed to run!"
+    fi
+    echo >> $OUTPUT_FILE
+    echo >> $OUTPUT_FILE
+fi
+
+if [[ $RUN_CUDA == true ]] ; then
+    echo "------------------------------------" >> $OUTPUT_FILE
+    echo "               CUDA"                  >> $OUTPUT_FILE
+    echo "------------------------------------" >> $OUTPUT_FILE
+    if $BUILD_DIR/stream_cuda.exe -n $STREAM_ARRAY_SIZE >> $OUTPUT_FILE; then
+        echo "CUDA implementation finished."
+    else
+        echo "CUDA implementation failed to run!" >> $OUTPUT_FILE
+        echo "CUDA implementation failed to run!"
     fi
     echo >> $OUTPUT_FILE
     echo >> $OUTPUT_FILE
