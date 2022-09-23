@@ -46,7 +46,7 @@
 - This is important as it is used throughout the benchmark code
 --------------------------------------------------------------------------------------*/
 # ifndef NUM_KERNELS
-# define NUM_KERNELS 16
+# define NUM_KERNELS 20
 # endif
 
 /*--------------------------------------------------------------------------------------
@@ -69,6 +69,10 @@ enum Kernels {
 	SCATTER_SCALE,
 	SCATTER_SUM,
 	SCATTER_TRIAD,
+	SG_COPY,
+	SG_SCALE,
+	SG_SUM,
+	SG_TRIAD,
 	CENTRAL_COPY,
 	CENTRAL_SCALE,
 	CENTRAL_SUM,
@@ -79,6 +83,7 @@ typedef enum {
 	STREAM,
 	GATHER,
 	SCATTER,
+	SG,
 	CENTRAL
 } KernelGroup;
 
@@ -95,6 +100,10 @@ static char *kernel_map[NUM_KERNELS] = {
 	"SCATTER_SCALE",
 	"SCATTER_SUM",
 	"SCATTER_TRIAD",
+	"SG_COPY",
+	"SG_SCALE",
+	"SG_SUM",
+	"SG_TRIAD",
 	"CENTRAL_COPY",
 	"CENTRAL_SCALE",
 	"CENTRAL_SUM",

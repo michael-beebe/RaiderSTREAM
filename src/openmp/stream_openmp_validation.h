@@ -226,6 +226,45 @@ void scatter_validation(ssize_t stream_array_size, STREAM_TYPE scalar, int *is_v
 #endif
 }
 
+void sg_validation(ssize_t stream_array_size, STREAM_TYPE scalar, int *is_validated, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c) {
+	STREAM_TYPE aj,bj,cj;
+	int err;
+
+    /* reproduce initialization */
+	aj = 1.0;
+	bj = 2.0;
+	cj = 0.0;
+
+    /* a[] is modified during timing check */
+	aj = 2.0E0 * aj;
+
+	/* now execute timing loop  */
+	scalar = 3.0;
+	for (int k = 0; k < NTIMES; k++){
+		// Scatter kernels
+		cj = aj;
+		bj = scalar*cj;
+		cj = aj+bj;
+		aj = bj+scalar*cj;
+  	}
+
+	err = validate_values(aj, bj, cj, stream_array_size, a, b, c, SG);
+
+	if (err == 0) {
+		is_validated[SG_COPY] = 1;
+		is_validated[SG_SCALE] = 1;
+		is_validated[SG_SUM] = 1;
+		is_validated[SG_TRIAD] = 1;
+	}
+#ifdef VERBOSE
+	printf("SCATTER-GATHER KERNELS VALIDATION\n");
+	printf ("Results Validation Verbose Results: \n");
+	printf ("    Expected a(1), b(1), c(1): %f %f %f \n",aj,bj,cj);
+	printf ("    Observed a(1), b(1), c(1): %f %f %f \n",a[1],b[1],c[1]);
+	printf ("    Rel Errors on a, b, c:     %e %e %e \n",abs(aAvgErr/aj),abs(bAvgErr/bj),abs(cAvgErr/cj));
+#endif
+}
+
 void central_validation(ssize_t stream_array_size, STREAM_TYPE scalar, int *is_validated, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c) {
 	STREAM_TYPE aj,bj,cj;
 	int err;

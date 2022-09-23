@@ -242,6 +242,41 @@ void scatter_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_vali
     } 
 }
 
+void sg_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_validated, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int myrank, int numranks) {
+	STREAM_TYPE aj,bj,cj;
+    STREAM_TYPE AvgErr[NUM_ARRAYS], AvgErrByRank[NUM_ARRAYS * numranks];
+    int err = 0;
+
+    /* reproduce initialization */
+	aj = 1.0;
+	bj = 2.0;
+	cj = 0.0;
+    /* a[] is modified during timing check */
+	aj = 2.0E0 * aj;
+
+    /* now execute timing loop */
+	scalar = SCALAR;
+	for (int k = 0; k < NTIMES; k++) {
+        cj = aj;
+        bj = scalar*cj;
+        cj = aj+bj;
+        aj = bj+scalar*cj;
+    }
+
+    validate_values(aj, bj, cj, array_elements, a, b, c, myrank, numranks, AvgErr, SG);
+    MPI_Gather(AvgErr, NUM_ARRAYS, MPI_DOUBLE, AvgErrByRank, NUM_ARRAYS, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    if(myrank == 0) {
+        err = group_kernel_validation(array_elements, AvgErrByRank, numranks, a, b, c, aj, bj, cj, SG);
+        if(err == 0) {
+            is_validated[SG_COPY] = 1;
+            is_validated[SG_SCALE] = 1;
+            is_validated[SG_SUM] = 1;
+            is_validated[SG_TRIAD] = 1;
+        }
+    } 
+}
+
 void central_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_validated, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int myrank, int numranks) {
 	STREAM_TYPE aj,bj,cj;
     STREAM_TYPE AvgErr[NUM_ARRAYS], AvgErrByRank[NUM_ARRAYS * numranks];

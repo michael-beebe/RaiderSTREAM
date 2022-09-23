@@ -31,6 +31,7 @@ STREAM_TYPE * restrict a, * restrict b, * restrict c;
 
 static ssize_t *IDX1;
 static ssize_t *IDX2;
+static ssize_t *IDX3;
 
 ssize_t		array_elements, array_bytes, array_alignment;
 
@@ -50,9 +51,9 @@ static int is_validated[NUM_KERNELS] = {0};
 extern int omp_get_num_threads();
 #endif
 
-void init_arrays(ssize_t stream_array_size) {
+void init_arrays(ssize_t STREAM_ARRAY_SIZE) {
 	#pragma omp parallel for
-    for (ssize_t j = 0; j < stream_array_size; j++) {
+    for (ssize_t j = 0; j < STREAM_ARRAY_SIZE; j++) {
 		a[j] = 2.0; // 1 or 2? since we are changing the validation we could discuss
 		b[j] = 2.0;
 		c[j] = 0.0;
@@ -286,6 +287,81 @@ void scatter_triad(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
 		times[SCATTER_TRIAD][k] = t1 - t0;
 }
 
+void sg_copy(double times[NUM_KERNELS][NTIMES], int k) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Copy_Scatter();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			c[IDX1[j]] = a[IDX2[j]];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[SG_COPY][k] = t1 - t0;
+}
+
+void sg_scale(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Scale_Scatter();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			b[IDX2[j]] = scalar * c[IDX1[j]];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[SG_SCALE][k] = t1 - t0;
+}
+
+void sg_sum(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef TUNED
+        tuned_STREAM_Add_Scatter();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			c[IDX1[j]] = a[IDX2[j]] + b[IDX3[j]];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[SG_SUM][k] = t1 - t0;
+}
+
+void sg_triad(double times[NUM_KERNELS][NTIMES], int k, double scalar) {
+	double t0, t1;
+	ssize_t j;
+	
+	t0 = MPI_Wtime();
+	MPI_Barrier(MPI_COMM_WORLD);
+#ifdef TUNED
+        tuned_STREAM_Triad_Scatter();
+#else
+#pragma omp parallel for
+		for (j = 0; j < array_elements; j++)
+			a[IDX2[j]] = b[IDX3[j]] + scalar * c[IDX1[j]];
+#endif
+		MPI_Barrier(MPI_COMM_WORLD);
+		t1 = MPI_Wtime();
+		times[SG_TRIAD][k] = t1 - t0;
+}
+
 void central_copy(double times[NUM_KERNELS][NTIMES], int k, STREAM_TYPE scalar) {
 	double t0, t1;
 	ssize_t j;
@@ -413,10 +489,15 @@ int main(int argc, char *argv[])
 		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // GATHER Add
 		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // GATHER Triad
 		// Scatter Kernels
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER copy
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER Scale
-		(((3 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER Add
-		(((3 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // SCATTER Triad
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER Add
+		(((3 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER Triad
+		// Scatter-Gather Kernels
+		(((2 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SG copy
+		(((2 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SG Scale
+		(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SG Add
+		(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SG Triad
 		// Central Kernels
 		2 * sizeof(STREAM_TYPE) * stream_array_size, // Central Copy
 		2 * sizeof(STREAM_TYPE) * stream_array_size, // Central Scale
@@ -440,6 +521,11 @@ int main(int argc, char *argv[])
 		1 * STREAM_ARRAY_SIZE, // SCATTER Scale
 		1 * STREAM_ARRAY_SIZE, // SCATTER Add
 		2 * STREAM_ARRAY_SIZE, // SCATTER Triad
+		// Scatter-Gather Kernels
+		(int)0,                // SG Copy
+		1 * STREAM_ARRAY_SIZE, // SG Scale
+		1 * STREAM_ARRAY_SIZE, // SG Add
+		2 * STREAM_ARRAY_SIZE, // SG Triad
 		// Central Kernels
 		(int)0,                // CENTRAL Copy
 		1 * STREAM_ARRAY_SIZE, // CENTRAL Scale
@@ -491,6 +577,7 @@ int main(int argc, char *argv[])
 --------------------------------------------------------------------------------------*/
 	IDX1 = malloc(array_elements * sizeof(ssize_t));
 	IDX2 = malloc(array_elements * sizeof(ssize_t));
+	IDX3 = malloc(array_elements * sizeof(ssize_t));
 
 /*--------------------------------------------------------------------------------------
     - Initialize the idx arrays on all PEs
@@ -500,10 +587,12 @@ int main(int argc, char *argv[])
     #ifdef CUSTOM
     	init_read_idx_array(IDX1, array_elements, "IDX1.txt");
     	init_read_idx_array(IDX2, array_elements, "IDX2.txt");
+		init_read_idx_array(IDX3, array_elements, "IDX3.txt");
     #else
         srand(time(0));
         init_random_idx_array(IDX1, array_elements);
         init_random_idx_array(IDX2, array_elements);
+		init_random_idx_array(IDX3, array_elements);
     #endif
 	
 /*--------------------------------------------------------------------------------------
@@ -657,6 +746,33 @@ int main(int argc, char *argv[])
 	}
 
 	scatter_validation(array_elements, scalar, is_validated, a, b, c, myrank, numranks);
+	
+	MPI_Barrier(MPI_COMM_WORLD);
+
+// =================================================================================
+//						SCATTER-GATHER VERSIONS OF THE KERNELS
+// =================================================================================
+	init_arrays(array_elements);
+	for(int k = 0; k < NTIMES; k++) {
+	// ----------------------------------------------
+	// 				SCATTER-GATHER COPY KERNEL
+	// ----------------------------------------------
+		sg_copy(times, k);
+	// ----------------------------------------------
+	// 				SCATTER-GATHER SCALE KERNEL
+	// ----------------------------------------------
+		sg_scale(times, k, scalar);
+	// ----------------------------------------------
+	// 				SCATTER-GATHER ADD KERNEL
+	// ----------------------------------------------
+		sg_sum(times, k, scalar);
+	// ----------------------------------------------
+	// 				SCATTER-GATHER TRIAD KERNEL
+	// ----------------------------------------------
+		sg_triad(times, k, scalar);
+	}
+
+	sg_validation(array_elements, scalar, is_validated, a, b, c, myrank, numranks);
 	
 	MPI_Barrier(MPI_COMM_WORLD);
 

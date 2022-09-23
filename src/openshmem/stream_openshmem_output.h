@@ -14,6 +14,8 @@ static char	*label[NUM_KERNELS] = {
 	"GATHER Add:\t", "GATHER Triad:\t",
 	"SCATTER Copy:\t", "SCATTER Scale:\t",
 	"SCATTER Add:\t", "SCATTER Triad:\t",
+	"SG      Copy:\t", "SG      Scale:\t",
+	"SG      Add:\t", "SG      Triad:\t",
 	"CENTRAL Copy:\t", "CENTRAL Scale:\t",
 	"CENTRAL Add:\t", "CENTRAL Triad:\t"
 };
