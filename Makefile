@@ -26,28 +26,29 @@ CUDA_FLAGS			?= # CUDA-specific flags
 #------------------------------------------------------------------
 # 					 DO NOT EDIT BELOW
 #------------------------------------------------------------------
-all: touch_build
+all: build
 	gcc   $(CFLAGS) $(PFLAGS) $(OPENMP) $(ORIGINAL_IMPL) 			 -o $(BUILD_DIR)/stream_original.exe
 	gcc   $(CFLAGS) $(PFLAGS) $(OPENMP) $(OMP_IMPL) 				 -o $(BUILD_DIR)/stream_omp.exe
 	mpicc $(CFLAGS) $(PFLAGS) $(OPENMP) $(MPI_FLAGS)  	$(MPI_IMPL)  -o $(BUILD_DIR)/stream_mpi.exe
 	oshcc $(CFLAGS) $(PFLAGS) $(OPENMP) $(SHMEM_FLAGS)  $(SHEM_IMPL) -o $(BUILD_DIR)/stream_oshmem.exe
 	nvcc  $(CFLAGS) $(PFLAGS) $(OPENMP) $(CUDA_FLAGS)	$(CUDA_IMPL) -o $(BUILD_DIR)/stream_cuda.exe
 
-stream_original: touch_build
+stream_original: build
 	gcc $(CFLAGS) $(PFLAGS) $(OPENMP)  $(ORIGINAL_IMPL) -o $(BUILD_DIR)/stream_original.exe
 
-stream_omp: touch_build
+stream_omp: build
 	gcc $(CFLAGS) $(PFLAGS) $(OPENMP)  $(OMP_IMPL) -o $(BUILD_DIR)/stream_omp.exe
 
-stream_mpi: touch_build
+stream_mpi: build
 	mpicc $(CFLAGS) $(PFLAGS) $(OPENMP) $(MPI_FLAGS)  $(MPI_IMPL) -o $(BUILD_DIR)/stream_mpi.exe
 
-stream_oshmem: touch_build
+stream_oshmem: build
 	oshcc $(CFLAGS) $(PFLAGS) $(OPENMP) $(SHMEM_FLAGS)  $(SHEM_IMPL) -o $(BUILD_DIR)/stream_oshmem.exe
 
-stream_cuda: touch_build
+stream_cuda: build
+	nvcc  $(CFLAGS) $(PFLAGS) $(OPENMP) $(CUDA_FLAGS)	$(CUDA_IMPL) -o $(BUILD_DIR)/stream_cuda.exe
 
-touch_build:
+build:
 	@mkdir $(BUILD_DIR)
 
 clean:

@@ -65,7 +65,7 @@ if [[ $COMPILE == true ]] ; then
     if [[ $RUN_SHMEM == true ]] ; then
         make stream_oshmem
     fi
-    fi [[ $RUN_CUDA == true ]] ; then
+    if [[ $RUN_CUDA == true ]] ; then
         make stream_cuda
     fi
 fi
