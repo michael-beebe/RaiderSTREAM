@@ -479,15 +479,15 @@ int main(int argc, char *argv[])
 --------------------------------------------------------------------------------------*/
 	double	bytes[NUM_KERNELS] = {
 		// Original Kernels
-		2 * sizeof(STREAM_TYPE) * stream_array_size, // Copy
-		2 * sizeof(STREAM_TYPE) * stream_array_size, // Scale
-		3 * sizeof(STREAM_TYPE) * stream_array_size, // Add
-		3 * sizeof(STREAM_TYPE) * stream_array_size, // Triad
+		2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Copy
+		2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Scale
+		3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Add
+		3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Triad
 		// Gather Kernels
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // GATHER copy
-		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * stream_array_size), // GATHER Scale
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // GATHER Add
-		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * stream_array_size), // GATHER Triad
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // GATHER copy
+		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // GATHER Scale
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // GATHER Add
+		(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // GATHER Triad
 		// Scatter Kernels
 		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER copy
 		(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SCATTER Scale
@@ -499,10 +499,10 @@ int main(int argc, char *argv[])
 		(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SG Add
 		(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t))) * STREAM_ARRAY_SIZE), // SG Triad
 		// Central Kernels
-		2 * sizeof(STREAM_TYPE) * stream_array_size, // Central Copy
-		2 * sizeof(STREAM_TYPE) * stream_array_size, // Central Scale
-		3 * sizeof(STREAM_TYPE) * stream_array_size, // Central Add
-		3 * sizeof(STREAM_TYPE) * stream_array_size, // Central Triad
+		2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Central Copy
+		2 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Central Scale
+		3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Central Add
+		3 * sizeof(STREAM_TYPE) * STREAM_ARRAY_SIZE, // Central Triad
 	};
 
 	double   flops[NUM_KERNELS] = {
