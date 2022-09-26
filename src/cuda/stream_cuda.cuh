@@ -60,11 +60,8 @@
 # define NUM_ARRAYS 3
 # endif
 
-# ifndef NUM_DEVICES
-# define NUM_DEVICES 1
-# endif
-
-ssize_t device_count = NUM_DEVICES;
+ssize_t device_count;
+cudaGetDeviceCount(&device_count);
 
 typedef enum {
 	COPY,
@@ -169,16 +166,13 @@ int checktick()
     return(minDelta);
 }
 
-void parse_opts(int argc, char **argv, ssize_t *stream_array_size, ssize_t *device_count) {
+void parse_opts(int argc, char **argv, ssize_t *stream_array_size) {
     int option;
     while( (option = getopt(argc, argv, "n:g:t:h")) != -1 ) {
         switch (option) {
             case 'n':
                 *stream_array_size = atoi(optarg);
                 break;
-			case 'g':
-				*device_count = atoi(optarg);
-				break;
             case 'h':
                 printf("Usage: -n <stream_array_size>\n");
                 exit(2);
