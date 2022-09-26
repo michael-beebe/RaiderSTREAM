@@ -91,52 +91,65 @@ __global__ void stream_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restr
 	if(j < array_elements) d_a[j] = d_b[j] + scalar * d_c[j];
 }
 
-void calculateTime(const cudaEvent_t& t0, const cudaEvent_t& t1, double times[NUM_KERNELS][NTIMES], int round, Kernels kernel) {
-	float ms = 0.0;
-	cudaEventSynchronize(t1);
-	cudaEventElapsedTime(&ms, t0, t1);
-	times[kernel][round] = ms * 1E-3;
+void calculateTime(int t0, double times[NUM_KERNELS][NTIMES], int round, Kernels kernel) {
+	cudaDeviceSynchronize();
+	times[kernel][round] = mysecond() - t0;
 }
 
 void executeSTREAM(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
 				   STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c,
 				   ssize_t* __restrict__  d_IDX1, ssize_t* __restrict__  d_IDX2, ssize_t* __restrict__  d_IDX3,
-				   double times[NUM_KERNELS][NTIMES], ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
+				   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
 {
 	init_arrays(array_elements);
-	cudaEvent_t t0, t1;
-	cudaEventCreate(&t0);
-	cudaEventCreate(&t1);
+	int t0;
 
-	cudaMemcpy(d_a, a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_b, b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_c, c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
+	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
+		cudaSetDevice(deviceId);
 
-	for(auto k = 0; k < NTIMES; k++) {
-		cudaEventRecord(t0);
-		stream_copy<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, array_elements);
-		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, COPY);
-
-		cudaEventRecord(t0);
-		stream_scale<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, array_elements);
-		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, SCALE);
-
-		cudaEventRecord(t0);
-		stream_sum<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, array_elements);
-		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, SUM);
-
-		cudaEventRecord(t0);
-		stream_triad<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, array_elements);
-		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, TRIAD);
+		cudaMemcpy(d_a, a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice); // here, it is not need to offset per device since all elements start with same values
+		cudaMemcpy(d_b, b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_c, c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
 	}
 
-	cudaMemcpy(a, d_a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-	cudaMemcpy(b, d_b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-	cudaMemcpy(c, d_c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
+	for(auto k = 0; k < NTIMES; k++) {
+		t0 = mysecond();
+		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
+			cudaSetDevice(deviceId);
+			stream_copy<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, array_elements);
+		}
+		calculateTime(t0, times, k, COPY);
+
+		t0 = mysecond();
+		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
+			cudaSetDevice(deviceId);
+			stream_scale<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, array_elements);
+		}
+		calculateTime(times, k, SCALE);
+
+		
+		t0 = mysecond();
+		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
+			cudaSetDevice(deviceId);
+			stream_sum<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, array_elements);
+		}
+		calculateTime(times, k, SUM);
+
+		t0 = mysecond();
+		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
+			cudaSetDevice(deviceId);
+			stream_triad<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, array_elements);
+		}
+		calculateTime(times, k, TRIAD);
+	}
+
+	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
+		cudaSetDevice(deviceId);
+
+		cudaMemcpy(a + deviceId * array_elements, d_a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
+		cudaMemcpy(b + deviceId * array_elements, d_b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
+		cudaMemcpy(c + deviceId * array_elements, d_c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
+	}
 
 	stream_validation(array_elements, scalar, is_validated, a, b, c);
 }
@@ -164,7 +177,7 @@ __global__ void gather_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restr
 void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
 				   STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c,
 				   ssize_t* __restrict__  d_IDX1, ssize_t* __restrict__  d_IDX2, ssize_t* __restrict__  d_IDX3,
-				   double times[NUM_KERNELS][NTIMES], ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
+				   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
 {
 	init_arrays(array_elements);
 	cudaEvent_t t0, t1;
@@ -179,22 +192,22 @@ void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		cudaEventRecord(t0);
 		gather_copy<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, d_IDX1, d_IDX2, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, GATHER_COPY);
+		calculateTime(times, k, GATHER_COPY);
 
 		cudaEventRecord(t0);
 		gather_scale<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, d_IDX1, d_IDX2, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, GATHER_SCALE);
+		calculateTime(times, k, GATHER_SCALE);
 
 		cudaEventRecord(t0);
 		gather_sum<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, d_IDX1, d_IDX2, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, GATHER_SUM);
+		calculateTime(times, k, GATHER_SUM);
 
 		cudaEventRecord(t0);
 		gather_triad<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, d_IDX1, d_IDX2, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, GATHER_TRIAD);
+		calculateTime(times, k, GATHER_TRIAD);
 	}
 
 	cudaMemcpy(a, d_a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
@@ -227,7 +240,7 @@ __global__ void scatter_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __rest
 void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
 				   STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c,
 				   ssize_t* __restrict__  d_IDX1, ssize_t* __restrict__  d_IDX2, ssize_t* __restrict__  d_IDX3,
-				   double times[NUM_KERNELS][NTIMES], ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
+				   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
 {
 	init_arrays(array_elements);
 	cudaEvent_t t0, t1;
@@ -242,22 +255,22 @@ void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		cudaEventRecord(t0);
 		scatter_copy<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, d_IDX1, d_IDX2, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, SCATTER_COPY);
+		calculateTime(times, k, SCATTER_COPY);
 
 		cudaEventRecord(t0);
 		scatter_scale<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, d_IDX1, d_IDX2, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, SCATTER_SCALE);
+		calculateTime(times, k, SCATTER_SCALE);
 
 		cudaEventRecord(t0);
 		scatter_sum<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, d_IDX1, d_IDX2, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, SCATTER_SUM);
+		calculateTime(times, k, SCATTER_SUM);
 
 		cudaEventRecord(t0);
 		scatter_triad<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, d_IDX1, d_IDX2, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, SCATTER_TRIAD);
+		calculateTime(times, k, SCATTER_TRIAD);
 	}
 
 	cudaMemcpy(a, d_a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
@@ -290,7 +303,7 @@ __global__ void sg_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict_
 void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
 				   STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c,
 				   ssize_t* __restrict__  d_IDX1, ssize_t* __restrict__  d_IDX2, ssize_t* __restrict__  d_IDX3,
-				   double times[NUM_KERNELS][NTIMES], ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
+				   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
 {
 	init_arrays(array_elements);
 	cudaEvent_t t0, t1;
@@ -305,22 +318,22 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 		cudaEventRecord(t0);
 		sg_copy<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, SG_COPY);
+		calculateTime(times, k, SG_COPY);
 
 		cudaEventRecord(t0);
 		sg_scale<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, d_IDX1, d_IDX2, d_IDX3, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, SG_SCALE);
+		calculateTime(times, k, SG_SCALE);
 
 		cudaEventRecord(t0);
 		sg_sum<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, SG_SUM);
+		calculateTime(times, k, SG_SUM);
 
 		cudaEventRecord(t0);
 		sg_triad<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, d_IDX1, d_IDX2, d_IDX3, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, SG_TRIAD);
+		calculateTime(times, k, SG_TRIAD);
 	}
 
 	cudaMemcpy(a, d_a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
@@ -349,9 +362,11 @@ __global__ void central_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __rest
 void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
 				   STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c,
 				   ssize_t* __restrict__  d_IDX1, ssize_t* __restrict__  d_IDX2, ssize_t* __restrict__  d_IDX3,
-				   double times[NUM_KERNELS][NTIMES], ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
+				   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
 {
 	init_arrays(array_elements);
+
+
 	cudaEvent_t t0, t1;
 	cudaEventCreate(&t0);
 	cudaEventCreate(&t1);
@@ -364,22 +379,22 @@ void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		cudaEventRecord(t0);
 		central_copy<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, CENTRAL_COPY);
+		calculateTime(times, k, CENTRAL_COPY);
 
 		cudaEventRecord(t0);
 		central_scale<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, CENTRAL_SCALE);
+		calculateTime(times, k, CENTRAL_SCALE);
 
 		cudaEventRecord(t0);
 		central_sum<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, CENTRAL_SUM);
+		calculateTime(times, k, CENTRAL_SUM);
 
 		cudaEventRecord(t0);
 		central_triad<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, array_elements);
 		cudaEventRecord(t1);
-		calculateTime(t0, t1, times, k, CENTRAL_TRIAD);
+		calculateTime(times, k, CENTRAL_TRIAD);
 	}
 
 	cudaMemcpy(a, d_a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
@@ -397,36 +412,38 @@ int main(int argc, char *argv[]) {
     ssize_t stream_array_size = 10000000; // Default stream_array_size is 10000000
     int			quantum, checktick();
     ssize_t		j;
+	double		t, times[NUM_KERNELS][NTIMES];
     STREAM_TYPE		scalar = 3.0;
-	ssize_t deviceCount = 1;
-    double		t, times[NUM_KERNELS][NTIMES];
 	double		t0,t1,tmin;
 
 /*
     get stream_array_size at runtime
 */
-    parse_opts(argc, argv, &stream_array_size);
+    parse_opts(argc, argv, &stream_array_size, &device_count);
 
 /*
     Allocate the arrays on the host
 */
+	ssize_t array_elements = stream_array_size / device_count;
+    a = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size);
+    b = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size);
+    c = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size);
 
-	ssize_t array_elements = stream_array_size / deviceCount;
-    a = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * array_elements);
-    b = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * array_elements);
-    c = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * array_elements);
+	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size);
+	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size);
+    IDX3 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size);
 
-	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * array_elements);
-	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * array_elements);
-    IDX3 = (ssize_t *) malloc(sizeof(ssize_t) * array_elements);
+	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
+		cudaSetDevice(deviceId);
 
-	cudaMalloc((void **) &d_a, sizeof(STREAM_TYPE) * array_elements);
-	cudaMalloc((void **) &d_b, sizeof(STREAM_TYPE) * array_elements);
-	cudaMalloc((void **) &d_c, sizeof(STREAM_TYPE) * array_elements);
+		cudaMalloc((void **) &d_a, sizeof(STREAM_TYPE) * array_elements);
+		cudaMalloc((void **) &d_b, sizeof(STREAM_TYPE) * array_elements);
+		cudaMalloc((void **) &d_c, sizeof(STREAM_TYPE) * array_elements);
 
-	cudaMalloc((void **) &d_IDX1, sizeof(ssize_t) * array_elements);
-	cudaMalloc((void **) &d_IDX2, sizeof(ssize_t) * array_elements);
-	cudaMalloc((void **) &d_IDX3, sizeof(ssize_t) * array_elements);
+		cudaMalloc((void **) &d_IDX1, sizeof(ssize_t) * array_elements);
+		cudaMalloc((void **) &d_IDX2, sizeof(ssize_t) * array_elements);
+		cudaMalloc((void **) &d_IDX3, sizeof(ssize_t) * array_elements);
+	}
 
 	double	bytes[NUM_KERNELS] = {
 		// Original Kernels
@@ -508,9 +525,13 @@ int main(int argc, char *argv[]) {
     init_random_idx_array(IDX3, array_elements);
 #endif
 
-	cudaMemcpy(d_IDX1, IDX1, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_IDX2, IDX2, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_IDX3, IDX3, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice);
+	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
+		cudaSetDevice(deviceId);
+
+		cudaMemcpy(d_IDX1, IDX1, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_IDX2, IDX2, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_IDX3, IDX3, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice);
+	}
 
 /*--------------------------------------------------------------------------------------
     - Print initial info
@@ -546,9 +567,6 @@ int main(int argc, char *argv[]) {
         c[j] = 0.0;
     }
 
-// TODO: copy necessary data to device
-
-
 /*--------------------------------------------------------------------------------------
     // Estimate precision and granularity of timer
 --------------------------------------------------------------------------------------*/
@@ -565,11 +583,11 @@ int main(int argc, char *argv[]) {
 	print_info2(t, quantum);
 	print_memory_usage(stream_array_size);
 
-	executeSTREAM(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, array_elements, scalar, is_validated);
-	executeGATHER(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, array_elements, scalar, is_validated);
-	executeSCATTER(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, array_elements, scalar, is_validated);
-	executeSG(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, array_elements, scalar, is_validated);
-	executeCENTRAL(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, array_elements, scalar, is_validated);
+	executeSTREAM( a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, array_elements, scalar, is_validated);
+	executeGATHER( a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, array_elements, scalar, is_validated);
+	executeSCATTER(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, array_elements, scalar, is_validated);
+	executeSG(     a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, array_elements, scalar, is_validated);
+	executeCENTRAL(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, array_elements, scalar, is_validated);
 
 /*--------------------------------------------------------------------------------------
 	// Calculate results
