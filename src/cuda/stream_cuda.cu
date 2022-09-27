@@ -485,6 +485,7 @@ int main(int argc, char *argv[]) {
     STREAM_TYPE		scalar = 3.0;
 	double		t0,t1,tmin;
 
+	num_devices_check();
 /*
     get stream_array_size at runtime
 */

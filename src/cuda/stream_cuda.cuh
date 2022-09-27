@@ -245,11 +245,24 @@ void init_stream_array(STREAM_TYPE *array, ssize_t array_elements, STREAM_TYPE v
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
 {
-   if (code != cudaSuccess) 
-   {
+   if (code != cudaSuccess) {
       fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
       if (abort) exit(code);
    }
+}
+
+void num_devices_check() {
+    int available_devices;
+    cudaGetDeviceCount(&available_devices);
+
+    if(NUM_GPUS > available_devices) {
+        printf(HLINE);
+        printf("NUM_GPUS should be set with -DNUM_GPUS=<number_of_gpus> when compiling. NUM_GPUS can not be greater than the number of available gpus");
+        printf(HLINE);
+
+        cudaError_t code = cudaErrorInvalidConfiguration;
+        exit(code);
+    }
 }
 
 #endif
