@@ -359,7 +359,7 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			sg_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements) );
+							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, SG_COPY);
 
