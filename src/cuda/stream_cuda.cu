@@ -498,19 +498,19 @@ int main(int argc, char *argv[]) {
     b = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size);
     c = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size);
 
-	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size);
-	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size);
-    IDX3 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size);
+	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * array_elements);
+	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * array_elements);
+    IDX3 = (ssize_t *) malloc(sizeof(ssize_t) * array_elements);
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
 		gpuErrchk( cudaSetDevice(deviceId) );
 
-		gpuErrchk( cudaMalloc((void **) &d_a[deviceId], sizeof(STREAM_TYPE) * array_elements) );
-		gpuErrchk( cudaMalloc((void **) &d_b[deviceId], sizeof(STREAM_TYPE) * array_elements) );
-		gpuErrchk( cudaMalloc((void **) &d_c[deviceId], sizeof(STREAM_TYPE) * array_elements) );
-		gpuErrchk( cudaMalloc((void **) &d_IDX1, sizeof(ssize_t) * array_elements) );
-		gpuErrchk( cudaMalloc((void **) &d_IDX2, sizeof(ssize_t) * array_elements) );
-		gpuErrchk( cudaMalloc((void **) &d_IDX3, sizeof(ssize_t) * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_a[deviceId],    sizeof(STREAM_TYPE) * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_b[deviceId],    sizeof(STREAM_TYPE) * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_c[deviceId],    sizeof(STREAM_TYPE) * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_IDX1[deviceId], sizeof(ssize_t)     * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_IDX2[deviceId], sizeof(ssize_t)     * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_IDX3[deviceId], sizeof(ssize_t)     * array_elements) );
 	}
 
 	double	bytes[NUM_KERNELS] = {
@@ -596,9 +596,9 @@ int main(int argc, char *argv[]) {
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
 		gpuErrchk( cudaSetDevice(deviceId) );
 
-		gpuErrchk( cudaMemcpy(d_IDX1, IDX1, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
-		gpuErrchk( cudaMemcpy(d_IDX2, IDX2, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
-		gpuErrchk( cudaMemcpy(d_IDX3, IDX3, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_IDX1[deviceId], IDX1, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_IDX2[deviceId], IDX2, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_IDX3[deviceId], IDX3, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
 	}
 
 /*--------------------------------------------------------------------------------------
