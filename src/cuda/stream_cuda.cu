@@ -105,50 +105,50 @@ void executeSTREAM(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 	double t0;
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMemcpy(d_a[deviceId], a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_b[deviceId], b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_c[deviceId], c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
+		gpuErrchk( cudaMemcpy(d_a[deviceId], a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_b[deviceId], b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_c[deviceId], c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
 	}
 
 	for(auto k = 0; k < NTIMES; k++) {
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			stream_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( stream_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, COPY);
 
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			stream_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( stream_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements) );
 		}
-		calculateTime(times, k, SCALE);
+		calculateTime(t0, times, k, SCALE);
 
 		
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			stream_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( stream_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements) );
 		}
-		calculateTime(times, k, SUM);
+		calculateTime(t0, times, k, SUM);
 
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			stream_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( stream_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements) );
 		}
-		calculateTime(times, k, TRIAD);
+		calculateTime(t0, times, k, TRIAD);
 	}
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMemcpy(a + deviceId * array_elements, d_a[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-		cudaMemcpy(b + deviceId * array_elements, d_b[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-		cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
+		gpuErrchk( cudaMemcpy(a + deviceId * array_elements, d_a[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
+		gpuErrchk( cudaMemcpy(b + deviceId * array_elements, d_b[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
+		gpuErrchk( cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
 	}
 
 	stream_validation(array_elements, scalar, is_validated, a, b, c);
@@ -175,7 +175,7 @@ __global__ void gather_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restr
 }
 
 void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
-				   STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c,
+				   STREAM_TYPE* __restrict__ d_a[device_count], STREAM_TYPE* __restrict__ d_b[device_count], STREAM_TYPE* __restrict__ d_c[device_count],
 				   ssize_t* __restrict__  d_IDX1[device_count], ssize_t* __restrict__  d_IDX2[device_count], ssize_t* __restrict__  d_IDX3[device_count],
 				   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
 {
@@ -183,54 +183,54 @@ void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 	double t0;
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMemcpy(d_a[deviceId], a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_b[deviceId], b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_c[deviceId], c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
+		gpuErrchk( cudaMemcpy(d_a[deviceId], a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_b[deviceId], b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_c[deviceId], c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
 	}
 
 	for(auto k = 0; k < NTIMES; k++) {
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			gather_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( gather_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+							d_IDX1[deviceId], d_IDX2[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, GATHER_COPY);
 
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			gather_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( gather_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+							d_IDX1[deviceId], d_IDX2[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, GATHER_SCALE);
 
 		
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			gather_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( gather_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+							d_IDX1[deviceId], d_IDX2[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, GATHER_SUM);
 
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			gather_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( gather_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+							d_IDX1[deviceId], d_IDX2[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, GATHER_TRIAD);
 	}
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMemcpy(a + deviceId * array_elements, d_a[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-		cudaMemcpy(b + deviceId * array_elements, d_b[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-		cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
+		gpuErrchk( cudaMemcpy(a + deviceId * array_elements, d_a[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
+		gpuErrchk( cudaMemcpy(b + deviceId * array_elements, d_b[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
+		gpuErrchk( cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
 	}
 
 	gather_validation(array_elements, scalar, is_validated, a, b, c);
@@ -257,7 +257,7 @@ __global__ void scatter_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __rest
 }
 
 void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
-				    STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c,
+				    STREAM_TYPE* __restrict__ d_a[device_count], STREAM_TYPE* __restrict__ d_b[device_count], STREAM_TYPE* __restrict__ d_c[device_count],
 				    ssize_t* __restrict__  d_IDX1[device_count], ssize_t* __restrict__  d_IDX2[device_count], ssize_t* __restrict__  d_IDX3[device_count],
 				    double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
 {
@@ -265,54 +265,54 @@ void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 	double t0;
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMemcpy(d_a[deviceId], a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_b[deviceId], b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_c[deviceId], c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
+		gpuErrchk( cudaMemcpy(d_a[deviceId], a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_b[deviceId], b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_c[deviceId], c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
 	}
 
 	for(auto k = 0; k < NTIMES; k++) {
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			scatter_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( scatter_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+							d_IDX1[deviceId], d_IDX2[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, SCATTER_COPY);
 
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			scatter_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( scatter_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+							d_IDX1[deviceId], d_IDX2[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, SCATTER_SCALE);
 
 		
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			scatter_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( scatter_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+							d_IDX1[deviceId], d_IDX2[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, SCATTER_SUM);
 
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			scatter_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( scatter_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+							d_IDX1[deviceId], d_IDX2[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, SCATTER_TRIAD);
 	}
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMemcpy(a + deviceId * array_elements, d_a[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-		cudaMemcpy(b + deviceId * array_elements, d_b[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-		cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
+		gpuErrchk( cudaMemcpy(a + deviceId * array_elements, d_a[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
+		gpuErrchk( cudaMemcpy(b + deviceId * array_elements, d_b[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
+		gpuErrchk( cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
 	}
 
 	scatter_validation(array_elements, scalar, is_validated, a, b, c);
@@ -339,7 +339,7 @@ __global__ void sg_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict_
 }
 
 void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
-			   STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c,
+			   STREAM_TYPE* __restrict__ d_a[device_count], STREAM_TYPE* __restrict__ d_b[device_count], STREAM_TYPE* __restrict__ d_c[device_count],
 			   ssize_t* __restrict__  d_IDX1[device_count], ssize_t* __restrict__  d_IDX2[device_count], ssize_t* __restrict__  d_IDX3[device_count],
 			   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
 {
@@ -347,54 +347,54 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 	double t0;
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMemcpy(d_a[deviceId], a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_b[deviceId], b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_c[deviceId], c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
+		gpuErrchk( cudaMemcpy(d_a[deviceId], a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_b[deviceId], b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_c[deviceId], c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
 	}
 
 	for(auto k = 0; k < NTIMES; k++) {
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			sg_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( sg_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, SG_COPY);
 
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			sg_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( sg_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, SG_SCALE);
 
 		
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			sg_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( sg_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, SG_SUM);
 
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			sg_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
-							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( sg_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, SG_TRIAD);
 	}
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMemcpy(a + deviceId * array_elements, d_a[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-		cudaMemcpy(b + deviceId * array_elements, d_b[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-		cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
+		gpuErrchk( cudaMemcpy(a + deviceId * array_elements, d_a[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
+		gpuErrchk( cudaMemcpy(b + deviceId * array_elements, d_b[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
+		gpuErrchk( cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
 	}
 
 	sg_validation(array_elements, scalar, is_validated, a, b, c);
@@ -417,7 +417,7 @@ __global__ void central_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __rest
 }
 
 void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
-				   STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c,
+				   STREAM_TYPE* __restrict__ d_a[device_count], STREAM_TYPE* __restrict__ d_b[device_count], STREAM_TYPE* __restrict__ d_c[device_count],
 				   ssize_t* __restrict__  d_IDX1[device_count], ssize_t* __restrict__  d_IDX2[device_count], ssize_t* __restrict__  d_IDX3[device_count],
 				   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
 {
@@ -425,49 +425,49 @@ void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 	double t0;
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMemcpy(d_a[deviceId], a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_b[deviceId], b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_c[deviceId], c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice);
+		gpuErrchk( cudaMemcpy(d_a[deviceId], a, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_b[deviceId], b, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_c[deviceId], c, sizeof(STREAM_TYPE) * array_elements, cudaMemcpyHostToDevice) );
 	}
 
 	for(auto k = 0; k < NTIMES; k++) {
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			central_copy<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( central_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, CENTRAL_COPY);
 
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			central_scale<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( central_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements) );
 		}
 		calculateTime(t0, times, k, CENTRAL_SCALE);
 
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			central_sum<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( central_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements) );
 		}
 		calculateTime(t0, times, k, CENTRAL_SUM);
 
 		t0 = mysecond();
 		for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-			cudaSetDevice(deviceId);
-			central_triad<<< (array_elements + 255)/256, 256 >>>(d_a, d_b, d_c, scalar, array_elements);
+			gpuErrchk( cudaSetDevice(deviceId) );
+			gpuErrchk( central_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements) );
 		}
 		calculateTime(t0, times, k, CENTRAL_TRIAD);
 	}
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMemcpy(a + deviceId * array_elements, d_a[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-		cudaMemcpy(b + deviceId * array_elements, d_b[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
-		cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost);
+		gpuErrchk( cudaMemcpy(a + deviceId * array_elements, d_a[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
+		gpuErrchk( cudaMemcpy(b + deviceId * array_elements, d_b[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
+		gpuErrchk( cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
 	}
 
 	central_validation(array_elements, scalar, is_validated, a, b, c);
@@ -503,15 +503,14 @@ int main(int argc, char *argv[]) {
     IDX3 = (ssize_t *) malloc(sizeof(ssize_t) * stream_array_size);
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMalloc((void **) &d_a[deviceId], sizeof(STREAM_TYPE) * array_elements);
-		cudaMalloc((void **) &d_b[deviceId], sizeof(STREAM_TYPE) * array_elements);
-		cudaMalloc((void **) &d_c[deviceId], sizeof(STREAM_TYPE) * array_elements);
-
-		cudaMalloc((void **) &d_IDX1, sizeof(ssize_t) * array_elements);
-		cudaMalloc((void **) &d_IDX2, sizeof(ssize_t) * array_elements);
-		cudaMalloc((void **) &d_IDX3, sizeof(ssize_t) * array_elements);
+		gpuErrchk( cudaMalloc((void **) &d_a[deviceId], sizeof(STREAM_TYPE) * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_b[deviceId], sizeof(STREAM_TYPE) * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_c[deviceId], sizeof(STREAM_TYPE) * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_IDX1, sizeof(ssize_t) * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_IDX2, sizeof(ssize_t) * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_IDX3, sizeof(ssize_t) * array_elements) );
 	}
 
 	double	bytes[NUM_KERNELS] = {
@@ -595,11 +594,11 @@ int main(int argc, char *argv[]) {
 #endif
 
 	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
-		cudaSetDevice(deviceId);
+		gpuErrchk( cudaSetDevice(deviceId) );
 
-		cudaMemcpy(d_IDX1, IDX1, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_IDX2, IDX2, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_IDX3, IDX3, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice);
+		gpuErrchk( cudaMemcpy(d_IDX1, IDX1, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_IDX2, IDX2, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_IDX3, IDX3, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
 	}
 
 /*--------------------------------------------------------------------------------------
@@ -717,13 +716,16 @@ int main(int argc, char *argv[]) {
 	free(IDX2);
 	free(IDX3);
 
-	cudaFree(d_a);
-	cudaFree(d_b);
-	cudaFree(d_c);
-	
-	cudaFree(d_IDX1);
-	cudaFree(d_IDX2);
-	cudaFree(d_IDX3);
+	for(auto deviceId = 0; deviceId < device_count; deviceId++) {
+		gpuErrchk( cudaSetDevice(deviceId) );
+		
+		gpuErrchk( cudaFree(d_a[deviceId]) );
+		gpuErrchk( cudaFree(d_b[deviceId]) );
+		gpuErrchk( cudaFree(d_c[deviceId]) );
+		gpuErrchk( cudaFree(d_IDX1[deviceId]) );
+		gpuErrchk( cudaFree(d_IDX2[deviceId]) );
+		gpuErrchk( cudaFree(d_IDX3[deviceId]) );
+	}
 
     return 0;
 }
