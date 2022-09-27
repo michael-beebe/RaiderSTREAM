@@ -60,8 +60,7 @@
 # define NUM_ARRAYS 3
 # endif
 
-ssize_t device_count;
-cudaGetDeviceCount(&device_count);
+const ssize_t device_count = 2;
 
 typedef enum {
 	COPY,
