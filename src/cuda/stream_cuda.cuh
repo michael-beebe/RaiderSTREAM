@@ -60,7 +60,9 @@
 # define NUM_ARRAYS 3
 # endif
 
-const ssize_t device_count = 2;
+# ifndef NUM_GPUS
+# define NUM_GPUS 1
+# endif
 
 typedef enum {
 	COPY,
