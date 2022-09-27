@@ -257,7 +257,7 @@ void num_devices_check() {
 
     if(NUM_GPUS > available_devices) {
         printf(HLINE);
-        printf("NUM_GPUS should be set with -DNUM_GPUS=<number_of_gpus> when compiling. NUM_GPUS can not be greater than the number of available gpus");
+        printf("NUM_GPUS should be set with -DNUM_GPUS=<number_of_gpus> when compiling. NUM_GPUS can not be greater than the number of available gpus\n");
         printf(HLINE);
 
         cudaError_t code = cudaErrorInvalidConfiguration;
