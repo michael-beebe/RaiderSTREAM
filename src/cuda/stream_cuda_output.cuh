@@ -14,7 +14,7 @@ static std::string label[NUM_KERNELS] = {
 	"SCATTER Copy:\t", "SCATTER Scale:\t",
 	"SCATTER Add:\t", "SCATTER Triad:\t",
     "SG Copy:\t", "SG Scale\t",
-    "SG Add:\t", "SG Triad:\t",
+    "SG Add:\t\t", "SG Triad:\t",
 	"CENTRAL Copy:\t", "CENTRAL Scale:\t",
 	"CENTRAL Add:\t", "CENTRAL Triad:\t"
 };

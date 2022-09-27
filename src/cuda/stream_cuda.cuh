@@ -60,6 +60,10 @@
 # define NUM_ARRAYS 3
 # endif
 
+# ifndef NUM_GPUS
+# define NUM_GPUS 1
+# endif
+
 typedef enum {
 	COPY,
 	SCALE,
@@ -165,7 +169,7 @@ int checktick()
 
 void parse_opts(int argc, char **argv, ssize_t *stream_array_size) {
     int option;
-    while( (option = getopt(argc, argv, "n:t:h")) != -1 ) {
+    while( (option = getopt(argc, argv, "n:g:t:h")) != -1 ) {
         switch (option) {
             case 'n':
                 *stream_array_size = atoi(optarg);
@@ -235,6 +239,29 @@ void init_stream_array(STREAM_TYPE *array, ssize_t array_elements, STREAM_TYPE v
     #pragma omp parallel for
     for (ssize_t i = 0; i < array_elements; i++) {
         array[i] = value;
+    }
+}
+
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
+void num_devices_check() {
+    int available_devices;
+    cudaGetDeviceCount(&available_devices);
+
+    if(NUM_GPUS > available_devices) {
+        printf(HLINE);
+        printf("NUM_GPUS should be set with -DNUM_GPUS=<number_of_gpus> when compiling. NUM_GPUS can not be greater than the number of available gpus\n");
+        printf(HLINE);
+
+        cudaError_t code = cudaErrorInvalidConfiguration;
+        exit(code);
     }
 }
 
