@@ -4,12 +4,13 @@
 #include "stream_cuda.cuh"
 
 void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
-                  STREAM_TYPE exp_val, double epsilon, int* errors, ssize_t array_elements) {
+                  STREAM_TYPE exp_val, double epsilon, int* errors, ssize_t array_elements, KernelGroup group) {
   ssize_t i;
   int ierr = 0;
 
 	if (abs(avg_err/exp_val) > epsilon) {
 		(*errors)++;
+		printf("Kernel %s", kernel_map[group].c_str());
 		printf ("Failed Validation on array %s, AvgRelAbsErr > epsilon (%e)\n", label, epsilon);
 		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n", exp_val, avg_err, abs(avg_err/exp_val));
 		ierr = 0;
@@ -29,10 +30,11 @@ void check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
 }
 
 void central_check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg_err,
-                  STREAM_TYPE exp_val, double epsilon, int* errors, ssize_t array_elements) {
+                  STREAM_TYPE exp_val, double epsilon, int* errors, ssize_t array_elements, KernelGroup group) {
 
 	if (abs(avg_err/exp_val) > epsilon) {
 		(*errors)++;
+		printf("Kernel %s", kernel_map[group].c_str());
 		printf ("Failed Validation on array %s, AvgRelAbsErr > epsilon (%e)\n", label, epsilon);
 		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n", exp_val, avg_err, abs(avg_err/exp_val));
 	}
@@ -67,15 +69,15 @@ int group_kernel_validation(ssize_t array_elements, STREAM_TYPE *AvgErrByRank, i
 	switch (group)
 	{
 	case CENTRAL:
-		central_check_errors("a[]", a, aAvgErr, aj, epsilon, &err, array_elements);
-		central_check_errors("b[]", b, bAvgErr, bj, epsilon, &err, array_elements);
-		central_check_errors("c[]", c, cAvgErr, cj, epsilon, &err, array_elements);
+		central_check_errors("a[]", a, aAvgErr, aj, epsilon, &err, array_elements, group);
+		central_check_errors("b[]", b, bAvgErr, bj, epsilon, &err, array_elements, group);
+		central_check_errors("c[]", c, cAvgErr, cj, epsilon, &err, array_elements, group);
 		break;
 	
 	default:
-		check_errors("a[]", a, aAvgErr, aj, epsilon, &err, array_elements);
-		check_errors("b[]", b, bAvgErr, bj, epsilon, &err, array_elements);
-		check_errors("c[]", c, cAvgErr, cj, epsilon, &err, array_elements);
+		check_errors("a[]", a, aAvgErr, aj, epsilon, &err, array_elements, group);
+		check_errors("b[]", b, bAvgErr, bj, epsilon, &err, array_elements, group);
+		check_errors("c[]", c, cAvgErr, cj, epsilon, &err, array_elements, group);
 		break;
 	}
 
