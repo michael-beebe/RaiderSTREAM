@@ -252,19 +252,11 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
-void num_devices_check(int myrank) {
+bool num_devices_check(int myrank) {
     int available_devices;
     cudaGetDeviceCount(&available_devices);
-
-    if(NUM_GPUS > available_devices) {
-        printf(HLINE);
-        printf("Rank %d\n", myrank);
-        printf("NUM_GPUS should be set with -DNUM_GPUS=<number_of_gpus> when compiling. NUM_GPUS can not be greater than the number of available gpus\n");
-        printf(HLINE);
-
-        cudaError_t code = cudaErrorInvalidConfiguration;
-        exit(code);
-    }
+    printf("%d number of gpus used and %d number of available gpus\n", NUM_GPUS, available_devices);
+    return NUM_GPUS <= available_devices;
 }
 
 #endif

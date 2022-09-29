@@ -115,7 +115,7 @@ void central_errors(STREAM_TYPE aj, STREAM_TYPE bj, STREAM_TYPE cj, ssize_t arra
 	AvgErr[2] = SumErr[2];
 }
 
-double validate_values(STREAM_TYPE aj, STREAM_TYPE bj, STREAM_TYPE cj, ssize_t array_elements, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int myrank, int numranks, STREAM_TYPE *AvgErr, KernelGroup group) {
+void validate_values(STREAM_TYPE aj, STREAM_TYPE bj, STREAM_TYPE cj, ssize_t array_elements, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, int myrank, int numranks, STREAM_TYPE *AvgErr, KernelGroup group) {
 	STREAM_TYPE SumErr[NUM_ARRAYS];
 
 	switch (group)
@@ -149,7 +149,6 @@ void stream_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_valid
 	aj = 2.0E0 * aj;
 
     /* now execute timing loop */
-	scalar = SCALAR;
 	for (int k = 0; k < NTIMES; k++) {
         cj = aj;
         bj = scalar*cj;
@@ -184,7 +183,6 @@ void gather_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_valid
 	aj = 2.0E0 * aj;
 
     /* now execute timing loop */
-	scalar = SCALAR;
 	for (int k = 0; k < NTIMES; k++) {
         cj = aj;
         bj = scalar*cj;
@@ -219,7 +217,6 @@ void scatter_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_vali
 	aj = 2.0E0 * aj;
 
     /* now execute timing loop */
-	scalar = SCALAR;
 	for (int k = 0; k < NTIMES; k++) {
         cj = aj;
         bj = scalar*cj;
@@ -254,7 +251,6 @@ void sg_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_validated
 	aj = 2.0E0 * aj;
 
     /* now execute timing loop */
-	scalar = SCALAR;
 	for (int k = 0; k < NTIMES; k++) {
         cj = aj;
         bj = scalar*cj;
@@ -289,7 +285,6 @@ void central_validation(ssize_t array_elements, STREAM_TYPE scalar, int *is_vali
 	aj = 2.0E0 * aj;
 
     /* now execute timing loop */
-	scalar = SCALAR;
 	for (int k = 0; k < NTIMES; k++) {
         cj = aj;
         bj = scalar*cj;
