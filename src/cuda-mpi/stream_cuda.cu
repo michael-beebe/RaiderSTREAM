@@ -507,7 +507,7 @@ int main(int argc, char *argv[]) {
     int			quantum, checktick();
     ssize_t		j;
 	double		t, times[NUM_KERNELS][NTIMES];
-    STREAM_TYPE		scalar = 3.0;
+    STREAM_TYPE		scalar = 0.42;
 	double		*TimesByRank;
 	STREAM_TYPE *AvgErrByRank;
 	double		t0,t1,tmin;
@@ -569,9 +569,9 @@ int main(int argc, char *argv[]) {
         exit(1);
 	}
 
-	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * elements_per_rank);
-	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * elements_per_rank);
-    IDX3 = (ssize_t *) malloc(sizeof(ssize_t) * elements_per_rank);
+	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * array_elements);
+	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * array_elements);
+    IDX3 = (ssize_t *) malloc(sizeof(ssize_t) * array_elements);
 
 	for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 		gpuErrchk( cudaSetDevice(deviceId) );
@@ -579,9 +579,9 @@ int main(int argc, char *argv[]) {
 		gpuErrchk( cudaMalloc((void **) &d_a[deviceId],    sizeof(STREAM_TYPE) * elements_per_rank) );
 		gpuErrchk( cudaMalloc((void **) &d_b[deviceId],    sizeof(STREAM_TYPE) * elements_per_rank) );
 		gpuErrchk( cudaMalloc((void **) &d_c[deviceId],    sizeof(STREAM_TYPE) * elements_per_rank) );
-		gpuErrchk( cudaMalloc((void **) &d_IDX1[deviceId], sizeof(ssize_t)     * elements_per_rank) );
-		gpuErrchk( cudaMalloc((void **) &d_IDX2[deviceId], sizeof(ssize_t)     * elements_per_rank) );
-		gpuErrchk( cudaMalloc((void **) &d_IDX3[deviceId], sizeof(ssize_t)     * elements_per_rank) );
+		gpuErrchk( cudaMalloc((void **) &d_IDX1[deviceId], sizeof(ssize_t)     * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_IDX2[deviceId], sizeof(ssize_t)     * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_IDX3[deviceId], sizeof(ssize_t)     * array_elements) );
 	}
 
 	double	bytes[NUM_KERNELS] = {
@@ -654,22 +654,22 @@ int main(int argc, char *argv[]) {
 	- If -DCUSTOM is not enabled, populate the IDX arrays with random values
 --------------------------------------------------------------------------------------*/
 #ifdef CUSTOM
-	init_read_idx_array(IDX1, elements_per_rank, "IDX1.txt");
-	init_read_idx_array(IDX2, elements_per_rank, "IDX2.txt");
-	init_read_idx_array(IDX3, elements_per_rank, "IDX2.txt");
+	init_read_idx_array(IDX1, array_elements, "IDX1.txt");
+	init_read_idx_array(IDX2, array_elements, "IDX2.txt");
+	init_read_idx_array(IDX3, array_elements, "IDX2.txt");
 #else
     srand(time(0));
-    init_random_idx_array(IDX1, elements_per_rank);
-    init_random_idx_array(IDX2, elements_per_rank);
-    init_random_idx_array(IDX3, elements_per_rank);
+    init_random_idx_array(IDX1, array_elements);
+    init_random_idx_array(IDX2, array_elements);
+    init_random_idx_array(IDX3, array_elements);
 #endif
 
 	for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 		gpuErrchk( cudaSetDevice(deviceId) );
 
-		gpuErrchk( cudaMemcpy(d_IDX1[deviceId], IDX1, sizeof(ssize_t) * elements_per_rank, cudaMemcpyHostToDevice) );
-		gpuErrchk( cudaMemcpy(d_IDX2[deviceId], IDX2, sizeof(ssize_t) * elements_per_rank, cudaMemcpyHostToDevice) );
-		gpuErrchk( cudaMemcpy(d_IDX3[deviceId], IDX3, sizeof(ssize_t) * elements_per_rank, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_IDX1[deviceId], IDX1, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_IDX2[deviceId], IDX2, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(d_IDX3[deviceId], IDX3, sizeof(ssize_t) * array_elements, cudaMemcpyHostToDevice) );
 	}
 
 /*--------------------------------------------------------------------------------------
