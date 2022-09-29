@@ -100,6 +100,14 @@ typedef enum {
 	CENTRAL
 } KernelGroup;
 
+static std::string kernel_group_map[NUM_KERNELS / 4] = {
+    "STREAM",
+	"GATHER",
+	"SCATTER",
+    "SG",
+	"CENTRAL"
+};
+
 static std::string kernel_map[NUM_KERNELS] = {
 	"COPY",
 	"SCALE",

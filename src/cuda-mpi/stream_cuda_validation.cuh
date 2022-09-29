@@ -34,7 +34,7 @@ void central_check_errors(const char* label, STREAM_TYPE* array, STREAM_TYPE avg
 
 	if (abs(avg_err/exp_val) > epsilon) {
 		(*errors)++;
-		printf("Kernel %s", kernel_map[group].c_str());
+		printf("Kernel %s", kernel_group_map[group].c_str());
 		printf ("Failed Validation on array %s, AvgRelAbsErr > epsilon (%e)\n", label, epsilon);
 		printf ("     Expected Value: %e, AvgAbsErr: %e, AvgRelAbsErr: %e\n", exp_val, avg_err, abs(avg_err/exp_val));
 	}
