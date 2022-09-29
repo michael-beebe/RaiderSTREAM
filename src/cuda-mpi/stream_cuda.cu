@@ -533,7 +533,6 @@ int main(int argc, char *argv[]) {
         exit(code);
 	}
 
-	printf("\n\n\n\nRankd %d stil working\n\n\n\n", myrank);
 /*
     get stream_array_size at runtime
 */

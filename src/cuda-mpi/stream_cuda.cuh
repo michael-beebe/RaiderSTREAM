@@ -263,7 +263,10 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 bool num_devices_check(int myrank) {
     int available_devices;
     cudaGetDeviceCount(&available_devices);
-    printf("%d number of gpus used and %d number of available gpus\n", NUM_GPUS, available_devices);
+    printf(HLINE);
+    printf("                    GPU SELECTION INFORMATION\n");
+    printf("%d number of gpus used and %d number of available gpus at rank %d\n", NUM_GPUS, available_devices, myrank);
+    printf(HLINE);
     return NUM_GPUS <= available_devices;
 }
 
