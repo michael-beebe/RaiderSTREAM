@@ -22,7 +22,7 @@ static std::string label[NUM_KERNELS] = {
 /*--------------------------------------------------------------------------------------
  - Functions for printing initial system information and so forth
 --------------------------------------------------------------------------------------*/
-void print_info1(ssize_t stream_array_size) {
+void print_info1(int numranks, ssize_t elements_per_rank, ssize_t array_elements) {
     int BytesPerWord = sizeof(STREAM_TYPE);
 	printf(HLINE);
     printf("RaiderSTREAM\n");
@@ -35,17 +35,27 @@ void print_info1(ssize_t stream_array_size) {
     printf("*****  WARNING: ******\n");
     printf("      It appears that you set the preprocessor variable N when compiling this code.\n");
     printf("      This version of the code uses the preprocesor variable stream_array_size to control the array size\n");
-    printf("      Reverting to default value of stream_array_size=%llu\n",(unsigned long long) stream_array_size);
+    printf("      Reverting to default value of stream_array_size=%llu\n",(unsigned long long) elements_per_rank);
     printf("*****  WARNING: ******\n");
 #endif
 
-    printf("Array size = %llu (elements), Offset = %d (elements)\n" , (unsigned long long) stream_array_size, OFFSET);
+    printf("Array size = %llu (elements), Offset = %d (elements)\n" , (unsigned long long) numranks * elements_per_rank, OFFSET);
     printf("Memory per array = %.1f MiB (= %.1f GiB).\n",
-	BytesPerWord * ( (double) stream_array_size / 1024.0/1024.0),
-	BytesPerWord * ( (double) stream_array_size / 1024.0/1024.0/1024.0));
+	BytesPerWord * ( (double) numranks * elements_per_rank / 1024.0/1024.0),
+	BytesPerWord * ( (double) numranks * elements_per_rank / 1024.0/1024.0/1024.0));
     printf("Total memory required = %.1f MiB (= %.1f GiB).\n",
-	(3.0 * BytesPerWord) * ( (double) stream_array_size / 1024.0/1024.),
-	(3.0 * BytesPerWord) * ( (double) stream_array_size / 1024.0/1024./1024.));
+	(3.0 * BytesPerWord) * ( (double) elements_per_rank / 1024.0/1024.),
+	(3.0 * BytesPerWord) * ( (double) elements_per_rank / 1024.0/1024./1024.));
+
+	printf("Data is distributed across %d MPI ranks\n",numranks);
+	printf("   Array size per MPI rank = %llu (elements)\n" , (unsigned long long) elements_per_rank);
+	printf("   Memory per array per MPI rank = %.1f MiB (= %.1f GiB).\n",
+		BytesPerWord * ( (double) array_elements / 1024.0/1024.0),
+		BytesPerWord * ( (double) array_elements / 1024.0/1024.0/1024.0));
+	printf("   Total memory per MPI rank = %.1f MiB (= %.1f GiB).\n",
+		(3.0 * BytesPerWord) * ( (double) array_elements / 1024.0/1024.),
+		(3.0 * BytesPerWord) * ( (double) array_elements / 1024.0/1024./1024.));
+	
     printf("Each kernel will be executed %d times.\n", NTIMES);
     printf(" The *best* time for each kernel (excluding the first iteration)\n");
     printf(" will be used to compute the reported bandwidth.\n");

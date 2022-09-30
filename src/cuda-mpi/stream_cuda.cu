@@ -22,7 +22,6 @@
 #include "stream_cuda_output.cuh"
 #include "stream_cuda_tuned.cuh"
 #include "stream_cuda_validation.cuh"
-// #include "stream_cuda_kernels.cuh"
 
 using namespace std;
 
@@ -93,15 +92,16 @@ __global__ void stream_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restr
 
 void calculateTime(double t0, double times[NUM_KERNELS][NTIMES], int round, Kernels kernel) {
 	cudaDeviceSynchronize();
-	times[kernel][round] = mysecond() - t0;
+	MPI_Barrier(MPI_COMM_WORLD);
+	times[kernel][round] = MPI_Wtime() - t0;
 }
 
 void executeSTREAM(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
 				   STREAM_TYPE* __restrict__ d_a[NUM_GPUS], STREAM_TYPE* __restrict__ d_b[NUM_GPUS], STREAM_TYPE* __restrict__ d_c[NUM_GPUS],
 				   ssize_t* __restrict__  d_IDX1[NUM_GPUS], ssize_t* __restrict__  d_IDX2[NUM_GPUS], ssize_t* __restrict__  d_IDX3[NUM_GPUS],
-				   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
+				   double times[NUM_KERNELS][NTIMES], ssize_t elements_per_rank, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS], int myrank, int numranks)
 {
-	init_arrays(array_elements);
+	init_arrays(elements_per_rank);
 	double t0;
 
 	for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
@@ -113,14 +113,16 @@ void executeSTREAM(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 	}
 
 	for(auto k = 0; k < NTIMES; k++) {
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			stream_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, COPY);
 
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			stream_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
@@ -128,14 +130,16 @@ void executeSTREAM(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		calculateTime(t0, times, k, SCALE);
 
 		
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			stream_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, SUM);
 
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			stream_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
@@ -151,7 +155,8 @@ void executeSTREAM(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		gpuErrchk( cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
 	}
 
-	stream_validation(array_elements, scalar, is_validated, a, b, c);
+	stream_validation(elements_per_rank, scalar, is_validated, a, b, c, myrank, numranks);
+	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 __global__ void gather_copy(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c, ssize_t* __restrict__ d_IDX1, ssize_t* __restrict__ d_IDX2, ssize_t array_elements) {
@@ -177,9 +182,9 @@ __global__ void gather_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restr
 void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
 				   STREAM_TYPE* __restrict__ d_a[NUM_GPUS], STREAM_TYPE* __restrict__ d_b[NUM_GPUS], STREAM_TYPE* __restrict__ d_c[NUM_GPUS],
 				   ssize_t* __restrict__  d_IDX1[NUM_GPUS], ssize_t* __restrict__  d_IDX2[NUM_GPUS], ssize_t* __restrict__  d_IDX3[NUM_GPUS],
-				   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
+				   double times[NUM_KERNELS][NTIMES], ssize_t elements_per_rank, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS], int myrank, int numranks)
 {
-	init_arrays(array_elements);
+	init_arrays(elements_per_rank);
 	double t0;
 
 	for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
@@ -191,7 +196,8 @@ void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 	}
 
 	for(auto k = 0; k < NTIMES; k++) {
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			gather_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
@@ -199,7 +205,8 @@ void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		}
 		calculateTime(t0, times, k, GATHER_COPY);
 
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			gather_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
@@ -208,7 +215,8 @@ void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		calculateTime(t0, times, k, GATHER_SCALE);
 
 		
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			gather_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
@@ -216,7 +224,8 @@ void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		}
 		calculateTime(t0, times, k, GATHER_SUM);
 
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			gather_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
@@ -233,7 +242,8 @@ void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		gpuErrchk( cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
 	}
 
-	gather_validation(array_elements, scalar, is_validated, a, b, c);
+	gather_validation(elements_per_rank, scalar, is_validated, a, b, c, myrank, numranks);
+	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 __global__ void scatter_copy(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c, ssize_t* __restrict__ d_IDX1, ssize_t* __restrict__ d_IDX2, ssize_t array_elements) {
@@ -259,9 +269,9 @@ __global__ void scatter_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __rest
 void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
 				    STREAM_TYPE* __restrict__ d_a[NUM_GPUS], STREAM_TYPE* __restrict__ d_b[NUM_GPUS], STREAM_TYPE* __restrict__ d_c[NUM_GPUS],
 				    ssize_t* __restrict__  d_IDX1[NUM_GPUS], ssize_t* __restrict__  d_IDX2[NUM_GPUS], ssize_t* __restrict__  d_IDX3[NUM_GPUS],
-				    double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
+				    double times[NUM_KERNELS][NTIMES], ssize_t elements_per_rank, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS], int myrank, int numranks)
 {
-	init_arrays(array_elements);
+	init_arrays(elements_per_rank);
 	double t0;
 
 	for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
@@ -273,7 +283,8 @@ void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 	}
 
 	for(auto k = 0; k < NTIMES; k++) {
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			scatter_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
@@ -281,7 +292,8 @@ void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		}
 		calculateTime(t0, times, k, SCATTER_COPY);
 
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			scatter_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
@@ -290,7 +302,8 @@ void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		calculateTime(t0, times, k, SCATTER_SCALE);
 
 		
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			scatter_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
@@ -298,7 +311,8 @@ void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		}
 		calculateTime(t0, times, k, SCATTER_SUM);
 
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			scatter_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
@@ -315,7 +329,8 @@ void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		gpuErrchk( cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
 	}
 
-	scatter_validation(array_elements, scalar, is_validated, a, b, c);
+	scatter_validation(elements_per_rank, scalar, is_validated, a, b, c, myrank, numranks);
+	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 __global__ void sg_copy(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c, ssize_t* __restrict__ d_IDX1, ssize_t* __restrict__ d_IDX2, ssize_t* __restrict__ d_IDX3, ssize_t array_elements) {
@@ -341,9 +356,9 @@ __global__ void sg_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict_
 void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
 			   STREAM_TYPE* __restrict__ d_a[NUM_GPUS], STREAM_TYPE* __restrict__ d_b[NUM_GPUS], STREAM_TYPE* __restrict__ d_c[NUM_GPUS],
 			   ssize_t* __restrict__  d_IDX1[NUM_GPUS], ssize_t* __restrict__  d_IDX2[NUM_GPUS], ssize_t* __restrict__  d_IDX3[NUM_GPUS],
-			   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
+			   double times[NUM_KERNELS][NTIMES], ssize_t elements_per_rank, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS], int myrank, int numranks)
 {
-	init_arrays(array_elements);
+	init_arrays(elements_per_rank);
 	double t0;
 
 	for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
@@ -355,7 +370,8 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 	}
 
 	for(auto k = 0; k < NTIMES; k++) {
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			sg_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
@@ -363,7 +379,8 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 		}
 		calculateTime(t0, times, k, SG_COPY);
 
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			sg_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
@@ -372,7 +389,8 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 		calculateTime(t0, times, k, SG_SCALE);
 
 		
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			sg_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
@@ -380,7 +398,8 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 		}
 		calculateTime(t0, times, k, SG_SUM);
 
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			sg_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
@@ -397,7 +416,8 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 		gpuErrchk( cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
 	}
 
-	sg_validation(array_elements, scalar, is_validated, a, b, c);
+	sg_validation(elements_per_rank, scalar, is_validated, a, b, c, myrank, numranks);
+	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 __global__ void central_copy(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __restrict__ d_b, STREAM_TYPE* __restrict__ d_c, ssize_t array_elements) {
@@ -419,9 +439,9 @@ __global__ void central_triad(STREAM_TYPE* __restrict__ d_a, STREAM_TYPE* __rest
 void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STREAM_TYPE* __restrict__  c,
 				   STREAM_TYPE* __restrict__ d_a[NUM_GPUS], STREAM_TYPE* __restrict__ d_b[NUM_GPUS], STREAM_TYPE* __restrict__ d_c[NUM_GPUS],
 				   ssize_t* __restrict__  d_IDX1[NUM_GPUS], ssize_t* __restrict__  d_IDX2[NUM_GPUS], ssize_t* __restrict__  d_IDX3[NUM_GPUS],
-				   double times[NUM_KERNELS][NTIMES], ssize_t stream_array_size, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS])
+				   double times[NUM_KERNELS][NTIMES], ssize_t elements_per_rank, ssize_t array_elements, STREAM_TYPE scalar, int is_validated[NUM_KERNELS], int myrank, int numranks)
 {
-	init_arrays(array_elements);
+	init_arrays(elements_per_rank);
 	double t0;
 
 	for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
@@ -433,28 +453,32 @@ void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 	}
 
 	for(auto k = 0; k < NTIMES; k++) {
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			central_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, CENTRAL_COPY);
 
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			central_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
 		}
 		calculateTime(t0, times, k, CENTRAL_SCALE);
 
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			central_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, CENTRAL_SUM);
 
-		t0 = mysecond();
+		t0 = MPI_Wtime();
+		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
 			central_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
@@ -470,7 +494,8 @@ void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		gpuErrchk( cudaMemcpy(c + deviceId * array_elements, d_c[deviceId], sizeof(STREAM_TYPE) * array_elements, cudaMemcpyDeviceToHost) );
 	}
 
-	central_validation(array_elements, scalar, is_validated, a, b, c);
+	central_validation(elements_per_rank, scalar, is_validated, a, b, c, myrank, numranks);
+	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 #ifdef _OPENMP
@@ -482,10 +507,32 @@ int main(int argc, char *argv[]) {
     int			quantum, checktick();
     ssize_t		j;
 	double		t, times[NUM_KERNELS][NTIMES];
-    STREAM_TYPE		scalar = 3.0;
+    STREAM_TYPE		scalar = 0.42;
+	double		*TimesByRank;
+	STREAM_TYPE *AvgErrByRank;
 	double		t0,t1,tmin;
+	int         rc, numranks, myrank, k, i;
 
-	num_devices_check();
+	rc = MPI_Init(NULL, NULL);
+	t0 = MPI_Wtime();
+    if (rc != MPI_SUCCESS) {
+       printf("ERROR: MPI Initialization failed with return code %d\n",rc);
+       exit(1);
+    }
+	// if either of these fail there is something really screwed up!
+	MPI_Comm_size(MPI_COMM_WORLD, &numranks);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+
+	if(!num_devices_check(myrank)) {
+		printf(HLINE);
+        printf("Rank %d\n", myrank);
+        printf("NUM_GPUS should be set with -DNUM_GPUS=<number_of_gpus> when compiling. NUM_GPUS can not be greater than the number of available gpus\n");
+        printf(HLINE);
+
+        cudaError_t code = cudaErrorInvalidConfiguration;
+        exit(code);
+	}
+
 /*
     get stream_array_size at runtime
 */
@@ -494,10 +541,32 @@ int main(int argc, char *argv[]) {
 /*
     Allocate the arrays on the host
 */
-	ssize_t array_elements = stream_array_size / NUM_GPUS;
-    a = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size);
-    b = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size);
-    c = (STREAM_TYPE *) malloc(sizeof(STREAM_TYPE) * stream_array_size);
+	ssize_t elements_per_rank = stream_array_size / (ssize_t) numranks;
+	ssize_t array_elements = elements_per_rank / NUM_GPUS;
+	
+	ssize_t array_size = elements_per_rank * sizeof(STREAM_TYPE);
+	ssize_t array_alignment = 64;
+	
+	k = posix_memalign((void **)&a, array_alignment, array_size);
+	if(k != 0) {
+		printf("Rank %d: Allocation of array a failed, return code is %d\n",myrank,k);
+		MPI_Abort(MPI_COMM_WORLD, 2);
+        exit(1);
+	}
+
+	k = posix_memalign((void **)&b, array_alignment, array_size);
+	if(k != 0) {
+		printf("Rank %d: Allocation of array a failed, return code is %d\n",myrank,k);
+		MPI_Abort(MPI_COMM_WORLD, 2);
+        exit(1);
+	}
+
+	k = posix_memalign((void **)&c, array_alignment, array_size); 
+	if(k != 0) {
+		printf("Rank %d: Allocation of array a failed, return code is %d\n",myrank,k);
+		MPI_Abort(MPI_COMM_WORLD, 2);
+        exit(1);
+	}
 
 	IDX1 = (ssize_t *) malloc(sizeof(ssize_t) * array_elements);
 	IDX2 = (ssize_t *) malloc(sizeof(ssize_t) * array_elements);
@@ -506,9 +575,9 @@ int main(int argc, char *argv[]) {
 	for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 		gpuErrchk( cudaSetDevice(deviceId) );
 
-		gpuErrchk( cudaMalloc((void **) &d_a[deviceId],    sizeof(STREAM_TYPE) * array_elements) );
-		gpuErrchk( cudaMalloc((void **) &d_b[deviceId],    sizeof(STREAM_TYPE) * array_elements) );
-		gpuErrchk( cudaMalloc((void **) &d_c[deviceId],    sizeof(STREAM_TYPE) * array_elements) );
+		gpuErrchk( cudaMalloc((void **) &d_a[deviceId],    sizeof(STREAM_TYPE) * elements_per_rank) );
+		gpuErrchk( cudaMalloc((void **) &d_b[deviceId],    sizeof(STREAM_TYPE) * elements_per_rank) );
+		gpuErrchk( cudaMalloc((void **) &d_c[deviceId],    sizeof(STREAM_TYPE) * elements_per_rank) );
 		gpuErrchk( cudaMalloc((void **) &d_IDX1[deviceId], sizeof(ssize_t)     * array_elements) );
 		gpuErrchk( cudaMalloc((void **) &d_IDX2[deviceId], sizeof(ssize_t)     * array_elements) );
 		gpuErrchk( cudaMalloc((void **) &d_IDX3[deviceId], sizeof(ssize_t)     * array_elements) );
@@ -584,9 +653,9 @@ int main(int argc, char *argv[]) {
 	- If -DCUSTOM is not enabled, populate the IDX arrays with random values
 --------------------------------------------------------------------------------------*/
 #ifdef CUSTOM
-	init_read_idx_array(IDX1, stream_array_size, "IDX1.txt");
-	init_read_idx_array(IDX2, stream_array_size, "IDX2.txt");
-	init_read_idx_array(IDX3, stream_array_size, "IDX2.txt");
+	init_read_idx_array(IDX1, array_elements, "IDX1.txt");
+	init_read_idx_array(IDX2, array_elements, "IDX2.txt");
+	init_read_idx_array(IDX3, array_elements, "IDX2.txt");
 #else
     srand(time(0));
     init_random_idx_array(IDX1, array_elements);
@@ -605,7 +674,8 @@ int main(int argc, char *argv[]) {
 /*--------------------------------------------------------------------------------------
     - Print initial info
 --------------------------------------------------------------------------------------*/
-    print_info1(stream_array_size);
+    if(myrank == 0)
+		print_info1(numranks, elements_per_rank, array_elements);
 
 #ifdef _OPENMP
     printf(HLINE);
@@ -630,84 +700,128 @@ int main(int argc, char *argv[]) {
     // Populate STREAM arrays
 --------------------------------------------------------------------------------------*/
 #pragma omp parallel for private (j)
-    for (j=0; j<stream_array_size; j++) {
+    for (j=0; j<elements_per_rank; j++) {
         a[j] = 1.0;
         b[j] = 2.0;
         c[j] = 0.0;
     }
 
+	if (myrank == 0) {
+		// There are NUM_ARRAYS average error values for each rank (using STREAM_TYPE).
+		AvgErrByRank = (double *) malloc(NUM_ARRAYS * sizeof(STREAM_TYPE) * numranks);
+		if (AvgErrByRank == NULL) {
+			printf("Ooops -- allocation of arrays to collect errors on MPI rank 0 failed\n");
+			MPI_Abort(MPI_COMM_WORLD, 2);
+		}
+		memset(AvgErrByRank, 0, NUM_ARRAYS * sizeof(STREAM_TYPE) * numranks);
+
+		// There are NUM_KERNELS*NTIMES timing values for each rank (always doubles)
+		TimesByRank = (double *) malloc(NUM_KERNELS * NTIMES * sizeof(double) * numranks);
+		if (TimesByRank == NULL) {
+			printf("Ooops -- allocation of arrays to collect timing data on MPI rank 0 failed\n");
+			MPI_Abort(MPI_COMM_WORLD, 3);
+		}
+		memset(TimesByRank, 0, NUM_KERNELS * NTIMES * sizeof(double) * numranks);
+	}
+
 /*--------------------------------------------------------------------------------------
     // Estimate precision and granularity of timer
 --------------------------------------------------------------------------------------*/
-	print_timer_granularity(quantum);
+	if(myrank == 0)
+		print_timer_granularity(quantum);
 
-    t = mysecond();
+    t = MPI_Wtime();
 #pragma omp parallel for private (j)
-    for (j = 0; j < stream_array_size; j++) {
+    for (j = 0; j < elements_per_rank; j++) {
   		a[j] = 2.0E0 * a[j];
 	}
 
-    t = 1.0E6 * (mysecond() - t);
+    t = 1.0E6 * (MPI_Wtime() - t);
 
-	print_info2(t, quantum);
-	print_memory_usage(stream_array_size);
+	if(myrank == 0) {
+		print_info2(t, quantum);
+		print_memory_usage(stream_array_size);
+	}
 
-	executeSTREAM( a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, array_elements, scalar, is_validated);
-	executeGATHER( a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, array_elements, scalar, is_validated);
-	executeSCATTER(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, array_elements, scalar, is_validated);
-	executeSG(     a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, array_elements, scalar, is_validated);
-	executeCENTRAL(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, stream_array_size, array_elements, scalar, is_validated);
+	executeSTREAM( a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, elements_per_rank, array_elements, scalar, is_validated, myrank, numranks);
+	executeGATHER( a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, elements_per_rank, array_elements, scalar, is_validated, myrank, numranks);
+	executeSCATTER(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, elements_per_rank, array_elements, scalar, is_validated, myrank, numranks);
+	executeSG(     a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, elements_per_rank, array_elements, scalar, is_validated, myrank, numranks);
+	executeCENTRAL(a, b, c, d_a, d_b, d_c, d_IDX1, d_IDX2, d_IDX3, times, elements_per_rank, array_elements, scalar, is_validated, myrank, numranks);
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Gather(times, NUM_KERNELS * NTIMES, MPI_DOUBLE, TimesByRank, NUM_KERNELS * NTIMES, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 /*--------------------------------------------------------------------------------------
 	// Calculate results
 --------------------------------------------------------------------------------------*/
-    for (int k=1; k<NTIMES; k++) /* note -- skip first iteration */
-	{
-	for (j=0; j<NUM_KERNELS; j++)
-	    {
-			avgtime[j] = avgtime[j] + times[j][k];
-			mintime[j] = MIN(mintime[j], times[j][k]);
-			maxtime[j] = MAX(maxtime[j], times[j][k]);
-	    }
-	}
+
+	if (myrank == 0) {
+		// for each iteration and each kernel, collect the minimum time across all MPI ranks
+		// and overwrite the rank 0 "times" variable with the minimum so the original post-
+		// processing code can still be used.
+		for (k = 0; k < NTIMES; k++) {
+			for (j = 0; j < NUM_KERNELS; j++) {
+				tmin = 1.0e36;
+				for (i = 0; i < numranks; i++) {
+					// printf("DEBUG: Timing: iter %d, kernel %lu, rank %d, tmin %f, TbyRank %f\n",k,j,i,tmin,TimesByRank[NUM_KERNELS*NTIMES*i+j*NTIMES+k]);
+					tmin = MIN(tmin, TimesByRank[NUM_KERNELS*NTIMES*i+j*NTIMES+k]);
+				}
+				// printf("DEBUG: Final Timing: iter %d, kernel %lu, final tmin %f\n",k,j,tmin);
+				times[j][k] = tmin;
+			}
+		}
+
+		for (int k=1; k<NTIMES; k++) /* note -- skip first iteration */
+		{
+		for (j=0; j<NUM_KERNELS; j++)
+			{
+				avgtime[j] = avgtime[j] + times[j][k];
+				mintime[j] = MIN(mintime[j], times[j][k]);
+				maxtime[j] = MAX(maxtime[j], times[j][k]);
+			}
+		}
 
 /*--------------------------------------------------------------------------------------
 	// Print results table
 --------------------------------------------------------------------------------------*/
-    printf("Function\tBest Rate MB/s      Best FLOP/s\t   Avg time\t   Min time\t   Max time\n");
-    for (j=0; j<NUM_KERNELS; j++) {
-		avgtime[j] = avgtime[j]/(double)(NTIMES-1);
+		printf("Function\tBest Rate MB/s      Best FLOP/s\t   Avg time\t   Min time\t   Max time\n");
+		for (j=0; j<NUM_KERNELS; j++) {
+			avgtime[j] = avgtime[j]/(double)(NTIMES-1);
 
-		if (j % 4 == 0) {
-			printf(HLINE);
+			if (j % 4 == 0) {
+				printf(HLINE);
+			}
+
+			if (flops[j] == 0) {
+				printf("%s%12.1f\t\t%s\t%11.6f\t%11.6f\t%11.6f\n",
+					label[j].c_str(),                           // Kernel
+					1.0E-06 * bytes[j]/mintime[j],      // MB/s
+					"-",      // FLOP/s
+					avgtime[j],                         // Avg Time
+					mintime[j],                         // Min Time
+					maxtime[j]);                        // Max time
+			}
+			else {
+				printf("%s%12.1f\t%12.1f\t%11.6f\t%11.6f\t%11.6f\n",
+					label[j].c_str(),                           // Kernel
+					1.0E-06 * bytes[j]/mintime[j],      // MB/s
+					1.0E-06 * flops[j]/mintime[j],      // FLOP/s
+					avgtime[j],                         // Avg Time
+					mintime[j],                         // Min Time
+					maxtime[j]);                        // Max time
+			}
 		}
-
-        if (flops[j] == 0) {
-            printf("%s%12.1f\t\t%s\t%11.6f\t%11.6f\t%11.6f\n",
-                label[j].c_str(),                           // Kernel
-                1.0E-06 * bytes[j]/mintime[j],      // MB/s
-                "-",      // FLOP/s
-                avgtime[j],                         // Avg Time
-                mintime[j],                         // Min Time
-                maxtime[j]);                        // Max time
-        }
-        else {
-            printf("%s%12.1f\t%12.1f\t%11.6f\t%11.6f\t%11.6f\n",
-                label[j].c_str(),                           // Kernel
-                1.0E-06 * bytes[j]/mintime[j],      // MB/s
-                1.0E-06 * flops[j]/mintime[j],      // FLOP/s
-                avgtime[j],                         // Avg Time
-                mintime[j],                         // Min Time
-                maxtime[j]);                        // Max time
-        }
-    }
-    printf(HLINE);
+		printf(HLINE);
+	}
 
 /*--------------------------------------------------------------------------------------
 	// Validate results
 --------------------------------------------------------------------------------------*/
-	checkSTREAMresults(is_validated);
-    printf(HLINE);
+	if(myrank == 0) {
+		checkSTREAMresults(is_validated);
+		printf(HLINE);
+	}
 
 	free(a);
 	free(b);

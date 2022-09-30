@@ -13,7 +13,8 @@
 # include <string>
 
 // # include <cuda_runtime.h>
-#include "/usr/local/cuda-11.0/include/cuda_runtime.h"
+# include "mpi.h"
+# include "/usr/local/cuda-11.0/include/cuda_runtime.h"
 
 # define HLINE "------------------------------------------------------------------------------------------------\n"
 
@@ -98,6 +99,14 @@ typedef enum {
     SG,
 	CENTRAL
 } KernelGroup;
+
+static std::string kernel_group_map[NUM_KERNELS / 4] = {
+    "STREAM",
+	"GATHER",
+	"SCATTER",
+    "SG",
+	"CENTRAL"
+};
 
 static std::string kernel_map[NUM_KERNELS] = {
 	"COPY",
@@ -251,18 +260,14 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
-void num_devices_check() {
+bool num_devices_check(int myrank) {
     int available_devices;
     cudaGetDeviceCount(&available_devices);
-
-    if(NUM_GPUS > available_devices) {
-        printf(HLINE);
-        printf("NUM_GPUS should be set with -DNUM_GPUS=<number_of_gpus> when compiling. NUM_GPUS can not be greater than the number of available gpus\n");
-        printf(HLINE);
-
-        cudaError_t code = cudaErrorInvalidConfiguration;
-        exit(code);
-    }
+    printf(HLINE);
+    printf("                    GPU SELECTION INFORMATION\n");
+    printf("%d number of gpus used and %d number of available gpus at rank %d\n", NUM_GPUS, available_devices, myrank);
+    printf(HLINE);
+    return NUM_GPUS <= available_devices;
 }
 
 #endif
