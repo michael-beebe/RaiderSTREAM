@@ -850,6 +850,8 @@ int main(int argc, char *argv[])
 		}
 
 		// note that "bytes[j]" is the aggregate array size, so no "numranks" is needed here
+		printf("\n");
+		printf(HLINE);
 		printf("Function\tBest Rate MB/s      Best FLOP/s\t   Avg time\t   Min time\t   Max time\n");
 		for (j=0; j<NUM_KERNELS; j++) {
 			avgtime[j] = avgtime[j]/(double)(NTIMES-1);
@@ -862,7 +864,7 @@ int main(int argc, char *argv[])
 				printf("%s%12.1f\t\t%s\t%11.6f\t%11.6f\t%11.6f\n",
 					label[j],                           // Kernel
 					1.0E-06 * bytes[j]/mintime[j],      // MB/s
-					"-",      // FLOP/s
+					"-",      							// FLOP/s
 					avgtime[j],                         // Avg Time
 					mintime[j],                         // Min Time
 					maxtime[j]);                        // Max time

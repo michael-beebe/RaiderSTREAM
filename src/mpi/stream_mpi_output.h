@@ -7,14 +7,14 @@
 - Initialize array to store labels for the benchmark kernels.
 --------------------------------------------------------------------------------------*/
 static char	*label[NUM_KERNELS] = {
-    "Copy:\t\t", "Scale:\t\t",
-    "Add:\t\t", "Triad:\t\t",
+    "STREAM Copy:\t", "STREAM Scale:\t",
+    "STREAM Add:\t", "STREAM Triad:\t",
 	"GATHER Copy:\t", "GATHER Scale:\t",
 	"GATHER Add:\t", "GATHER Triad:\t",
 	"SCATTER Copy:\t", "SCATTER Scale:\t",
 	"SCATTER Add:\t", "SCATTER Triad:\t",
-	"SG      Copy:\t", "SG      Scale:\t",
-	"SG      Add:\t", "SG      Triad:\t",
+	"SG Copy:\t", "SG Scale:\t",
+	"SG Add:\t\t", "SG Triad:\t",
 	"CENTRAL Copy:\t", "CENTRAL Scale:\t",
 	"CENTRAL Add:\t", "CENTRAL Triad:\t"
 };

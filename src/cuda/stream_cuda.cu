@@ -674,6 +674,8 @@ int main(int argc, char *argv[]) {
 /*--------------------------------------------------------------------------------------
 	// Print results table
 --------------------------------------------------------------------------------------*/
+	printf("\n");
+	printf(HLINE);
     printf("Function\tBest Rate MB/s      Best FLOP/s\t   Avg time\t   Min time\t   Max time\n");
     for (j=0; j<NUM_KERNELS; j++) {
 		avgtime[j] = avgtime[j]/(double)(NTIMES-1);

@@ -8,7 +8,7 @@ export RUN_ORIGINAL=false
 export RUN_OMP=false
 export RUN_MPI=false
 export RUN_SHMEM=false
-export RUN_CUDA=true
+export RUN_CUDA=false
 
 # Problem Size
 export STREAM_ARRAY_SIZE=10000000
@@ -18,7 +18,7 @@ export STREAM_ARRAY_SIZE=10000000
 export OMP_NUM_THREADS=
 
 # Set the number of PEs/ranks if using MPI and/or OpenSHMEM implementations
-export NPES=1
+export NPES=
 
 # Set this to true if you want this script to recompile the executables
 export COMPILE=true
@@ -131,7 +131,7 @@ fi
 
 if [[ $RUN_CUDA == true ]] ; then
     echo "------------------------------------" >> $OUTPUT_FILE
-    echo "               CUDA"                  >> $OUTPUT_FILE
+    echo "         CUDA (SINGLE GPU)"                  >> $OUTPUT_FILE
     echo "------------------------------------" >> $OUTPUT_FILE
     if $BUILD_DIR/stream_cuda.exe -n $STREAM_ARRAY_SIZE >> $OUTPUT_FILE; then
         echo "CUDA implementation finished."
