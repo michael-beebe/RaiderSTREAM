@@ -8,8 +8,8 @@ export RUN_ORIGINAL=false
 export RUN_OMP=false
 export RUN_MPI=false
 export RUN_SHMEM=false
-export RUN_CUDA=true
-export RUN_CUDA_MPI=true
+export RUN_CUDA=false
+export RUN_CUDA_MPI=false
 
 # Problem Size
 export STREAM_ARRAY_SIZE=10000000
@@ -19,7 +19,7 @@ export STREAM_ARRAY_SIZE=10000000
 export OMP_NUM_THREADS=
 
 # Set the number of PEs/ranks if using MPI and/or OpenSHMEM implementations
-export NPES=2
+export NPES=
 
 # Set this to true if you want this script to recompile the executables
 export COMPILE=true

@@ -29,10 +29,10 @@ With RaiderSTREAM, we address these two limitations by:
 | SCATTER Scale  | a[IDX[i]] = q * b[i] | 16 + sizeof(ssize_t) | 1 |
 | SCATTER Sum    | a[IDX[i]] = b[i] + c[i]  | 16 + sizeof(ssize_t) | 1 |
 | SCATTER Triad  | a[IDX[i]] = b[i] + q * c[i] | 16 + sizeof(ssize_t) | 2 |
-| SG Copy   | a[IDX[i]] = b[i] | 16 + sizeof(ssize_t) | 0 |
-| SG Scale  | a[IDX[i]] = q * b[i] | 16 + sizeof(ssize_t) | 1 |
-| SG Sum    | a[IDX[i]] = b[i] + c[i]  | 16 + sizeof(ssize_t) | 1 |
-| SG Triad  | a[IDX[i]] = b[i] + q * c[i] | 16 + sizeof(ssize_t) | 2 |
+| SG Copy   | a[IDX[i]] = b[i] | 16 + 2 * sizeof(ssize_t) | 0 |
+| SG Scale  | a[IDX[i]] = q * b[i] | 16 + 2 * sizeof(ssize_t) | 1 |
+| SG Sum    | a[IDX[i]] = b[i] + c[i]  | 16 + 3 * sizeof(ssize_t) | 1 |
+| SG Triad  | a[IDX[i]] = b[i] + q * c[i] | 16 + 3 * sizeof(ssize_t) | 2 |
 | CENTRAL Copy   | a[0] = b[0] | 16 | 0 |
 | CENTRAL Scale  | a[0] = q * b[0] | 16 | 1 |
 | CENTRAL Sum    | a[0] = b[0] + c[0] | 24 | 1 |
@@ -85,6 +85,16 @@ make stream_mpi
 ##### OpenSHMEM
 ```
 make stream_oshmem
+```
+
+##### CUDA (Single GPU)
+```
+make stream_cuda
+```
+
+##### CUDA (Multi-Node, Mutli-GPU)
+```
+make stream_cuda_mpi
 ```
 
 ##### Cleaning
