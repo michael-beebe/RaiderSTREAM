@@ -8,7 +8,8 @@ export RUN_ORIGINAL=false
 export RUN_OMP=false
 export RUN_MPI=false
 export RUN_SHMEM=false
-export RUN_CUDA=false
+export RUN_CUDA=true
+export RUN_CUDA_MPI=true
 
 # Problem Size
 export STREAM_ARRAY_SIZE=10000000
@@ -18,7 +19,7 @@ export STREAM_ARRAY_SIZE=10000000
 export OMP_NUM_THREADS=
 
 # Set the number of PEs/ranks if using MPI and/or OpenSHMEM implementations
-export NPES=
+export NPES=2
 
 # Set this to true if you want this script to recompile the executables
 export COMPILE=true
@@ -67,6 +68,9 @@ if [[ $COMPILE == true ]] ; then
     fi
     if [[ $RUN_CUDA == true ]] ; then
         make stream_cuda
+    fi
+    if [[ $RUN_CUDA_MPI == true ]] ; then
+        make stream_cuda_mpi
     fi
 fi
 
@@ -131,13 +135,27 @@ fi
 
 if [[ $RUN_CUDA == true ]] ; then
     echo "------------------------------------" >> $OUTPUT_FILE
-    echo "         CUDA (SINGLE GPU)"                  >> $OUTPUT_FILE
+    echo "         CUDA (Single GPU)"           >> $OUTPUT_FILE
     echo "------------------------------------" >> $OUTPUT_FILE
     if $BUILD_DIR/stream_cuda.exe -n $STREAM_ARRAY_SIZE >> $OUTPUT_FILE; then
         echo "CUDA implementation finished."
     else
         echo "CUDA implementation failed to run!" >> $OUTPUT_FILE
         echo "CUDA implementation failed to run!"
+    fi
+    echo >> $OUTPUT_FILE
+    echo >> $OUTPUT_FILE
+fi
+
+if [[ $RUN_CUDA_MPI == true ]] ; then
+    echo "------------------------------------" >> $OUTPUT_FILE
+    echo "     CUDA/MPI (Multiple GPUs)"        >> $OUTPUT_FILE
+    echo "------------------------------------" >> $OUTPUT_FILE
+    if mpirun -np $NPES $BUILD_DIR/stream_cuda_mpi.exe -n $STREAM_ARRAY_SIZE >> $OUTPUT_FILE; then
+        echo "CUDA MPI implementation finished."
+    else
+        echo "CUDA MPI implementation failed to run!" >> $OUTPUT_FILE
+        echo "CUDA MPI implementation failed to run!"
     fi
     echo >> $OUTPUT_FILE
     echo >> $OUTPUT_FILE
@@ -160,5 +178,3 @@ if [[ $PROMPT_OUTPUT == true ]] ; then
 else
     cat $OUTPUT_FILE
 fi
-
-

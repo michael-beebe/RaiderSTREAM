@@ -3,8 +3,8 @@
 /* Original STREAM code developed by John D. McCalpin                    */
 /* Programmers: Michael Beebe                                            */
 /*              Brody Williams                                           */
-/*              Pedro DaSilva                                            */
-/*              Stephen Devaney                                          */
+/*              Pedro Barros                                             */
+/*																		 */
 /* This program measures memory transfer rates in MB/s for simple        */
 /* computational kernels coded in C.                                     */
 /*-----------------------------------------------------------------------*/

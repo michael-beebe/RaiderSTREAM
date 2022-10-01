@@ -29,12 +29,16 @@ With RaiderSTREAM, we address these two limitations by:
 | SCATTER Scale  | a[IDX[i]] = q * b[i] | 16 + sizeof(ssize_t) | 1 |
 | SCATTER Sum    | a[IDX[i]] = b[i] + c[i]  | 16 + sizeof(ssize_t) | 1 |
 | SCATTER Triad  | a[IDX[i]] = b[i] + q * c[i] | 16 + sizeof(ssize_t) | 2 |
+| SG Copy   | a[IDX[i]] = b[i] | 16 + sizeof(ssize_t) | 0 |
+| SG Scale  | a[IDX[i]] = q * b[i] | 16 + sizeof(ssize_t) | 1 |
+| SG Sum    | a[IDX[i]] = b[i] + c[i]  | 16 + sizeof(ssize_t) | 1 |
+| SG Triad  | a[IDX[i]] = b[i] + q * c[i] | 16 + sizeof(ssize_t) | 2 |
 | CENTRAL Copy   | a[0] = b[0] | 16 | 0 |
 | CENTRAL Scale  | a[0] = q * b[0] | 16 | 1 |
 | CENTRAL Sum    | a[0] = b[0] + c[0] | 24 | 1 |
 | CENTRAL Triad  | a[0] = b[0] + q * c[0] | 24 | 2 |
 
-### How are bytes and FLOP/s counted?
+### How are bytes counted?
 ![Benchmark Kernels](readme_images/mbps_formula.png)
 
 * $\alpha$ = number of memory accesses per iteration of the main STREAM loops
