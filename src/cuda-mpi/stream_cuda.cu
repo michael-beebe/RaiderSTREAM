@@ -534,7 +534,7 @@ int main(int argc, char *argv[]) {
         exit(code);
 	}
 
-	set_max_threads(&MAX_NUM_THREADS)
+	set_max_threads(&MAX_NUM_THREADS);
 /*
     get stream_array_size at runtime
 */
