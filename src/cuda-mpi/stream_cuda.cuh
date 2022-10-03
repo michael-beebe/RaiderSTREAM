@@ -270,4 +270,10 @@ bool num_devices_check(int myrank) {
     return NUM_GPUS <= available_devices;
 }
 
+void set_max_threads(int* MAX_NUM_THREADS) {
+    cudaDeviceProp prop;
+	gpuErrchk( cudaGetDeviceProperties(&prop, 0) );
+	*MAX_NUM_THREADS = prop.maxThreadsPerBlock;
+}
+
 #endif

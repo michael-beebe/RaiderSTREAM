@@ -29,6 +29,7 @@ using namespace std;
 // - Initialize the STREAM arrays used in the kernels
 // - Some compilers require an extra keyword to recognize the "restrict" qualifier.
 // --------------------------------------------------------------------------------------*/
+int MAX_NUM_THREADS;
 STREAM_TYPE* __restrict__   a;
 STREAM_TYPE* __restrict__   b;
 STREAM_TYPE* __restrict__   c;
@@ -117,7 +118,7 @@ void executeSTREAM(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			stream_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
+			stream_copy<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, COPY);
 
@@ -125,7 +126,7 @@ void executeSTREAM(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			stream_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
+			stream_scale<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
 		}
 		calculateTime(t0, times, k, SCALE);
 
@@ -134,7 +135,7 @@ void executeSTREAM(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			stream_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
+			stream_sum<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, SUM);
 
@@ -142,7 +143,7 @@ void executeSTREAM(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			stream_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
+			stream_triad<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
 		}
 		calculateTime(t0, times, k, TRIAD);
 	}
@@ -200,7 +201,7 @@ void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			gather_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+			gather_copy<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
 							d_IDX1[deviceId], d_IDX2[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, GATHER_COPY);
@@ -209,7 +210,7 @@ void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			gather_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+			gather_scale<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
 							d_IDX1[deviceId], d_IDX2[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, GATHER_SCALE);
@@ -219,7 +220,7 @@ void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			gather_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+			gather_sum<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
 							d_IDX1[deviceId], d_IDX2[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, GATHER_SUM);
@@ -228,7 +229,7 @@ void executeGATHER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b,
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			gather_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+			gather_triad<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
 							d_IDX1[deviceId], d_IDX2[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, GATHER_TRIAD);
@@ -287,7 +288,7 @@ void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			scatter_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+			scatter_copy<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
 							d_IDX1[deviceId], d_IDX2[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, SCATTER_COPY);
@@ -296,7 +297,7 @@ void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			scatter_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+			scatter_scale<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
 							d_IDX1[deviceId], d_IDX2[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, SCATTER_SCALE);
@@ -306,7 +307,7 @@ void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			scatter_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+			scatter_sum<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
 							d_IDX1[deviceId], d_IDX2[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, SCATTER_SUM);
@@ -315,7 +316,7 @@ void executeSCATTER(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			scatter_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+			scatter_triad<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
 							d_IDX1[deviceId], d_IDX2[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, SCATTER_TRIAD);
@@ -374,7 +375,7 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			sg_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+			sg_copy<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
 							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, SG_COPY);
@@ -383,7 +384,7 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			sg_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+			sg_scale<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
 							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, SG_SCALE);
@@ -393,7 +394,7 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			sg_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
+			sg_sum<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId],
 							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, SG_SUM);
@@ -402,7 +403,7 @@ void executeSG(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b, STR
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			sg_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
+			sg_triad<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar,
 							d_IDX1[deviceId], d_IDX2[deviceId], d_IDX3[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, SG_TRIAD);
@@ -457,7 +458,7 @@ void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			central_copy<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
+			central_copy<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, CENTRAL_COPY);
 
@@ -465,7 +466,7 @@ void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			central_scale<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
+			central_scale<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
 		}
 		calculateTime(t0, times, k, CENTRAL_SCALE);
 
@@ -473,7 +474,7 @@ void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			central_sum<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
+			central_sum<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], array_elements);
 		}
 		calculateTime(t0, times, k, CENTRAL_SUM);
 
@@ -481,7 +482,7 @@ void executeCENTRAL(STREAM_TYPE* __restrict__   a, STREAM_TYPE* __restrict__   b
 		MPI_Barrier(MPI_COMM_WORLD);
 		for(auto deviceId = 0; deviceId < NUM_GPUS; deviceId++) {
 			gpuErrchk( cudaSetDevice(deviceId) );
-			central_triad<<< (array_elements + 255)/256, 256 >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
+			central_triad<<< (array_elements + MAX_NUM_THREADS - 1)/MAX_NUM_THREADS, MAX_NUM_THREADS >>>(d_a[deviceId], d_b[deviceId], d_c[deviceId], scalar, array_elements);
 		}
 		calculateTime(t0, times, k, CENTRAL_TRIAD);
 	}
@@ -533,6 +534,7 @@ int main(int argc, char *argv[]) {
         exit(code);
 	}
 
+	set_max_threads(&MAX_NUM_THREADS)
 /*
     get stream_array_size at runtime
 */
