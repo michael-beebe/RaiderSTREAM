@@ -12,8 +12,8 @@
 # include <getopt.h>
 # include <string>
 
-// # include <cuda_runtime.h>
-#include "/usr/local/cuda-11.0/include/cuda_runtime.h"
+# include <cuda_runtime.h>
+// #include "/usr/local/cuda-11.0/include/cuda_runtime.h"
 
 # define HLINE "------------------------------------------------------------------------------------------------\n"
 

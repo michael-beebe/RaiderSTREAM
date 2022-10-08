@@ -23,16 +23,16 @@ With RaiderSTREAM, we address these two limitations by:
 | STREAM Triad   | a[i] = b[i] + q * c[i] | 24 | 2 |
 | GATHER Copy    | a[i] = b[IDX[i]]       | 16 + sizeof(ssize_t) | 0 |
 | GATHER Scale   | a[i] = q * b[IDX[i]]   | 16 + sizeof(ssize_t) | 1 |
-| GATHER Sum     | a[i] = b[IDX[i]] + c[IDX[i]] | 16 + 2 * sizeof(ssize_t) | 1 |
-| GATHER Triad   | a[j] = b[IDX1[j]] + q * c[IDX[j]] | 16 + 2 * sizeof(ssize_t) | 2 |
+| GATHER Sum     | a[i] = b[IDX[i]] + c[IDX[i]] | 24 + 2 * sizeof(ssize_t) | 1 |
+| GATHER Triad   | a[j] = b[IDX1[j]] + q * c[IDX[j]] | 24 + 2 * sizeof(ssize_t) | 2 |
 | SCATTER Copy   | a[IDX[i]] = b[i] | 16 + sizeof(ssize_t) | 0 |
 | SCATTER Scale  | a[IDX[i]] = q * b[i] | 16 + sizeof(ssize_t) | 1 |
-| SCATTER Sum    | a[IDX[i]] = b[i] + c[i]  | 16 + sizeof(ssize_t) | 1 |
-| SCATTER Triad  | a[IDX[i]] = b[i] + q * c[i] | 16 + sizeof(ssize_t) | 2 |
+| SCATTER Sum    | a[IDX[i]] = b[i] + c[i]  | 24 + sizeof(ssize_t) | 1 |
+| SCATTER Triad  | a[IDX[i]] = b[i] + q * c[i] | 24 + sizeof(ssize_t) | 2 |
 | SG Copy   | a[IDX[i]] = b[i] | 16 + 2 * sizeof(ssize_t) | 0 |
 | SG Scale  | a[IDX[i]] = q * b[i] | 16 + 2 * sizeof(ssize_t) | 1 |
-| SG Sum    | a[IDX[i]] = b[i] + c[i]  | 16 + 3 * sizeof(ssize_t) | 1 |
-| SG Triad  | a[IDX[i]] = b[i] + q * c[i] | 16 + 3 * sizeof(ssize_t) | 2 |
+| SG Sum    | a[IDX[i]] = b[i] + c[i]  | 24 + 3 * sizeof(ssize_t) | 1 |
+| SG Triad  | a[IDX[i]] = b[i] + q * c[i] | 24 + 3 * sizeof(ssize_t) | 2 |
 | CENTRAL Copy   | a[0] = b[0] | 16 | 0 |
 | CENTRAL Scale  | a[0] = q * b[0] | 16 | 1 |
 | CENTRAL Sum    | a[0] = b[0] + c[0] | 24 | 1 |
@@ -50,7 +50,7 @@ Different from the original STREAM implementation, we allow users to set the pro
 
 If you insist on compiling files individually, you can set the problem size using the `-n` flag at runtime. For example:
 ```
-mpirun -np 2 a.out -n 10000000
+mpirun -np 2 ./stream.exe -n <desired array size>
 ```
 
 ### Build
@@ -130,6 +130,9 @@ make clean_inputs
 * `CUSTOM`: enable this flag to use your own IDX arrays for the scatter/gather kernels. The source code will read inputs from IDX1.txt and IDX2.txt.
     * Ex: `-DTUNED`
 
+* `NUM_GPUS`: sets the number of GPUs to be used per node. If not set, it will be set to 1.
+    * Ex: `-DNUM_GPUS=3`
+
 ### Custom Memory Access Patterns
 To make RaiderSTREAM more configurable. We have added a simple way to input your own IDX array indices. If `-DCUSTOM` is enabled at compile time, the source code will read in the contents of IDX1.txt and IDX2.txt to the respective IDX arrays used simulate irregularity in the scatter/gather kernels.
 
@@ -142,10 +145,11 @@ To make it easier to populate these input files, we have included a file called 
 gcc arraygen.c -o arraygen.exe
 ./arraygen.exe > IDX1.txt
 ./arraygen.exe > IDX2.txt
+./arraygen.exe > IDX3.txt
 ```
 
 ### Run Rules
-STREAM is intended to measure the bandwidth from main memory. However, it can be used to measure cache bandwidth as well by the adjusting the environment variable STREAM_ARRAY_SIZE such that the memory needed to allocate the arrays can fit in the cache level of interest. The general rule for STREAM_ARRAY_SIZE is that each array must be at least 4x the size of the sum of all the lastlevel caches, or 1 million elements – whichever is larger
+STREAM is intended to measure the bandwidth from main memory. However, it can be used to measure cache bandwidth as well by the adjusting the  STREAM_ARRAY_SIZE such that the memory needed to allocate the arrays can fit in the cache level of interest. The general rule for STREAM_ARRAY_SIZE is that each array must be at least 4x the size of the sum of all the lastlevel caches, or 1 million elements – whichever is larger
 
 ### Irregular Memory Access Patterns
 The gather and scatter benchmark kernels are similar in that they both provide insight into the real-world performance one can expect from a given system in a scientific computing setting. However, there are differences between these two memory access patterns that should be understood.

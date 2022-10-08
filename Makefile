@@ -2,6 +2,11 @@ BUILD_DIR 	= ./build
 SRC_DIR		= ./src
 ROOT_DIR	= ./
 
+CC 	 ?= gcc
+MPIC ?= mpicc
+OSHC ?= oshcc
+NVC  ?= nvcc
+
 ORIGINAL_IMPL 		?= $(SRC_DIR)/original/stream_original.c
 OMP_IMPL 			?= $(SRC_DIR)/openmp/stream_openmp.c
 MPI_IMPL 			?= $(SRC_DIR)/mpi/stream_mpi.c
@@ -28,34 +33,30 @@ CUDA_MPI_FLAGS		?= -DNUM_GPUS=2
 #------------------------------------------------------------------
 # 					 DO NOT EDIT BELOW
 #------------------------------------------------------------------
-all: build
-	gcc $(ORIGINAL_FLAGS) $(OPENMP) $(ORIGINAL_IMPL) -o $(BUILD_DIR)/stream_original.exe
-	gcc $(OMP_FLAGS) $(OPENMP) $(OMP_IMPL) -o $(BUILD_DIR)/stream_omp.exe
-	mpicc $(MPI_FLAGS) $(OPENMP) $(MPI_IMPL) -o $(BUILD_DIR)/stream_mpi.exe
-	oshcc $(SHMEM_FLAGS) $(OPENMP) $(SHEM_IMPL) -o $(BUILD_DIR)/stream_oshmem.exe
-	nvcc $(CUDA_FLAGS) $(CUDA_IMPL) -o $(BUILD_DIR)/stream_cuda.exe
-	nvcc -lmpi $(CUDA_MPI_FLAGS) $(CUDA_MPI_IMPL) -o $(BUILD_DIR)/stream_cuda_mpi.exe
+all: build stream_original stream_omp stream_mpi stream_oshmem stream_cuda stream_cuda_mpi
 
 stream_original: build
-	gcc $(ORIGINAL_FLAGS) $(OPENMP) $(ORIGINAL_IMPL) -o $(BUILD_DIR)/stream_original.exe
+	$(CC) $(ORIGINAL_FLAGS) $(OPENMP) $(ORIGINAL_IMPL) -o $(BUILD_DIR)/stream_original.exe
 
 stream_omp: build
-	gcc $(OMP_FLAGS) $(OPENMP) $(OMP_IMPL) -o $(BUILD_DIR)/stream_omp.exe
+	$(CC) $(OMP_FLAGS) $(OPENMP) $(OMP_IMPL) -o $(BUILD_DIR)/stream_omp.exe
 
 stream_mpi: build
-	mpicc $(MPI_FLAGS) $(OPENMP) $(MPI_IMPL) -o $(BUILD_DIR)/stream_mpi.exe
+	$(MPIC) $(MPI_FLAGS) $(OPENMP) $(MPI_IMPL) -o $(BUILD_DIR)/stream_mpi.exe
 
 stream_oshmem: build
-	oshcc $(SHMEM_FLAGS) $(OPENMP) $(SHEM_IMPL) -o $(BUILD_DIR)/stream_oshmem.exe
+	$(OSHC) $(SHMEM_FLAGS) $(OPENMP) $(SHEM_IMPL) -o $(BUILD_DIR)/stream_oshmem.exe
 
 stream_cuda: build
-	nvcc $(CUDA_FLAGS) $(CUDA_IMPL) -o $(BUILD_DIR)/stream_cuda.exe
+	$(NVC) $(CUDA_FLAGS) $(CUDA_IMPL) -o $(BUILD_DIR)/stream_cuda.exe
 
 stream_cuda_mpi: build
-	nvcc -lmpi $(CUDA_MPI_FLAGS) $(CUDA_MPI_IMPL) -o $(BUILD_DIR)/stream_cuda_mpi.exe
+	$(NVC) -lmpi $(CUDA_MPI_FLAGS) $(CUDA_MPI_IMPL) -o $(BUILD_DIR)/stream_cuda_mpi.exe
 
 build:
 	@mkdir $(BUILD_DIR)
+
+clean_all: clean clean_outputs clean_inputs
 
 clean:
 	rm -f *.exe
@@ -71,7 +72,5 @@ clean_inputs:
 	touch $(IDX1)
 	touch $(IDX2)
 	touch $(IDX3)
-
-clean_all: clean clean_outputs clean_inputs
 
 ###############################################################################
