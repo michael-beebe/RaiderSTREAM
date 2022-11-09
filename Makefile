@@ -14,9 +14,9 @@ SHEM_IMPL 			?= $(SRC_DIR)/openshmem/stream_openshmem.c
 CUDA_IMPL			?= $(SRC_DIR)/cuda/stream_cuda.cu
 CUDA_MPI_IMPL		?= $(SRC_DIR)/cuda-mpi/stream_cuda.cu
 
-IDX1				?= $(ROOT_DIR)/IDX1.txt
-IDX2				?= $(ROOT_DIR)/IDX2.txt
-IDX3				?= $(ROOT_DIR)/IDX3.txt
+IDX1  ?= $(ROOT_DIR)/IDX1.txt
+IDX2  ?= $(ROOT_DIR)/IDX2.txt
+IDX3  ?= $(ROOT_DIR)/IDX3.txt
 
 ENABLE_OPENMP ?= false # Change this to false if you don't want to use OpenMP
 ifeq ($(ENABLE_OPENMP), true)
