@@ -4,42 +4,42 @@
 # -------------------------------------------------
 #  Set true only for implementations you want to run
 # -------------------------------------------------
-export RUN_ORIGINAL=false
-export RUN_OMP=false
-export RUN_MPI=false
-export RUN_SHMEM=false
-export RUN_CUDA=false
-export RUN_CUDA_MPI=false
+RUN_ORIGINAL=false
+RUN_OMP=false
+RUN_MPI=false
+RUN_SHMEM=false
+RUN_CUDA=false
+RUN_CUDA_MPI=false
 
 # Problem Size
-export STREAM_ARRAY_SIZE=10000000
+STREAM_ARRAY_SIZE=10000000
 
 # Don't forget to set OMP_NUM_THREADS if you are using OpenMP
 # NOTE: OpenMP is enabled/disbled in the Makefile
-export OMP_NUM_THREADS=
+OMP_NUM_THREADS=
 
 # Set the number of PEs/ranks if using MPI and/or OpenSHMEM implementations
-export NPES=
+NPES=
 
 # Set this to true if you want this script to recompile the executables
-export COMPILE=true
+COMPILE=true
 
 # Set this to true if you want to be prompted to cat your output file. Good for a single 
 # run, not so good if you're running several runs at once
-export PROMPT_OUTPUT=false
+PROMPT_OUTPUT=false
 
 # -------------------------------------------------
 #   Setting up directory to dump benchmark output
 # -------------------------------------------------
-export STREAM_DIR=$(pwd)
-export OUTPUT_DIR=$STREAM_DIR/outputs
+STREAM_DIR=$(pwd)
+OUTPUT_DIR=$STREAM_DIR/outputs
 if [[ ! -d $OUTPUT_DIR ]] ; then
     mkdir $OUTPUT_DIR
 fi
 
-export BUILD_DIR=$STREAM_DIR/build
+BUILD_DIR=$STREAM_DIR/build
 
-export OUTPUT_FILE=$OUTPUT_DIR/raiderstream_output_$(date +"%d-%m-%y")_$(date +"%T").txt
+OUTPUT_FILE=$OUTPUT_DIR/raiderstream_output_$(date +"%d-%m-%y")_$(date +"%T").txt
 if [[ -f $OUTPUT_FILE ]] ; then
     rm $OUTPUT_FILE
     touch $OUTPUT_FILE
