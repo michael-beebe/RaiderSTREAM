@@ -28,7 +28,7 @@ OMP_FLAGS			?=
 MPI_FLAGS			?=
 SHMEM_FLAGS			?=
 CUDA_FLAGS			?=
-CUDA_MPI_FLAGS		?= -DNUM_GPUS=2
+CUDA_MPI_FLAGS		?= -DNUM_GPUS=
 
 #------------------------------------------------------------------
 # 					 DO NOT EDIT BELOW
