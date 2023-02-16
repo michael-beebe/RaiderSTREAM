@@ -13,7 +13,7 @@ RaiderSTREAM is a variation of the STREAM benchmark for high-performance computi
 * [Irregular Memory Access Patterns](#irregular_mem_access)
 * [Multi-Node Support](#multi_node_support)
 * [Custom Memory Access Patterns](#custom)
-* [Citing](#citing)
+* [Citing RaiderSTREAM](#citing)
 * [Acknowledgements](#acknowledgements)
 
 ## How is RaiderSTREAM different from STREAM?<a id="rstream_vs_stream"></a>
@@ -181,7 +181,7 @@ Or you could use `arraygen.sh` script (that simply does the above) to save youre
 source arraygen.sh
 ```
 
-## Citing<a id="citing"></a>
+## Citing RaiderSTREAM<a id="citing"></a>
 To properly cite RaiderSTREAM, please use the following reference:
 * M. Beebe, B. Williams, S. Devaney, J. Leidel, Y. Chen and S. Poole, "RaiderSTREAM: Adapting the STREAM Benchmark to Modern HPC Systems," 2022 IEEE High Performance Extreme Computing Conference (HPEC), Waltham, MA, USA, 2022, pp. 1-7, doi: 10.1109/HPEC55821.2022.9926292.
 
