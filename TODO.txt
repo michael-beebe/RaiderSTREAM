@@ -1,0 +1,3 @@
+- Add a LICENSE
+- Parent RaiderSTREAM class
+- Completely update README.d

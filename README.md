@@ -3,18 +3,29 @@
 RaiderSTREAM is a variation of the STREAM benchmark for high-performance computing (HPC), developed in the Data-Intensive Scalable Computing Laboratory at Texas Tech University.
 
 ## Table of Contents
-* [How is RaiderSTREAM different from STREAM?](#rstream_vs_stream)
-* [Benchmark Kernels](#kernels)
-* [How are bytes counted?](#counting_bytes)
-* [Setting Problem Size](#setting_problem_size)
-* [Building RaiderSTREAM](#build)
-* [Compiler Flags and Environment Variables](#flags)
-* [Run Rules](#run_rules)
-* [Irregular Memory Access Patterns](#irregular_mem_access)
-* [Multi-Node Support](#multi_node_support)
-* [Custom Memory Access Patterns](#custom)
-* [Citing RaiderSTREAM](#citing)
-* [Acknowledgements](#acknowledgements)
+- [RaiderSTREAM](#raiderstream)
+  - [Table of Contents](#table-of-contents)
+  - [How is RaiderSTREAM different from STREAM?](#how-is-raiderstream-different-from-stream)
+  - [Benchmark Kernels](#benchmark-kernels)
+  - [How are bytes counted?](#how-are-bytes-counted)
+  - [Setting Problem Size](#setting-problem-size)
+  - [Building RaiderSTREAM](#building-raiderstream)
+    - [Original STREAM Implementation](#original-stream-implementation)
+    - [Pure OpenMP](#pure-openmp)
+    - [MPI](#mpi)
+    - [OpenSHMEM](#openshmem)
+    - [CUDA (Single GPU)](#cuda-single-gpu)
+    - [CUDA (Multi-Node, Mutli-GPU)](#cuda-multi-node-mutli-gpu)
+    - [Clean build directory:](#clean-build-directory)
+    - [Clean output directory:](#clean-output-directory)
+    - [Empty IDX1.txt, IDX2.txt, IDX3.txt:](#empty-idx1txt-idx2txt-idx3txt)
+  - [Compiler Flags and Environment Variables](#compiler-flags-and-environment-variables)
+  - [Run Rules](#run-rules)
+  - [Irregular Memory Access Patterns](#irregular-memory-access-patterns)
+  - [Multi-Node Support](#multi-node-support)
+  - [Custom Memory Access Patterns](#custom-memory-access-patterns)
+  - [Citing RaiderSTREAM](#citing-raiderstream)
+  - [Acknowledgements](#acknowledgements)
 
 ## How is RaiderSTREAM different from STREAM?<a id="rstream_vs_stream"></a>
 
@@ -53,7 +64,7 @@ We have also added multi-node GPU support to better accomodate
 | CENTRAL Triad  | a[0] = b[0] + q * c[0] | 24 | 2 |
 
 ## How are bytes counted?<a id="counting_bytes"></a>
-![Benchmark Kernels](readme_images/mbps_formula.png)
+![Benchmark Kernels](.github/readme_images/mbps_formula.png)
 
 * $\alpha$ = number of memory accesses per iteration of the main STREAM loops
 * $\gamma$ = size in bytes of `STREAM_TYPE` (8 bytes for double, 4 bytes for int) 
@@ -154,12 +165,12 @@ The gather and scatter benchmark kernels are similar in that they both provide i
 * The gather memory access pattern is characterized by randomly indexed loads coupled with sequential stores. This can help give us an understanding of read performance from sparse datasets such as arrays or matrices.
 * The scatter memory access pattern can be considered the inverse of its gather counterpart, and is characterized by the combination of sequential loads coupled together with randomly indexed stores. This pattern can give us an understanding of write performance to sparse datasets.
 
-![Gather Scatter](readme_images/gather_scatter.png)
+![Gather Scatter](.github/readme_images/gather_scatter.png)
 
 ## Multi-Node Support<a id="multi_node_support"></a>
 RadierSTREAM does not currently use any inter-process communication routines such as MPI_SEND or SHMEM_PUT within the benchmark kernels. Instead, the programming models are essentially leveraged as a <b>resource allocator</b>. It is worth noting that for the multi-node implementations, each processing element DOES NOT get its own copy of the STREAM arrays. The STREAM arrays are distributed evenly across a user-specified number of processing elements (PEs), each PE computes the kernel and writes the result back to its own array segment.
 
-![Multi-Node Support](readme_images/oshrun.png)
+![Multi-Node Support](.github/readme_images/oshrun.png)
 
 ## Custom Memory Access Patterns<a id="custom"></a>
 To make RaiderSTREAM more configurable. We have added a simple way to input your own IDX array indices. If `-DCUSTOM` is enabled at compile time, the source code will read in the contents of IDX1.txt and IDX2.txt to the respective IDX arrays used simulate irregularity in the scatter/gather kernels.

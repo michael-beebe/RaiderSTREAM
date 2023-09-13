@@ -1,11 +1,11 @@
 build
-.*
 .todo.txt
 .debug_notes.txt
 outputs
 .assembly
 .tests
 .vscode
+.idea
 .DS_Store
 
 # Prerequisites
