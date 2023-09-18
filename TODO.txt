@@ -1,3 +1,6 @@
 - Add a LICENSE
-- Parent RaiderSTREAM class
+- Make it so users enter a desired amount of memory rather than
+  a STREAM_ARRAY_SIZE
+- Add in validation
 - Completely update README.d
+- Work in GPU-aware MPI

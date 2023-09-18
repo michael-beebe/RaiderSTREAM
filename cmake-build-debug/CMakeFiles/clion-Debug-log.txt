@@ -1,0 +1,25 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/ninja -G Ninja -S /Users/michaelbeebe/Documents/rstream/RaiderSTREAM_cleanup -B /Users/michaelbeebe/Documents/rstream/RaiderSTREAM_cleanup/cmake-build-debug
+-- The C compiler identification is AppleClang 14.0.3.14030022
+-- The CXX compiler identification is AppleClang 14.0.3.14030022
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /Library/Developer/CommandLineTools/usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /Library/Developer/CommandLineTools/usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- DISABLING OpenMP Implementation
+-- DISABLING MPI/OpenMP Implementation
+-- DISABLING OpenSHMEM Implementation
+-- DISABLING MPI CUDA Implementation
+-- DISABLING MPI CUDA Implementation
+-- RS_INCLUDE_PATH set to /Users/michaelbeebe/Documents/rstream/RaiderSTREAM_cleanup/include
+-- RS_SRC_PATH set to /Users/michaelbeebe/Documents/rstream/RaiderSTREAM_cleanup/src
+CMake Error at src/RaiderSTREAM/CMakeLists.txt:35 (install):
+  install TARGETS given target "raiderstream" which does not exist.
+
+
+-- Configuring incomplete, errors occurred!
