@@ -29,8 +29,6 @@
 #include "Impl/RS_MPI_CUDA/RS_MPI_CUDA.cuh"
 #endif
 
-
-
 void print_timing() {
   // TODO: print_timing()
 }

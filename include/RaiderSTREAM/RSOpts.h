@@ -31,7 +31,7 @@ private:
   ssize_t STREAM_ARRAY_SIZE;      // stream array size
   int NTIMES;                     // number of times to run benchmark
   std::string STREAM_TYPE;        // stream datatype TODO: figure out how to parse this
-  // int NTHREADS;                   // number of OpenMP threads
+  int NTHREADS;                   // number of OpenMP threads
   int NPROCS;                     // Numer of ranks, PEs, etc.
   int LARGC;                      // main argc
   char **LARGV;                   // main argv
