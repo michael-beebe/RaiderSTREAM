@@ -1,12 +1,5 @@
-build
-.todo.txt
-.debug_notes.txt
-outputs
-.assembly
-.tests
-.vscode
-.idea
-.DS_Store
+# CMake
+cmake-build-debug
 
 # Prerequisites
 *.d
@@ -54,3 +47,14 @@ outputs
 
 # Kernel Module Compile Results
 *.cmd
+
+# Other
+build
+.todo.txt
+.debug_notes.txt
+outputs
+.assembly
+.tests
+.vscode
+.idea
+.DS_Store

@@ -42,7 +42,7 @@ if( RS_LINKER_FLAGS )
   message(STATUS "USING MACHINE-SPECIFIC LINKER_FLAGS: ${RS_LINKER_FLAGS}")
 endif()
 
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -std=c99 ${RS_CFLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -std=c99 ${RS_CFLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 ${RS_CXXFLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall -g ${RS_CXXFLAGS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -std=c++11 ${RS_CXXFLAGS}")
@@ -55,12 +55,6 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${RS_LINKER_FLAGS}")
 if (ENABLE_OMP)
   find_package(OpenMP REQUIRED)
   if (OPENMP_FOUND)
-    # include_directories("/opt/homebrew/include") # path to omp.h
-    include_directories("/System/Volumes/Data/opt/homebrew/Cellar/llvm@16/16.0.6/lib/clang/16/include/") # path to omp.h
-    
-    # link_directories("/opt/homebrew/lib") # path to libomp.dylib
-    link_directories("/System/Volumes/Data/opt/homebrew/Cellar/llvm@16/16.0.6/lib/") # libomp.dylib")
-    
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -D_ENABLE_OMP_")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -D_ENABLE_OMP_")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
