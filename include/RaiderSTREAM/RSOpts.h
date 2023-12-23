@@ -13,7 +13,7 @@
 #define RS_VERSION_MINOR 2
 
 /** BenchType struct: defines an individual benchmark table entry */
-// TODO: work in memory size, we will have user input that instead of streeam_array_size
+// TODO: work in memory size, we will have user input that instead of stream_array_size
 typedef struct {
   const std::string Name;         // benchmark name
   std::string Arg;                // benchmark arguments
@@ -136,6 +136,19 @@ public:
 
   /// Retrieve the argv value
   char **get_argv() { return LARGV; }
+
+/****************
+		Setters
+		TODO: add more setters as needed
+*****************/
+	// Set the STREAM array size
+	void set_STREAM_ARRAY_SIZE(ssize_t size) { STREAM_ARRAY_SIZE = size; }
+
+	void set_num_times(int num_times) { NTIMES = num_times; }
+
+	void set_num_procs(int num_procs) { NPROCS = num_procs; }
+
+	void set_stream_type(std::string type) { STREAM_TYPE = type; }
 };
 
 #endif // _RSOPTS_H_

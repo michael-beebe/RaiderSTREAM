@@ -14,7 +14,7 @@ extern "C" { // TODO: updates the arguments here
     double *b,
     double *c,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -25,7 +25,7 @@ extern "C" { // TODO: updates the arguments here
     double *b,
     double *c,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -36,7 +36,7 @@ extern "C" { // TODO: updates the arguments here
     double *b,
     double *c,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -47,11 +47,11 @@ extern "C" { // TODO: updates the arguments here
     double *b,
     double *c,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
-
+  
   // gather copy
   void gather_copy(
     double *a,
@@ -59,7 +59,7 @@ extern "C" { // TODO: updates the arguments here
     double *c,
     ssize_t *IDX1,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -71,7 +71,7 @@ extern "C" { // TODO: updates the arguments here
     double *c,
     ssize_t *IDX1,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -84,7 +84,7 @@ extern "C" { // TODO: updates the arguments here
     ssize_t *IDX1,
     ssize_t *IDX2,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -97,7 +97,7 @@ extern "C" { // TODO: updates the arguments here
     ssize_t *IDX1,
     ssize_t *IDX2,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -109,7 +109,7 @@ extern "C" { // TODO: updates the arguments here
     double *c,
     ssize_t *IDX1,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -121,7 +121,7 @@ extern "C" { // TODO: updates the arguments here
     double *c,
     ssize_t *IDX1,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -133,7 +133,7 @@ extern "C" { // TODO: updates the arguments here
     double *c,
     ssize_t *IDX1,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -145,7 +145,7 @@ extern "C" { // TODO: updates the arguments here
     double *c,
     ssize_t *IDX1,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -158,7 +158,7 @@ extern "C" { // TODO: updates the arguments here
     ssize_t *IDX1,
     ssize_t *IDX2,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -171,7 +171,7 @@ extern "C" { // TODO: updates the arguments here
     ssize_t *IDX1,
     ssize_t *IDX2,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -185,7 +185,7 @@ extern "C" { // TODO: updates the arguments here
     ssize_t *IDX2,
     ssize_t *IDX3,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -199,7 +199,7 @@ extern "C" { // TODO: updates the arguments here
     ssize_t *IDX2,
     ssize_t *IDX3,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES],
     int k,
     double scalar
   );
@@ -210,7 +210,7 @@ extern "C" { // TODO: updates the arguments here
     double *b,
     double *c,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES]
     int k,
     double scalar
   );
@@ -221,7 +221,7 @@ extern "C" { // TODO: updates the arguments here
     double *b,
     double *c,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES]
     int k,
     double scalar
   );
@@ -232,7 +232,7 @@ extern "C" { // TODO: updates the arguments here
     double *b,
     double *c,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES]
     int k,
     double scalar
   );
@@ -243,7 +243,7 @@ extern "C" { // TODO: updates the arguments here
     double *b,
     double *c,
     ssize_t stream_array_size,
-    double **times,
+    double times[NUM_KERNELS][NTIMES]
     int k,
     double scalar
   );
@@ -251,41 +251,31 @@ extern "C" { // TODO: updates the arguments here
 
 class RS_OMP : public RSBaseImpl {
 private:
-  double scalar = 3.0;                                       // scalar used in triad
-
   double *a;                          // STREAM array
   double *b;                          // STREAM array
   double *c;                          // STREAM array
   double *IDX1;                       // random index array
   double *IDX2;                       // random index array
   double *IDX3;                       // random index array
-  ssize_t stream_array_size;          // size of the STREAM arrays
-  double **times;  // Array for storing the timings
+  ssize_t STREAM_ARRAY_SIZE;          // size of the STREAM arrays
+  double times[NUM_KERNELS][NTIMES];  // Array for storing the timings
   int k;                              // index of the kernel FIXME:
 
 public:
   // RaiderSTREAM OpenMP constructor
-  RS_OMP();
-  // FIXME: not sure what's going on here
-  // RS_OMP(
-  //   RSBaseImpl::RSBenchType BenchType
-  // );
-
+  RS_OMP(
+    RSBaseImpl::RSBenchType BenchType
+  );
   // RaiderSTREAM OpenMP destructor
   ~RS_OMP();
   
   // RaiderSTREAM OpenMP data allocation function
-  // TODO: virtual bool allocate_data(/*TODO: fill these in*/) override;
+  virtual bool allocate_data(/*TODO: fill these in*/) override;
   
   // RaiderSTREAM OpenMP execute function
-  // TODO: virtual bool execute(/*fill in these args*/) override {
-  // t0 = mysecond();
-  // run benchmark
-  // t1 = mysecond();
-  // times[<benchmark>][k] = t1 - t0;
-  // };
+  virtual bool execute(/*fill in these args*/) override;
 
-  // TODO: virtual bool free_data() override;
+  virtual bool free_data() override;
 };
 
 #endif // _RS_OMP_H_

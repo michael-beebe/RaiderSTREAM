@@ -1,10 +1,12 @@
 #ifndef _RSBASEIMPL_H_
-#define _RSBASE_IMPL_H_
+#define _RSBASEIMPL_H_
 
 #include <iostream>
 #include <stdlib.h>
 // #include <bits/stdc++.h>
 #include <sys/time.h>
+#include <stdint.h>
+#include <sys/types.h>
 
 #ifndef NUM_KERNELS
 #define NUM_KERNELS 20 // TODO: possibly find a better place for this

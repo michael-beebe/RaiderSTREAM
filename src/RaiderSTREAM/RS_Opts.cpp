@@ -1,4 +1,5 @@
 #include "RaiderSTREAM/RS_Opts.h"
+// #include "RaiderSTREAM/RSOpts.h"
 
 Benchtype BenchTypeTable[] = {
 // {  Name, Arg, Notes, KType, Enabled, ReqArq }
@@ -88,17 +89,20 @@ bool RSOpts::parse_opts( int argc, char **argv ) {
     }
     // get the stream array size
     else if( (s=="-s" || (s=="-size") || (s=="--size")) ) {
-      STREAM_ARRAY_SIZE = atoi(argv[i+1]);
+      // STREAM_ARRAY_SIZE = atoi(argv[i+1]);
+      set_stream_array_size( atoi(argv[i+1]) );
       i++;
     }
     // get the number of times to run the benchmark
     else if( (s=="-n" || (s=="-ntimes") || (s=="--ntimes")) ) {
-      NTIMES = atoi(argv[i+1]);
+      // NTIMES = atoi(argv[i+1]);
+      set_num_times( atoi(argv[i+1]) );
       i++;
     }
     // get the stream datatype
     else if( (s=="-d" || (s=="-dtype") || (s=="--dtype")) ) {
-      STREAM_TYPE = argv[i+1];
+      // STREAM_TYPE = argv[i+1];
+      set_stream_type( argv[i+1] );
       i++;
     }
     // // get the number of OpenMP threads

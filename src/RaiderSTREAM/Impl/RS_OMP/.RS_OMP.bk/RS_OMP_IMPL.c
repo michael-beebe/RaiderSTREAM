@@ -1,5 +1,5 @@
 #include <omp.h>
-#include <sys/types.h>
+#include <stdint.h>
 
 /**************************************************
  * @brief Copies data from one stream to another.
@@ -14,7 +14,7 @@ void seq_copy(
   double *b,
   double *c,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -42,7 +42,7 @@ void seq_scale(
   double *b,
   double *c,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -70,7 +70,7 @@ void seq_add(
   double *b,
   double *c,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -98,7 +98,7 @@ void seq_triad(
   double *b,
   double *c,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -127,7 +127,7 @@ void gather_copy(
   double *c,
   ssize_t *IDX1,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -156,7 +156,7 @@ void gather_scale(
   double *c,
   ssize_t *IDX1,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -186,7 +186,7 @@ void gather_add(
   ssize_t *IDX1,
   ssize_t *IDX2,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -216,7 +216,7 @@ void gather_triad(
   ssize_t *IDX1,
   ssize_t *IDX2,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -245,7 +245,7 @@ void scatter_copy(
   double *c,
   ssize_t *IDX1,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -274,7 +274,7 @@ void scatter_scale(
   double *c,
   ssize_t *IDX1,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -303,7 +303,7 @@ void scatter_add(
   double *c,
   ssize_t *IDX1,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -332,7 +332,7 @@ void scatter_triad(
   double *c,
   ssize_t *IDX1,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -362,7 +362,7 @@ void sg_copy(
   ssize_t *IDX1,
   ssize_t *IDX2,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -392,7 +392,7 @@ void sg_scale(
   ssize_t *IDX1,
   ssize_t *IDX2,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -423,7 +423,7 @@ void sg_add(
   ssize_t *IDX2,
   ssize_t *IDX3,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -454,7 +454,7 @@ void sg_triad(
   ssize_t *IDX2,
   ssize_t *IDX3,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -482,7 +482,7 @@ void central_copy(
   double *b,
   double *c,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -510,7 +510,7 @@ void central_scale(
   double *b,
   double *c,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -538,7 +538,7 @@ void central_add(
   double *b,
   double *c,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {
@@ -566,7 +566,7 @@ void central_triad(
   double *b,
   double *c,
   ssize_t stream_array_size,
-  double **times,
+  double times[NUM_KERNELS][NTIMES],
   int k,
   double scalar)
 {

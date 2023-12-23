@@ -51,7 +51,7 @@ bool RS_OMP::free_data() {
   return true;
 }
 
-bool RS_OMP::execute(/*TODO: fill in args*/) {
+bool RS_OMP::execute(/*TODO: fill in args*/){
   RSBaseImpl::RSKernelType kernel_type = get_kernel_type();
   double start_time = 0.;
   double end_time = 0.;
