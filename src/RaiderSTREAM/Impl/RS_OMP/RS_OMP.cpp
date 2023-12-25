@@ -49,16 +49,20 @@ bool RS_OMP::allocateData(
     ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
     double *mbps, double *flops, double *times
 ) {
-  // a = (double *) malloc(streamArraySize * sizeof(double));
-  // b = (double *) malloc(streamArraySize * sizeof(double));
-  // c = (double *) malloc(streamArraySize * sizeof(double));
-  // idx1 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
-  // idx2 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
-  // idx3 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+  a = (double *) malloc(streamArraySize * sizeof(double));
+  b = (double *) malloc(streamArraySize * sizeof(double));
+  c = (double *) malloc(streamArraySize * sizeof(double));
+  idx1 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+  idx2 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+  idx3 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
 
-  // initStreamArray(a, streamArraySize, 1.0);
-  // initStreamArray(b, streamArraySize, 2.0);
-  // initStreamArray(c, streamArraySize, 0.0);
+  mbps = (double *) malloc(NUM_KERNELS * sizeof(double));
+  flops = (double *) malloc(NUM_KERNELS * sizeof(double));
+  times = (double *) malloc(NUM_KERNELS * sizeof(double));
+
+  initStreamArray(a, streamArraySize, 1.0);
+  initStreamArray(b, streamArraySize, 2.0);
+  initStreamArray(c, streamArraySize, 0.0);
 
   return true;
 }
