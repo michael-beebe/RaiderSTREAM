@@ -1,0 +1,56 @@
+# Doxyfile for Your Project
+
+# General Configuration
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "RaiderSTREAM"
+PROJECT_NUMBER         = "0.2"              # Version number
+
+OUTPUT_DIRECTORY       = doc                # Output directory for documentation
+GENERATE_HTML          = YES                # Generate HTML documentation
+GENERATE_XML           = YES                # Generate XML documentation
+GENERATE_LATEX         = YES                # Generate LaTeX/PDF documentation (optional)
+
+# Source Code
+#---------------------------------------------------------------------------
+INPUT                  = src/ include/      # Paths to your source code directories
+RECURSIVE              = YES                # Scan subdirectories for source files
+FILE_PATTERNS          = *.c *.cpp *.h *.cu *.cuh # File patterns to include in documentation
+EXCLUDE                =                     # Paths to exclude from documentation (optional)
+
+# Additional Configuration
+#---------------------------------------------------------------------------
+EXTRACT_ALL            = YES                # Extract all functions/methods (optional)
+HIDE_UNDOC_MEMBERS     = NO                 # Hide undocumented class members (optional)
+HIDE_UNDOC_CLASSES     = NO                 # Hide undocumented classes (optional)
+SORT_BRIEF_DOCS        = NO                 # Sort brief documentation by member order (optional)
+
+# Documentation Output
+#---------------------------------------------------------------------------
+GENERATE_TODOLIST      = YES                # Generate a todo list (optional)
+TODOLIST_HYPERLINKS    = YES                # Hyperlinks in the todo list (optional)
+
+# HTML Output Configuration
+#---------------------------------------------------------------------------
+HTML_OUTPUT            = html               # Output directory for HTML documentation
+HTML_FILE_EXTENSION    = .html              # File extension for HTML files
+HTML_HEADER            =                    # Path to a custom header file (optional)
+HTML_FOOTER            =                    # Path to a custom footer file (optional)
+HTML_EXTRA_STYLESHEET  =                    # Path to a custom CSS file (optional)
+
+# LaTeX/PDF Output Configuration (if enabled)
+#---------------------------------------------------------------------------
+LATEX_OUTPUT           = latex              # Output directory for LaTeX/PDF documentation (if enabled)
+LATEX_BATCHMODE        = YES                # Enable batch mode for LaTeX (optional)
+LATEX_SOURCE_CODE      = NO                 # Include source code in LaTeX/PDF output (optional)
+
+# Examples (optional)
+#---------------------------------------------------------------------------
+EXAMPLE_PATH           = examples           # Directory containing example code (optional)
+EXAMPLE_RECURSIVE      = YES                # Recursively scan for examples (optional)
+
+
+
+
+
+
+# EOF

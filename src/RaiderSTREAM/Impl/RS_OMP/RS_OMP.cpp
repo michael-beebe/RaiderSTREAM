@@ -1,175 +1,90 @@
+//
+// _RS_OMP_CPP_
+//
+// Copyright (C) 2022-2024 Texas Tech University
+// All Rights Reserved
+// michael.beebe@ttu.edu
+//
+// See LICENSE in the top level directory for licensing details
+//
+
 #include "RS_OMP.h"
 
 #ifdef _RS_OMP_H_
 
+#include <sys/types.h>
+
+// RaiderSTREAM OpenMP implementation class constructor
 RS_OMP::RS_OMP(
-  RSBaseImpl::RSBenchType bench_type,
-  RSBaseImpl::RSKernelType kernel_type
-) :
-  RSBaseImpl("OMP", bench_type, kernel_type),
+  std::string implName,
+  RSBaseImpl::RSKernelType kType
+) : 
+  RSBaseImpl("RS_OMP", kType),
+  kernelName("all"),
+  streamArraySize(1000000),
+  numTimes(10),
+  streamType("double"),
+  numPEs(1),
+  lArgc(0),
+  lArgv(nullptr),
   a(nullptr),
   b(nullptr),
   c(nullptr),
-  IDX1(nullptr),
-  IDX2(nullptr),
-  IDX3(nullptr),
-  avgtime(nullptr),
-  maxtime(nullptr),
-  mintime(nullptr),
-  scalar(3.0),
-  STREAM_ARRAY_SIZE(1000000),
-  NTIMES(10),
-  NumThreads(1),
-  NumProcs(1)
-  // TODO: find what else we need
+  idx1(nullptr),
+  idx2(nullptr),
+  idx3(nullptr),
+  mbps(nullptr),
+  flops(nullptr),
+  times(nullptr),
+  scalar(3.0)
 {}
-RS_OMP::~RS_OMP(){}
 
-bool RS_OMP::alocate_data() {
-  a = (double *)malloc(sizeof(double) * STREAM_ARRAY_SIZE);
-  b = (double *)malloc(sizeof(double) * STREAM_ARRAY_SIZE);
-  c = (double *)malloc(sizeof(double) * STREAM_ARRAY_SIZE);
-  IDX1 = (ssize_t *)malloc(sizeof(ssize_t) * STREAM_ARRAY_SIZE);
-  IDX2 = (ssize_t *)malloc(sizeof(ssize_t) * STREAM_ARRAY_SIZE);
-  IDX3 = (ssize_t *)malloc(sizeof(ssize_t) * STREAM_ARRAY_SIZE);
-  avgtime = (double *)malloc(sizeof(double) * NUM_KERNELS);
-  maxtime = (double *)malloc(sizeof(double) * NUM_KERNELS);
-  mintime = (double *)malloc(sizeof(double) * NUM_KERNELS);
+RS_OMP::~RS_OMP() {}
+
+/*
+
+*/
+bool RS_OMP::allocateData(
+    double *a, double *b, double *c,
+    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
+    double *mbps, double *flops, double *times
+) {
+  // a = (double *) malloc(streamArraySize * sizeof(double));
+  // b = (double *) malloc(streamArraySize * sizeof(double));
+  // c = (double *) malloc(streamArraySize * sizeof(double));
+  // idx1 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+  // idx2 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+  // idx3 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+
+  // initStreamArray(a, streamArraySize, 1.0);
+  // initStreamArray(b, streamArraySize, 2.0);
+  // initStreamArray(c, streamArraySize, 0.0);
+
   return true;
 }
 
-bool RS_OMP::free_data() {
-  if ( a ) { free( a ); }
-  if ( b ) { free( b ); }
-  if ( c ) { free( c ); }
-  if ( IDX1 ) { free( IDX1 ); }
-  if ( IDX2 ) { free( IDX2 ); }
-  if ( IDX3 ) { free( IDX3 ); }
-  if ( avgtime ) { free( avgtime ); }
-  if ( maxtime ) { free( maxtime ); }
-  if ( mintime ) { free( mintime ); }
+/*
+
+*/
+bool RS_OMP::execute(double *times, double *mbps, double *flops) {  
+  RSBaseImpl::RSKernelType kType = this->getKernelType();
+  double startTime = 0.0;
+  double endTime = 0.0;
+  double MBPS = 0.0;
+  double FLOPS = 0.0;
+
+  // this->allocateData(a, b, c, idx1, idx2, idx3, );
+
   return true;
 }
 
-bool RS_OMP::execute(/*TODO: fill in args*/) {
-  RSBaseImpl::RSKernelType kernel_type = get_kernel_type();
-  double start_time = 0.;
-  double end_time = 0.;
+/*
 
-  // TODO: Run desired kernels
-  switch ( kernel_type ) {
-    case RSBaseImpl::RS_ALL:
-      // TODO: run all kernels
-      break;
-    case RSBaseImpl::RS_SEQ_COPY:
-      start_time = this->my_second();
-      seq_copy(a, b, c, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_SEQ_SCALE:
-      start_time = this->my_second();
-      seq_scale(a, b, c, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_SEQ_ADD:
-      start_time = this->my_second();
-      seq_add(a, b, c, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_SEQ_TRIAD:
-      start_time = this->my_second();
-      seq_triad(a, b, c, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_GATHER_COPY:
-      start_time = this->my_second();
-      gather_copy(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_GATHER_SCALE:
-      start_time = this->my_second();
-      gather_scale(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_GATHER_ADD:
-      start_time = this->my_second();
-      gather_add(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_GATHER_TRIAD:
-      start_time = this->my_second();
-      gather_triad(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_SCATTER_COPY:
-      start_time = this->my_second();
-      scatter_copy(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_SCATTER_SCALE:
-      start_time = this->my_second();
-      scatter_scale(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_SCATTER_ADD:
-      start_time = this->my_second();
-      scatter_add(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_SCATTER_TRIAD:
-      start_time = this->my_second();
-      scatter_triad(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_SG_COPY:
-      start_time = this->my_second();
-      sg_copy(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_SG_SCALE:
-      start_time = this->my_second();
-      sg_scale(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_SG_ADD:
-      start_time = this->my_second();
-      sg_add(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_SG_TRIAD:
-      start_time = this->my_second();
-      sg_triad(a, b, c, IDX1, IDX2, IDX3, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_CENTRAL_COPY:
-      start_time = this->my_second();
-      central_copy(a, b, c, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_CENTRAL_SCALE:
-      start_time = this->my_second();
-      central_scale(a, b, c, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_CENTRAL_ADD:
-      start_time = this->my_second();
-      central_add(a, b, c, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    case RSBaseImpl::RS_CENTRAL_TRIAD:
-      start_time = this->my_second();
-      central_triad(a, b, c, STREAM_ARRAY_SIZE, times, k, scalar);
-      end_time = this->my_second();
-      break;
-    default:
-      this->print_help(); // FIXME: maybe do something else here
-  
-  // TODO: gather results
-  
-  // TODO: validate results
-  
-  
+*/
+bool RS_OMP::freeData() {
   return true;
 }
 
 #endif // _RS_OMP_H_
+// EOF
+

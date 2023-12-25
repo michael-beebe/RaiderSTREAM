@@ -1,13 +1,11 @@
 add_subdirectory(Impl)
 
-set (RSSrcs
-RS_Main.cpp
-RS_Opts.cpp
-)
-
 include_directories(${RS_INCLUDE_PATH})
 
-
+set (RSSrcs
+RS_Main.cpp
+RSOpts.cpp
+)
 
 if (ENABLE_OMP)
   add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_OMP_OBJS>)
@@ -28,8 +26,5 @@ endif()
 if (ENABLE_MPI_CUDA)
   add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_MPI_CUDA_OBJS>)
 endif()
-
-
-
 
 install(TARGETS raiderstream DESTINATION bin)

@@ -1,582 +1,315 @@
+//
+// _RS_OMP_IMPL_C_
+//
+// Copyright (C) 2022-2024 Texas Tech University
+// All Rights Reserved
+// michael.beebe@ttu.edu
+//
+// See LICENSE in the top level directory for licensing details
+//
+
 #include <omp.h>
 #include <sys/types.h>
 
 /**************************************************
  * @brief Copies data from one stream to another.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
- * @param scalar Scalar value for operations.
+ * @param streamArraySize Size of the stream array.
  **************************************************/
-void seq_copy(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void seqCopy(
+  double *a, double *b, double *c,
+  ssize_t streamArraySize)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
+  for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[j];
-  t1 = mysecond();
-  times[COPY][k] = t1 - t0;
 }
 
 /**************************************************
  * @brief Scales data in a stream.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
+ * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void seq_scale(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void seqScale(
+  double *a, double *b, double *c,
+  ssize_t streamArraySize, double scalar)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
+  for (ssize_t j = 0; j < streamArraySize; j++)
     b[j] = scalar * c[j];
-  t1 = mysecond();
-  times[SCALE][k] = t1 - t0;
 }
 
 /**************************************************
  * @brief Adds data from two streams.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
- * @param scalar Scalar value for operations.
+ * @param streamArraySize Size of the stream array.
  **************************************************/
-void seq_add(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void seqAdd(
+  double *a, double *b, double *c,
+  ssize_t streamArraySize)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
+  for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[j] + b[j];
-  t1 = mysecond();
-  times[SUM][k] = t1 - t0;
 }
 
 /**************************************************
  * @brief Performs triad operation on stream data.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
+ * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void seq_triad(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void seqTriad(
+  double *a, double *b, double *c,
+  ssize_t streamArraySize, double scalar)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
+  for (ssize_t j = 0; j < streamArraySize; j++)
     a[j] = b[j] + scalar * c[j];
-  t1 = mysecond();
-  times[TRIAD][k] = t1 - t0;
 }
 
 /**************************************************
  * @brief Copies data using gather operation.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
- * @param scalar Scalar value for operations.
+ * @param streamArraySize Size of the stream array.
  **************************************************/
-void gather_copy(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void gatherCopy(
+  double *a, double *b, double *c,
+  ssize_t *idx1, ssize_t streamArraySize)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    c[j] = a[IDX1[j]];
-  t1 = mysecond();
-  times[GATHER_COPY][k] = t1 - t0;
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    c[j] = a[idx1[j]];
 }
 
 /**************************************************
  * @brief Scales data using gather operation.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
+ * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void gather_scale(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void gatherScale(
+  double *a, double *b, double *c,
+  ssize_t *idx1,
+  ssize_t streamArraySize, double scalar)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    b[j] = scalar * c[IDX1[j]];
-  t1 = mysecond();
-  times[GATHER_SCALE][k] = t1 - t0;  
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    b[j] = scalar * c[idx1[j]];
 }
 
 /**************************************************
  * @brief Adds data using gather operation.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
- * @param scalar Scalar value for operations.
+ * @param streamArraySize Size of the stream array.
  **************************************************/
-void gather_add(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t *IDX2,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void gatherAdd(
+  double *a, double *b, double *c,
+  ssize_t *idx1, ssize_t *idx2,
+  ssize_t streamArraySize)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    c[j] = a[IDX1[j]] + b[IDX2[j]];
-  t1 = mysecond();
-  times[GATHER_SUM][k] = t1 - t0;
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    c[j] = a[idx1[j]] + b[idx2[j]];
 }
 
 /**************************************************
  * @brief Performs triad operation using gather.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
+ * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void gather_triad(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t *IDX2,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void gatherTriad(
+  double *a, double *b, double *c,
+  ssize_t *idx1, ssize_t *idx2,
+  ssize_t streamArraySize, double scalar)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    a[j] = b[IDX1[j]] + scalar * c[IDX2[j]];
-  t1 = mysecond();
-  times[GATHER_TRIAD][k] = t1 - t0;
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    a[j] = b[idx1[j]] + scalar * c[idx2[j]];
 }
 
 /**************************************************
  * @brief Copies data using scatter operation.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
- * @param scalar Scalar value for operations.
+ * @param streamArraySize Size of the stream array.
  **************************************************/
-void scatter_copy(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void scatterCopy(
+  double *a, double *b, double *c,
+  ssize_t *idx1,
+  ssize_t streamArraySize)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    c[IDX1[j]] = a[j];
-  t1 = mysecond();
-  times[SCATTER_COPY][k] = t1 - t0;
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    c[idx1[j]] = a[j];
 }
 
 /**************************************************
  * @brief Scales data using scatter operation.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
+ * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void scatter_scale(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void scatterScale(
+  double *a, double *b, double *c,
+  ssize_t *idx1,
+  ssize_t streamArraySize, double scalar)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    b[IDX1[j]] = scalar * c[j];
-  t1 = mysecond();
-  times[SCATTER_SCALE][k] = t1 - t0;  
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    b[idx1[j]] = scalar * c[j];
 }
 
 /**************************************************
  * @brief Adds data using scatter operation.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
- * @param scalar Scalar value for operations.
+ * @param streamArraySize Size of the stream array.
  **************************************************/
-void scatter_add(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void scatterAdd(
+  double *a, double *b, double *c,
+  ssize_t *idx1,
+  ssize_t streamArraySize)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    c[IDX1[j]] = a[j] + b[j];
-  t1 = mysecond();
-  times[SCATTER_SUM][k] = t1 - t0;
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    c[idx1[j]] = a[j] + b[j];
 }
 
 /**************************************************
  * @brief Performs triad operation using scatter.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
+ * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void scatter_triad(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void scatterTriad(
+  double *a, double *b, double *c,
+  ssize_t *idx1,
+  ssize_t streamArraySize, double scalar)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    a[IDX1[j]] = b[j] + scalar * c[j];
-  t1 = mysecond();
-  times[SCATTER_TRIAD][k] = t1 - t0;
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    a[idx1[j]] = b[j] + scalar * c[j];
 }
 
 /**************************************************
  * @brief Copies data using scatter-gather operation.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
- * @param scalar Scalar value for operations.
+ * @param streamArraySize Size of the stream array.
  **************************************************/
-void sg_copy(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t *IDX2,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void sgCopy(
+  double *a, double *b, double *c,
+  ssize_t *idx1, ssize_t *idx2,
+  ssize_t streamArraySize)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    c[IDX1[j]] = a[IDX2[j]];
-  t1 = mysecond();
-  times[SG_COPY][k] = t1 - t0;
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    c[idx1[j]] = a[idx2[j]];
 }
 
 /**************************************************
  * @brief Scales data using scatter-gather operation.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
+ * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void sg_scale(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t *IDX2,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void sgScale(
+  double *a, double *b, double *c,
+  ssize_t *idx1, ssize_t *idx2,
+  ssize_t streamArraySize, double scalar)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    b[IDX2[j]] = scalar * c[IDX1[j]];
-  t1 = mysecond();
-  times[SG_SCALE][k] = t1 - t0;  
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    b[idx2[j]] = scalar * c[idx1[j]];
 }
 
 /**************************************************
  * @brief Adds data using scatter-gather operation.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
- * @param scalar Scalar value for operations.
+ * @param streamArraySize Size of the stream array.
  **************************************************/
-void sg_add(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t *IDX2,
-  ssize_t *IDX3,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void sgAdd(
+  double *a, double *b, double *c,
+  ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
+  ssize_t streamArraySize)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    c[IDX1[j]] = a[IDX2[j]] + b[IDX3[j]];
-  t1 = mysecond();
-  times[SG_SUM][k] = t1 - t0;
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
 }
 
 /**************************************************
  * @brief Performs triad operation using scatter-gather.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
+ * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void sg_triad(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t *IDX1,
-  ssize_t *IDX2,
-  ssize_t *IDX3,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void sgTriad(
+  double *a, double *b, double *c,
+  ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
+  ssize_t streamArraySize, double scalar)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
-    a[IDX2[j]] = b[IDX3[j]] + scalar * c[IDX1[j]];
-  t1 = mysecond();
-  times[SG_TRIAD][k] = t1 - t0;
+  for (ssize_t j = 0; j < streamArraySize; j++)
+    a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
 }
 
 /**************************************************
  * @brief Copies data using a central location.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
- * @param scalar Scalar value for operations.
+ * @param streamArraySize Size of the stream array.
  **************************************************/
-void central_copy(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void centralCopy(
+  double *a, double *b, double *c,
+  ssize_t streamArraySize)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
+  for (ssize_t j = 0; j < streamArraySize; j++)
     c[0] = a[0];
-  t1 = mysecond();
-  times[CENTRAL_COPY][k] = t1 - t0;
 }
 
 /**************************************************
  * @brief Scales data using a central location.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
+ * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void central_scale(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void centralScale(
+  double *a,double *b, double *c,
+  ssize_t streamArraySize, double scalar)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
+  for (ssize_t j = 0; j < streamArraySize; j++)
     b[0] = scalar * c[0];
-  t1 = mysecond();
-  times[CENTRAL_SCALE][k] = t1 - t0;
 }
 
 /**************************************************
  * @brief Adds data using a central location.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
- * @param scalar Scalar value for operations.
+ * @param streamArraySize Size of the stream array.
  **************************************************/
-void central_add(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void centralAdd(
+  double *a, double *b, double *c,
+  ssize_t streamArraySize)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
+  for (ssize_t j = 0; j < streamArraySize; j++)
     c[0] = a[0] + b[0];
-  t1 = mysecond();
-  times[CENTRAL_SUM][k] = t1 - t0;
 }
 
 /**************************************************
  * @brief Performs triad operation using a central location.
  * 
- * @param stream_array_size Size of the stream array.
- * @param times 2D array to store kernel execution times.
- * @param k Kernel index.
+ * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void central_triad(
-  double *a,
-  double *b,
-  double *c,
-  ssize_t stream_array_size,
-  double **times,
-  int k,
-  double scalar)
+void centralTriad(
+  double *a, double *b, double *c,
+  ssize_t streamArraySize, double scalar)
 {
-  double t0, t1;
-  ssize_t j;
-
-  t0 = mysecond();
   #pragma omp parallel for
-  for (j = 0; j < stream_array_size; j++)
+  for (ssize_t j = 0; j < streamArraySize; j++)
     a[0] = b[0] + scalar * c[0];
-  t1 = mysecond();
-  times[CENTRAL_TRIAD][k] = t1 - t0;
 }
+
+// EOF

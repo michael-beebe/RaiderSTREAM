@@ -48,6 +48,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall -g ${RS_CXXFLAGS}"
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -std=c++11 ${RS_CXXFLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${RS_LINKER_FLAGS}")
 
+if( DEBUG )
+  add_definitions(-D_DEBUG_=1)
+endif()
 
 #------------------------------------------------------------------------
 #-- IMPLEMENTATION-SPECIFIC FLAGS

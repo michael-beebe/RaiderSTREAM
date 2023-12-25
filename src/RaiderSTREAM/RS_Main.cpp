@@ -1,3 +1,13 @@
+//
+// _RS_MAIN_CPP_
+//
+// Copyright (C) 2022-2024 Texas Tech University
+// All Rights Reserved
+// michael.beebe@ttu.edu
+//
+// See LICENSE in the top level directory for licensing details
+//
+
 # include <stdio.h>
 # include <stdlib.h>
 # include <unistd.h>
@@ -29,76 +39,73 @@
 #include "Impl/RS_MPI_CUDA/RS_MPI_CUDA.cuh"
 #endif
 
-void print_timing() {
-  // TODO: print_timing()
+void printTiming() {
+  // TODO: printTiming()
 }
 
-
 #ifdef _ENABLE_OMP_
-void run_bench_omp( RSOpts *Opts ) {
+void runBenchOMP( RSOpts *Opts ) {
   // TODO: run_bench_omp()
 }
 #endif
 
 #ifdef _ENABLE_MPI_OMP_
-void run_bench_mpi_omp( RSOpts *Opts ) {
-  // TODO: run_bench_mpi_omp()
+void runBenchMPIOMP( RSOpts *Opts ) {
+  // TODO: runBenchMPIOMP()
 }
 #endif
 
 #ifdef _ENABLE_OPENSHMEM_
-void run_bench_openshmem( RSOpts *Opts ) {
-  // TODO: run_bench_openshmem()
+void runBenchOpenSHMEM( RSOpts *Opts ) {
+  // TODO: runBenchOpenSHMEM()
 }
 #endif
 
 #ifdef _ENABLE_CUDA_
-void run_bench_cuda( RSOpts *Opts ) {
-  // TODO: run_bench_cuda()
+void runBenchCUDA( RSOpts *Opts ) {
+  // TODO: runBenchCUDA()
 }
 #endif
 
 #ifdef _ENABLE_MPI_CUDA_
-void run_bench_mpi_cuda( RSOpts *Opts ) {
-  // TODO: run_bench_mpi_cuda()
+void runBenchMPICUDA( RSOpts *Opts ) {
+  // TODO: runBenchMPICUDA()
 }
 #endif
-
-
-
-
-
-
 
 int main( int argc, char **argv ) {
   RSOpts *Opts = new RSOpts();
   
-  if ( !Opts->parse_opts(argc, argv) ) {
+  if ( !Opts->parseOpts(argc, argv) ) {
     std::cout << "Failed to parse command line options" << std::endl;
     delete Opts;
     return -1;
   }
   
   #ifdef _ENABLE_OMP_
-  run_bench_omp( Opts );
+  runBenchOMP( Opts );
   #endif
 
   #ifdef _ENABLE_MPI_OMP_
-  run_bench_mpi_omp( Opts );
+  runBenchMPIOMP( Opts );
   #endif
   
   #ifdef _ENABLE_OPENSHMEM_
-  run_bench_openshmem( Opts );
+  runBenchOpenSHMEM( Opts );
   #endif
   
   #ifdef _ENABLE_CUDA_
-  run_bench_cuda( Opts );
+  runBenchCUDA( Opts );
   #endif
   
   #ifdef _ENABLE_MPI_CUDA_
-  run_bench_mpi_cuda( Opts );
+  runBenchMPICUDA( Opts );
   #endif
-  
+
+  #ifdef _DEBUG_
+    printf("Hello, RaiderSTREAM!\n");
+  #endif
+
   return 0;
 }
 
