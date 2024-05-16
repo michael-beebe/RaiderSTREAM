@@ -147,9 +147,6 @@ private:
   ssize_t *idx1;
   ssize_t *idx2;
   ssize_t *idx3;
-  double *mbps;
-  double *flops;
-  double *times;
   int scalar;
 
   // command line options
@@ -172,12 +169,11 @@ public:
   ~RS_OMP();
 
   // RaiderSTREAM OMP execute
-  virtual bool execute(double *times, double *mbps, double *flops, double *bytes, double *floatOps) override;
+  virtual bool execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS) override;
 
   virtual bool allocateData(
     double *a, double *b, double *c,
-    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
-    double *mbps, double *flops, double *times
+    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3
   ) override;
 
   virtual bool freeData() override;

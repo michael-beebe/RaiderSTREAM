@@ -87,7 +87,11 @@ public:
 
   // Default virtual destructor
   virtual ~RSBaseImpl() {}
-  
+
+	// double MBPS[NUM_KERNELS];
+	// double FLOPS[NUM_KERNELS];
+	// double TIMES[NUM_KERNELS];
+
   /**
    * @brief Get the implementation name.
    *
@@ -112,8 +116,7 @@ public:
    */
   virtual bool allocateData(
     double *a, double *b, double *c,
-    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
-    double *mbps, double *flops, double *times
+    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3
   ) = 0;
 
   /**
@@ -130,7 +133,7 @@ public:
    *
    * @return True if the benchmark execution is successful, false otherwise.
    */
-  virtual bool execute(double *times, double *mbps, double *flops, double *bytes, double *floatOps) = 0;
+  virtual bool execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS) = 0;
 
   /**
    * @brief Check for errors in the benchmark results.

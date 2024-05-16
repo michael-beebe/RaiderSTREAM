@@ -42,7 +42,8 @@
 #include "Impl/RS_MPI_CUDA/RS_MPI_CUDA.cuh"
 #endif
 
-void printTiming(const std::string& kernelName, double totalRuntime, const double* mbps, const double* flops) {
+// FIXME: printTiming
+void printTiming(const std::string& kernelName, double totalRuntime, const double* MBPS, const double* FLOPS) {
   std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
   std::cout << std::setfill(' ');
   std::cout << std::left << std::setw(20) << "Kernel";
@@ -55,8 +56,8 @@ void printTiming(const std::string& kernelName, double totalRuntime, const doubl
 
   std::cout << std::left << std::setw(20) << kernelName;
   std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(6) << totalRuntime;
-  std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << mbps[RSBaseImpl::RS_SEQ_COPY];
-  std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << flops[RSBaseImpl::RS_SEQ_COPY];
+  std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << MBPS[RSBaseImpl::RS_SEQ_COPY];
+  std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << FLOPS[RSBaseImpl::RS_SEQ_COPY];
   std::cout << std::endl;
 
   std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
@@ -79,18 +80,15 @@ void runBenchOMP(RSOpts *Opts) {
   ssize_t *idx1 = nullptr;
   ssize_t *idx2 = nullptr;
   ssize_t *idx3 = nullptr;
-  double *mbps = nullptr;
-  double *flops = nullptr;
-  double *times = nullptr;
 
-  if (!RS->allocateData(a, b, c, idx1, idx2, idx3, mbps, flops, times)) {
+  if (!RS->allocateData(a, b, c, idx1, idx2, idx3)) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OMP" << std::endl;
     delete RS;
     return;
   }
 
   // Execute the benchmark
-  if (!RS->execute(times, mbps, flops, Opts->bytes, Opts->floatOps)) {
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP" << std::endl;
     RS->freeData();
     delete RS;
@@ -101,7 +99,7 @@ void runBenchOMP(RSOpts *Opts) {
   for (int i = 0; i < RSBaseImpl::RS_ALL; i++) {
     RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
     std::string kernelName = BenchTypeTable[i].Notes;
-    printTiming(kernelName, Opts->times[i], mbps, flops);
+    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS);
   }
 
   // Free the data

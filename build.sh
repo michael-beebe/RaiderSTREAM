@@ -13,6 +13,8 @@ cmake \
 
 make
 
+export RS=bin/raiderstream
+
 cd ../
 
 ./run.sh

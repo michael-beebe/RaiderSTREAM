@@ -77,7 +77,7 @@ public:
    *
    * This array stores the memory transfer times for different benchmark kernels.
    */
-  double bytes[NUM_KERNELS] = {
+  double BYTES[NUM_KERNELS] = {
 		// Original Kernels
 		static_cast<double>(2 * sizeof(double) * streamArraySize), // Copy
 		static_cast<double>(2 * sizeof(double) * streamArraySize), // Scale
@@ -105,7 +105,7 @@ public:
 		static_cast<double>(3 * sizeof(double) * streamArraySize), // Central Triad
   };
 
-  double floatOps[NUM_KERNELS] = {
+  double FLOATOPS[NUM_KERNELS] = {
 		// Original Kernels
 		(double)0.0,                       // Copy
 		1.0 * streamArraySize,             // Scale
@@ -137,7 +137,7 @@ public:
 
 	double FLOPS[NUM_KERNELS];
 
-	double times[NUM_KERNELS];
+	double TIMES[NUM_KERNELS];
 
 /****************************************************
  * 									 Getters 
@@ -158,9 +158,10 @@ public:
 
   int getNumPEs() { return numPEs; }
 
-  double* getBytes() { return bytes; }
+  // FIXME: not sure if we need the below two arrays
+  double* getBytes() { return BYTES; }
 
-  double* getFloatOps() { return floatOps; }
+  double* getFloatOps() { return FLOATOPS; }
 
 /****************************************************
  * 									 Setters

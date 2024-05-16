@@ -9,6 +9,7 @@
 //
 
 #include "RaiderSTREAM/RSOpts.h"
+#include <algorithm>
 
 BenchType BenchTypeTable[] = {
   // {  Name, Arg, Notes, KType, Enabled, ReqArq }
@@ -33,7 +34,7 @@ BenchType BenchTypeTable[] = {
   { "central_add", "", "Central add",       RSBaseImpl::RS_CENTRAL_ADD, false, false },
   { "central_triad", "", "Central triad",   RSBaseImpl::RS_CENTRAL_TRIAD, false, false },
   { "all", "", "All",                       RSBaseImpl::RS_ALL, false, false },
-  { "", "", "",                             RSBaseImpl::RS_NB, false, false }
+  { ".", "", ".",                           RSBaseImpl::RS_NB, false, false }
 };
 
 // RSOpts Constructor
@@ -44,10 +45,28 @@ RSOpts::RSOpts()
 // RSOpts Destructor
 RSOpts::~RSOpts() {}
 
+
+
+// bool RSOpts::enableBenchmark(std::string benchName) {
+//   unsigned Idx = 0;
+//   while (BenchTypeTable[Idx].KType != RSBaseImpl::RS_NB) {
+//     if (BenchTypeTable[Idx].Name == benchName) {
+//       BenchTypeTable[Idx].Enabled = true;
+//       return true;
+//     }
+//     Idx++;
+//   }
+//   std::cout << "Invalid benchmark name: " << benchName << std::endl;
+//   return false;
+// }
+
 bool RSOpts::enableBenchmark(std::string benchName) {
   unsigned Idx = 0;
+  std::transform(benchName.begin(), benchName.end(), benchName.begin(), ::tolower); // Convert benchName to lowercase
   while (BenchTypeTable[Idx].KType != RSBaseImpl::RS_NB) {
-    if (BenchTypeTable[Idx].Name == benchName) {
+    std::string lowercaseName = BenchTypeTable[Idx].Name;
+    std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), ::tolower); // Convert BenchTypeTable[Idx].Name to lowercase
+    if (lowercaseName == benchName) {
       BenchTypeTable[Idx].Enabled = true;
       return true;
     }
@@ -85,6 +104,8 @@ bool RSOpts::parseOpts(int argc, char **argv) {
         std::cout << "Error: invalid argument for --kernel" << std::endl;
         return false;
       }
+      // Set the kernelName after successfully enabling the benchmark
+      kernelName = P;
       i++;
     }
     // Get the stream array size
@@ -98,7 +119,8 @@ bool RSOpts::parseOpts(int argc, char **argv) {
         std::cout << "Error: --pes requires an argument" << std::endl;
         return false;
       }
-      numPEs = atoi(argv[i + 1]);
+      // numPEs = atoi(argv[i + 1]);
+      setNumPEs(atoi(argv[i + 1]));
       i++;
     }
     else {
@@ -106,6 +128,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
       return false;
     }
   }
+
   // Sanity checks for the options
   if (streamArraySize == 0) {
     std::cout << "Error: STREAM Array Size cannot be 0" << std::endl;
@@ -150,6 +173,6 @@ void RSOpts::printHelp() {
   std::cout << "  -l, --list                List the benchmarks" << std::endl;
   std::cout << "  -k, --kernel              Specify the kernel to run" << std::endl;
   std::cout << "  -s, --size                Specify the size of the STREAM array" << std::endl;
-  std::cout << "  -p, --pes                 Specify the number of PEs" << std::endl;
+  std::cout << "  -np, --pes                Specify the number of PEs" << std::endl;
   std::cout << "-----------------------------------------------------------------------------------" << std::endl;
 }

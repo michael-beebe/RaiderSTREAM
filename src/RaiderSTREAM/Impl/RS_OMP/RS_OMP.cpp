@@ -33,9 +33,6 @@ RS_OMP::RS_OMP(
   idx1(nullptr),
   idx2(nullptr),
   idx3(nullptr),
-  mbps(nullptr),
-  flops(nullptr),
-  times(nullptr),
   scalar(3.0)
 {}
 
@@ -43,8 +40,7 @@ RS_OMP::~RS_OMP() {}
 
 bool RS_OMP::allocateData(
     double* a, double* b, double* c,
-    ssize_t* idx1, ssize_t* idx2, ssize_t* idx3,
-    double* mbps, double* flops, double* times
+    ssize_t* idx1, ssize_t* idx2, ssize_t* idx3
 ) {
   this->a = (double *) malloc(streamArraySize * sizeof(double));
   this->b = (double *) malloc(streamArraySize * sizeof(double));
@@ -52,10 +48,6 @@ bool RS_OMP::allocateData(
   this->idx1 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
   this->idx2 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
   this->idx3 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
-
-  this->mbps = (double *) malloc(NUM_KERNELS * sizeof(double));
-  this->flops = (double *) malloc(NUM_KERNELS * sizeof(double));
-  this->times = (double *) malloc(NUM_KERNELS * sizeof(double));
 
   initStreamArray(this->a, streamArraySize, 1.0);
   initStreamArray(this->b, streamArraySize, 2.0);
@@ -67,20 +59,17 @@ bool RS_OMP::allocateData(
   idx1 = this->idx1;
   idx2 = this->idx2;
   idx3 = this->idx3;
-  mbps = this->mbps;
-  flops = this->flops;
-  times = this->times;
 
   return true;
 }
 
-bool RS_OMP::execute(double *times, double *mbps, double *flops, double *bytes, double *floatOps) {  
+bool RS_OMP::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS) {  
   RSBaseImpl::RSKernelType kType = this->getKernelType();
   double startTime = 0.0;
   double endTime = 0.0;
   double runTime = 0.0;
-  double MBPS = 0.0;
-  double FLOPS = 0.0;
+  double mbps = 0.0;
+  double flops = 0.0;
 
   switch ( kType ) {
     /* SEQUENTIAL KERNELS */
@@ -90,12 +79,12 @@ bool RS_OMP::execute(double *times, double *mbps, double *flops, double *bytes, 
       endTime = this->mySecond();
 
       runTime = this->calculateRunTime(startTime, endTime);
-      MBPS = calculateMBPS(bytes[RSBaseImpl::RS_SEQ_COPY], runTime);
-      FLOPS = calculateFLOPS(floatOps[RSBaseImpl::RS_SEQ_COPY], runTime);
+      mbps = calculateMBPS(MBPS[RSBaseImpl::RS_SEQ_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
 
-      times[RSBaseImpl::RS_SEQ_COPY] = runTime;
-      mbps[RSBaseImpl::RS_SEQ_COPY] = MBPS;
-      flops[RSBaseImpl::RS_SEQ_COPY] = FLOPS;
+      TIMES[RSBaseImpl::RS_SEQ_COPY] = runTime;
+      MBPS[RSBaseImpl::RS_SEQ_COPY] = mbps;
+      FLOPS[RSBaseImpl::RS_SEQ_COPY] = flops;
 
       break;
     case RSBaseImpl::RS_SEQ_SCALE:
@@ -226,6 +215,7 @@ bool RS_OMP::execute(double *times, double *mbps, double *flops, double *bytes, 
 
     /* NO KERNELS, SOMETHING IS WRONG */
     default:
+      std::cout << "ERROR: KERNEL NOT SET" << std::endl;
       return false;
   }
   return true;
@@ -238,9 +228,6 @@ bool RS_OMP::freeData() {
   free(this->idx1);
   free(this->idx2);
   free(this->idx3);
-  free(this->mbps);
-  free(this->flops);
-  free(this->times);
 
   this->a = nullptr;
   this->b = nullptr;
@@ -248,9 +235,6 @@ bool RS_OMP::freeData() {
   this->idx1 = nullptr;
   this->idx2 = nullptr;
   this->idx3 = nullptr;
-  this->mbps = nullptr;
-  this->flops = nullptr;
-  this->times = nullptr;
 
   return true;
 }
