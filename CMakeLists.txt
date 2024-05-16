@@ -118,7 +118,7 @@ endif()
 
 
 #------------------------------------------------------------------------
-# Add package paths
+#-- Add package paths
 #------------------------------------------------------------------------
 if(NOT RS_INCLUDE_PATH)
   set(RS_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -213,5 +213,6 @@ endif()
 add_subdirectory(src)
 add_subdirectory(include)
 add_subdirectory(test)
+add_subdirectory(arraygen)
 
 # EOF

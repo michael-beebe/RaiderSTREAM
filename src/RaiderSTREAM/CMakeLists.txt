@@ -2,9 +2,12 @@ add_subdirectory(Impl)
 
 include_directories(${RS_INCLUDE_PATH})
 
-set (RSSrcs
-RS_Main.cpp
-RSOpts.cpp
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+set (
+  RSSrcs
+  RS_Main.cpp
+  RSOpts.cpp
 )
 
 if (ENABLE_OMP)

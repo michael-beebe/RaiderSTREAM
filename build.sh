@@ -1,20 +1,18 @@
 #!/bin/bash
 
-root_dir=$(pwd)
-exe=$root_dir/build/src/RaiderSTREAM/raiderstream
+ml load cmake
 
-./clean.sh
-
+rm -rf build
 mkdir -p build
 cd build
-rm -rf *
-
-# Test the --help flag
-# cmake -DDEBUG=1 -DENABLE_OMP=ON ../
-# make -j4
-# $exe --help ; echo ; echo ; echo
 
 # Test the --list flag
-cmake -DDEBUG=1 -DENABLE_OMP=ON ../
-make -j4
-$exe --list ; echo ; echo ; echo
+cmake \
+  -DENABLE_OMP=ON \
+  ../
+
+make
+
+cd ../
+
+./run.sh

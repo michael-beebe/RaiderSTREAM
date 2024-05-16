@@ -38,8 +38,8 @@ BenchType BenchTypeTable[] = {
 
 // RSOpts Constructor
 RSOpts::RSOpts()
-  : isHelp(false), isList(false), streamArraySize(1000000), numTimes(10),
-    streamType("double"), numPEs(1), lArgc(0), lArgv(nullptr) {}
+  : isHelp(false), isList(false), streamArraySize(1000000),
+    numPEs(1), lArgc(0), lArgv(nullptr) {}
 
 // RSOpts Destructor
 RSOpts::~RSOpts() {}
@@ -92,18 +92,8 @@ bool RSOpts::parseOpts(int argc, char **argv) {
       setStreamArraySize(atoi(argv[i + 1]));
       i++;
     }
-    // Get the number of times to run the benchmark
-    else if ((s == "-n") || (s == "--ntimes")) {
-      setNumTimes(atoi(argv[i + 1]));
-      i++;
-    }
-    // Get the stream datatype
-    else if ((s == "-d") || (s == "--dtype")) {
-      setStreamType(argv[i + 1]);
-      i++;
-    }
     // Get the number of PEs
-    else if ((s == "-p") || (s == "--pes")) {
+    else if ((s == "-np") || (s == "--pes")) {
       if (i + 1 > (argc - 1)) {
         std::cout << "Error: --pes requires an argument" << std::endl;
         return false;
@@ -116,18 +106,9 @@ bool RSOpts::parseOpts(int argc, char **argv) {
       return false;
     }
   }
-
   // Sanity checks for the options
   if (streamArraySize == 0) {
     std::cout << "Error: STREAM Array Size cannot be 0" << std::endl;
-    return false;
-  }
-  if (numTimes == 0) {
-    std::cout << "Error: NTIMES cannot be 0" << std::endl;
-    return false;
-  }
-  if (streamType != "double" && streamType != "float" && streamType != "int" && streamType != "long") {
-    std::cout << "Error: streamType must be double, float, int, or long" << std::endl;
     return false;
   }
   if (numPEs < 1) {
@@ -169,8 +150,6 @@ void RSOpts::printHelp() {
   std::cout << "  -l, --list                List the benchmarks" << std::endl;
   std::cout << "  -k, --kernel              Specify the kernel to run" << std::endl;
   std::cout << "  -s, --size                Specify the size of the STREAM array" << std::endl;
-  std::cout << "  -n, --ntimes              Specify the number of times to run the benchmark" << std::endl;
-  std::cout << "  -d, --dtype               Specify the datatype of the STREAM array" << std::endl;
   std::cout << "  -p, --pes                 Specify the number of PEs" << std::endl;
   std::cout << "-----------------------------------------------------------------------------------" << std::endl;
 }

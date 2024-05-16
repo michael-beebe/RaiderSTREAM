@@ -41,51 +41,217 @@ RS_OMP::RS_OMP(
 
 RS_OMP::~RS_OMP() {}
 
-/*
-
-*/
 bool RS_OMP::allocateData(
-    double *a, double *b, double *c,
-    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
-    double *mbps, double *flops, double *times
+    double* a, double* b, double* c,
+    ssize_t* idx1, ssize_t* idx2, ssize_t* idx3,
+    double* mbps, double* flops, double* times
 ) {
-  a = (double *) malloc(streamArraySize * sizeof(double));
-  b = (double *) malloc(streamArraySize * sizeof(double));
-  c = (double *) malloc(streamArraySize * sizeof(double));
-  idx1 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
-  idx2 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
-  idx3 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+  this->a = (double *) malloc(streamArraySize * sizeof(double));
+  this->b = (double *) malloc(streamArraySize * sizeof(double));
+  this->c = (double *) malloc(streamArraySize * sizeof(double));
+  this->idx1 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+  this->idx2 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+  this->idx3 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
 
-  mbps = (double *) malloc(NUM_KERNELS * sizeof(double));
-  flops = (double *) malloc(NUM_KERNELS * sizeof(double));
-  times = (double *) malloc(NUM_KERNELS * sizeof(double));
+  this->mbps = (double *) malloc(NUM_KERNELS * sizeof(double));
+  this->flops = (double *) malloc(NUM_KERNELS * sizeof(double));
+  this->times = (double *) malloc(NUM_KERNELS * sizeof(double));
 
-  initStreamArray(a, streamArraySize, 1.0);
-  initStreamArray(b, streamArraySize, 2.0);
-  initStreamArray(c, streamArraySize, 0.0);
+  initStreamArray(this->a, streamArraySize, 1.0);
+  initStreamArray(this->b, streamArraySize, 2.0);
+  initStreamArray(this->c, streamArraySize, 0.0);
+
+  a = this->a;
+  b = this->b;
+  c = this->c;
+  idx1 = this->idx1;
+  idx2 = this->idx2;
+  idx3 = this->idx3;
+  mbps = this->mbps;
+  flops = this->flops;
+  times = this->times;
 
   return true;
 }
 
-/*
-
-*/
-bool RS_OMP::execute(double *times, double *mbps, double *flops) {  
+bool RS_OMP::execute(double *times, double *mbps, double *flops, double *bytes, double *floatOps) {  
   RSBaseImpl::RSKernelType kType = this->getKernelType();
   double startTime = 0.0;
   double endTime = 0.0;
+  double runTime = 0.0;
   double MBPS = 0.0;
   double FLOPS = 0.0;
 
-  // this->allocateData(a, b, c, idx1, idx2, idx3, );
+  switch ( kType ) {
+    /* SEQUENTIAL KERNELS */
+    case RSBaseImpl::RS_SEQ_COPY:
+      startTime = this->mySecond();
+      seqCopy(this->a, this->b, this->c, streamArraySize);
+      endTime = this->mySecond();
 
+      runTime = this->calculateRunTime(startTime, endTime);
+      MBPS = calculateMBPS(bytes[RSBaseImpl::RS_SEQ_COPY], runTime);
+      FLOPS = calculateFLOPS(floatOps[RSBaseImpl::RS_SEQ_COPY], runTime);
+
+      times[RSBaseImpl::RS_SEQ_COPY] = runTime;
+      mbps[RSBaseImpl::RS_SEQ_COPY] = MBPS;
+      flops[RSBaseImpl::RS_SEQ_COPY] = FLOPS;
+
+      break;
+    case RSBaseImpl::RS_SEQ_SCALE:
+      startTime = this->mySecond();
+      seqScale(this->a, this->b, this->c, streamArraySize, scalar);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_SEQ_ADD:
+      startTime = this->mySecond();
+      seqAdd(this->a, this->b, this->c, streamArraySize);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_SEQ_TRIAD:
+      startTime = this->mySecond();
+      seqTriad(this->a, this->b, this->c, streamArraySize, scalar);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+
+    /* GATHER KERNELS */
+    case RSBaseImpl::RS_GATHER_COPY:
+      startTime = this->mySecond();
+      gatherCopy(this->a, this->b, this->c, this->idx1, streamArraySize);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_GATHER_SCALE:
+      startTime = this->mySecond();
+      gatherScale(this->a, this->b, this->c, this->idx1, streamArraySize, scalar);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_GATHER_ADD:
+      startTime = this->mySecond();
+      gatherAdd(this->a, this->b, this->c, this->idx1, this->idx2, streamArraySize);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_GATHER_TRIAD:
+      startTime = this->mySecond();
+      gatherTriad(this->a, this->b, this->c, this->idx1, this->idx2, streamArraySize, scalar);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    
+    /* SCATTER KERNELS */
+    case RSBaseImpl::RS_SCATTER_COPY:
+      startTime = this->mySecond();
+      scatterCopy(this->a, this->b, this->c, this->idx1, streamArraySize);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_SCATTER_SCALE:
+      startTime = this->mySecond();
+      scatterScale(this->a, this->b, this->c, this->idx1, streamArraySize, scalar);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_SCATTER_ADD:
+      startTime = this->mySecond();
+      scatterAdd(this->a, this->b, this->c, this->idx1, streamArraySize);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_SCATTER_TRIAD:
+      startTime = this->mySecond();
+      scatterTriad(this->a, this->b, this->c, this->idx1, streamArraySize, scalar);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    
+    /* SCATTER-GATHER KERNELS */
+    case RSBaseImpl::RS_SG_COPY:
+      startTime = this->mySecond();
+      sgCopy(this->a, this->b, this->c, this->idx1, this->idx2, streamArraySize);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_SG_SCALE:
+      startTime = this->mySecond();
+      sgScale(this->a, this->b, this->c, this->idx1, this->idx2, streamArraySize, scalar);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_SG_ADD:
+      startTime = this->mySecond();
+      sgAdd(this->a, this->b, this->c, this->idx1, this->idx2, this->idx3, streamArraySize);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_SG_TRIAD:
+      startTime = this->mySecond();
+      sgTriad(this->a, this->b, this->c, this->idx1, this->idx2, this->idx3, streamArraySize, scalar);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    
+    /* CENTRAL KERNELS */
+    case RSBaseImpl::RS_CENTRAL_COPY:
+      startTime = this->mySecond();
+      centralCopy(this->a, this->b, this->c, streamArraySize);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_CENTRAL_SCALE:
+      startTime = this->mySecond();
+      centralScale(this->a, this->b, this->c, streamArraySize, scalar);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_CENTRAL_ADD:
+      startTime = this->mySecond();
+      centralAdd(this->a, this->b, this->c, streamArraySize);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    case RSBaseImpl::RS_CENTRAL_TRIAD:
+      startTime = this->mySecond();
+      centralTriad(this->a, this->b, this->c, streamArraySize, scalar);
+      endTime = this->mySecond();
+      // TODO: record results
+      break;
+    
+    /* ALL KERNELS */
+    // TODO: case RSBaseImpl::RS_ALL
+
+    /* NO KERNELS, SOMETHING IS WRONG */
+    default:
+      return false;
+  }
   return true;
 }
 
-/*
-
-*/
 bool RS_OMP::freeData() {
+  free(this->a);
+  free(this->b);
+  free(this->c);
+  free(this->idx1);
+  free(this->idx2);
+  free(this->idx3);
+  free(this->mbps);
+  free(this->flops);
+  free(this->times);
+
+  this->a = nullptr;
+  this->b = nullptr;
+  this->c = nullptr;
+  this->idx1 = nullptr;
+  this->idx2 = nullptr;
+  this->idx3 = nullptr;
+  this->mbps = nullptr;
+  this->flops = nullptr;
+  this->times = nullptr;
+
   return true;
 }
 

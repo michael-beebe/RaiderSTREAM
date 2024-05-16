@@ -8,14 +8,17 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-# include <stdio.h>
-# include <stdlib.h>
-# include <unistd.h>
-# include <math.h>
-# include <float.h>
-# include <limits.h>
-# include <sys/time.h>
-# include <time.h>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include <sys/time.h>
+#include <time.h>
+#include <iomanip>
+#include <string>
 
 #include "RaiderSTREAM/RaiderSTREAM.h"
 
@@ -39,15 +42,80 @@
 #include "Impl/RS_MPI_CUDA/RS_MPI_CUDA.cuh"
 #endif
 
-void printTiming() {
-  // TODO: printTiming()
+void printTiming(const std::string& kernelName, double totalRuntime, const double* mbps, const double* flops) {
+  std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
+  std::cout << std::setfill(' ');
+  std::cout << std::left << std::setw(20) << "Kernel";
+  std::cout << std::right << std::setw(20) << "Total Runtime (s)";
+  std::cout << std::right << std::setw(20) << "MB/s";
+  std::cout << std::right << std::setw(20) << "FLOP/s";
+  std::cout << std::endl;
+  std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
+  std::cout << std::setfill(' ');
+
+  std::cout << std::left << std::setw(20) << kernelName;
+  std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(6) << totalRuntime;
+  std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << mbps[RSBaseImpl::RS_SEQ_COPY];
+  std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << flops[RSBaseImpl::RS_SEQ_COPY];
+  std::cout << std::endl;
+
+  std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef _ENABLE_OMP_
-void runBenchOMP( RSOpts *Opts ) {
-  // TODO: run_bench_omp()
+void runBenchOMP(RSOpts *Opts) {
+  // Initialize the RS_OMP object
+  RS_OMP *RS = new RS_OMP(Opts->getKernelName(), Opts->getKernelType());
+  if (!RS) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RS_OMP OBJECT" << std::endl;
+    return;
+  }
+
+  // Allocate the data
+  double *a = nullptr;
+  double *b = nullptr;
+  double *c = nullptr;
+  ssize_t *idx1 = nullptr;
+  ssize_t *idx2 = nullptr;
+  ssize_t *idx3 = nullptr;
+  double *mbps = nullptr;
+  double *flops = nullptr;
+  double *times = nullptr;
+
+  if (!RS->allocateData(a, b, c, idx1, idx2, idx3, mbps, flops, times)) {
+    std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OMP" << std::endl;
+    delete RS;
+    return;
+  }
+
+  // Execute the benchmark
+  if (!RS->execute(times, mbps, flops, Opts->bytes, Opts->floatOps)) {
+    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP" << std::endl;
+    RS->freeData();
+    delete RS;
+    return;
+  }
+
+  // Print the timing
+  for (int i = 0; i < RSBaseImpl::RS_ALL; i++) {
+    RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+    std::string kernelName = BenchTypeTable[i].Notes;
+    printTiming(kernelName, Opts->times[i], mbps, flops);
+  }
+
+  // Free the data
+  if (!RS->freeData()) {
+    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_OMP" << std::endl;
+    delete RS;
+    return;
+  }
+
+  // Free the RS_OMP object
+  delete RS;
 }
 #endif
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef _ENABLE_MPI_OMP_
 void runBenchMPIOMP( RSOpts *Opts ) {

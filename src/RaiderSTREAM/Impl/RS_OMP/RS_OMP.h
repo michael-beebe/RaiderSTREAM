@@ -26,7 +26,7 @@
 extern "C" {
   void seqCopy(
     double *a, double *b, double *c,
-    ssize_t stream_array_size, double scalar
+    ssize_t stream_array_size
   );
 
   void seqScale(
@@ -172,13 +172,12 @@ public:
   ~RS_OMP();
 
   // RaiderSTREAM OMP execute
-  virtual bool execute(double *times, double *mbps, double *flops) override;
+  virtual bool execute(double *times, double *mbps, double *flops, double *bytes, double *floatOps) override;
 
   virtual bool allocateData(
     double *a, double *b, double *c,
     ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
     double *mbps, double *flops, double *times
-    // double *avgTime, double *maxTime, double *minTime
   ) override;
 
   virtual bool freeData() override;
