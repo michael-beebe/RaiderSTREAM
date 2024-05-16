@@ -24,6 +24,9 @@ ifeq ($(ENABLE_OPENMP), true)
 OPENMP = -fopenmp
 endif
 
+CFLAGS									?=
+CXXFLAGS 								?=
+
 ORIGINAL_FLAGS          ?=
 OMP_FLAGS               ?=
 MPI_FLAGS               ?=
@@ -41,16 +44,16 @@ build:
 	mkdir -p $(BIN_DIR)
 
 stream_original: build
-	$(CC) $(ORIGINAL_FLAGS) $(OPENMP) $(ORIGINAL_IMPL) -o $(BIN_DIR)/stream_original
+	$(CC) $(CFLAGS) $(ORIGINAL_FLAGS) $(OPENMP) $(ORIGINAL_IMPL) -o $(BIN_DIR)/stream_original
 
 stream_omp: build
-	$(CC) $(OMP_FLAGS) $(OPENMP) $(OMP_IMPL) -o $(BIN_DIR)/stream_omp
+	$(CC) $(CFLAGS) $(OMP_FLAGS) $(OPENMP) $(OMP_IMPL) -o $(BIN_DIR)/stream_omp
 
 stream_mpi: build
-	$(MPIC) $(MPI_FLAGS) $(OPENMP) $(MPI_IMPL) -o $(BIN_DIR)/stream_mpi
+	$(MPIC) $(CFLAGS) $(MPI_FLAGS) $(OPENMP) $(MPI_IMPL) -o $(BIN_DIR)/stream_mpi
 
 stream_oshmem: build
-	$(OSHC) $(SHMEM_FLAGS) $(OPENMP) $(SHEM_IMPL) -o $(BIN_DIR)/stream_oshmem
+	$(OSHC) $(CFLAGS) $(SHMEM_FLAGS) $(OPENMP) $(SHEM_IMPL) -o $(BIN_DIR)/stream_oshmem
 
 stream_cuda: build
 	$(NVC) $(CUDA_FLAGS) $(CUDA_IMPL) -o $(BIN_DIR)/stream_cuda
@@ -73,3 +76,5 @@ clean_inputs:
 	touch $(IDX1)
 	touch $(IDX2)
 	touch $(IDX3)
+
+
