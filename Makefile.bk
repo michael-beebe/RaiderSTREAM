@@ -36,10 +36,6 @@ CUDA_MPI_FLAGS          ?= -DNUM_GPUS=
 #------------------------------------------------------------------
 all: build stream_original stream_omp stream_mpi stream_oshmem stream_cuda stream_cuda_mpi
 
-build:
-	mkdir -p $(BUILD_DIR)
-	mkdir -p $(BIN_DIR)
-
 stream_original: build
 	$(CC) $(ORIGINAL_FLAGS) $(OPENMP) $(ORIGINAL_IMPL) -o $(BIN_DIR)/stream_original
 
@@ -58,6 +54,9 @@ stream_cuda: build
 stream_cuda_mpi: build
 	$(NVC) -lmpi $(CUDA_MPI_FLAGS) $(CUDA_MPI_IMPL) -o $(BIN_DIR)/stream_cuda_mpi
 
+build:
+	@mkdir -p $(BIN_DIR)
+
 clean_all: clean clean_outputs clean_inputs
 
 clean:
@@ -73,3 +72,4 @@ clean_inputs:
 	touch $(IDX1)
 	touch $(IDX2)
 	touch $(IDX3)
+
