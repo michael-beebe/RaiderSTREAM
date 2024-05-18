@@ -81,18 +81,9 @@ public:
   // Default constructor
   RSBaseImpl(const std::string& implName, RSKernelType kType)
     : Impl(implName), KType(kType) {}
-  // RSBaseImpl(
-  //   std::string implName,
-  //   RSBaseImpl::RSKernelType kType)
-  //   : Impl(implName), KType(kType
-  // ) {}
 
   // Default virtual destructor
   virtual ~RSBaseImpl() {}
-
-	// double MBPS[NUM_KERNELS];
-	// double FLOPS[NUM_KERNELS];
-	// double TIMES[NUM_KERNELS];
 
   /**
    * @brief Get the implementation name.
@@ -126,7 +117,10 @@ public:
    *
    * This pure virtual method frees memory allocated for benchmarking data.
    */
-  virtual bool freeData() = 0;
+  virtual bool freeData(
+    double *a, double *b, double *c,
+    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3
+  ) = 0;
 
   /**
    * @brief Execute the benchmark.
@@ -135,7 +129,10 @@ public:
    *
    * @return True if the benchmark execution is successful, false otherwise.
    */
-  virtual bool execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS) = 0;
+  virtual bool execute(
+    double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS,
+    double *a, double *b, double *c, ssize_t *idx1, ssize_t *idx2, ssize_t *idx3, double scalar
+  ) = 0;
 
   /**
    * @brief Check for errors in the benchmark results.

@@ -8,15 +8,13 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-
 #ifdef _ENABLE_OMP_
 #ifndef _RS_OMP_H_
 #define _RS_OMP_H_
 
 #include <omp.h>
 
-#include "RaiderSTREAM/RSBaseImpl.h"
-#include "RaiderSTREAM/RSOpts.h"
+#include "RaiderSTREAM/RaiderSTREAM.h"
 
 /**
  * @brief RaiderSTREAM OpenMP implementation class
@@ -25,19 +23,8 @@
  */
 class RS_OMP : public RSBaseImpl {
 private:
-  double *a;
-  double *b;
-  double *c;
-  ssize_t *idx1;
-  ssize_t *idx2;
-  ssize_t *idx3;
-  int scalar;
-
-  // command line options
   std::string kernelName;
   ssize_t streamArraySize;
-  int numTimes;
-  std::string streamType;
   int numPEs;
   int lArgc;
   char **lArgv;
@@ -45,27 +32,26 @@ private:
 public:
   // RaiderSTREAM OMP constructor
   RS_OMP(const RSOpts& opts);
-  // RS_OMP(
-  //   std::string implName,
-  //   RSBaseImpl::RSKernelType kType
-  // );
 
   // RaiderSTREAM OMP destructor
   ~RS_OMP();
 
   // RaiderSTREAM OMP execute
-  virtual bool execute( double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS ) override;
-  // virtual bool execute(
-  //   double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS,
-  //   double *a, double *b, double *c, double *idx1, double *idx2, double *idx3, double scalar
-  // ) override;
+  virtual bool execute(
+    double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS,
+    double *a, double *b, double *c, ssize_t *idx1, ssize_t *idx2, ssize_t *idx3, double scalar
+  ) override;
+  // virtual bool execute( double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS ) override;
 
   virtual bool allocateData(
     double *a, double *b, double *c,
     ssize_t *idx1, ssize_t *idx2, ssize_t *idx3
   ) override;
 
-  virtual bool freeData() override;
+  virtual bool freeData(
+    double *a, double *b, double *c,
+    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3
+  ) override;
 };
 
 extern "C" {

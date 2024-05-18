@@ -101,7 +101,6 @@ bool RSOpts::parseOpts(int argc, char **argv) {
         std::cout << "Error: invalid argument for --kernel" << std::endl;
         return false;
       }
-      // Set the kernelName after successfully enabling the benchmark
       setKernelName( P );
       i++;
     }

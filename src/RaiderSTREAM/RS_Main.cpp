@@ -68,7 +68,6 @@ void printTiming(const std::string& kernelName, double totalRuntime, const doubl
 void runBenchOMP(RSOpts *Opts) {
   // Initialize the RS_OMP object
   RS_OMP *RS = new RS_OMP(*Opts);
-  // RS_OMP *RS = new RS_OMP(Opts->getKernelName(), Opts->getKernelType());
   if (!RS) {
     std::cout << "ERROR: COULD NOT ALLOCATE RS_OMP OBJECT" << std::endl;
     return;
@@ -78,12 +77,13 @@ void runBenchOMP(RSOpts *Opts) {
     Opts->printOpts();
   #endif
 
-  double *a = nullptr;
-  double *b = nullptr;
-  double *c = nullptr;
-  ssize_t *idx1 = nullptr;
-  ssize_t *idx2 = nullptr;
-  ssize_t *idx3 = nullptr;
+  double *a;
+  double *b;
+  double *c;
+  ssize_t *idx1;
+  ssize_t *idx2;
+  ssize_t *idx3;
+  double scalar = 3.0;
 
   if (!RS->allocateData(a, b, c, idx1, idx2, idx3)) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OMP" << std::endl;
@@ -91,10 +91,19 @@ void runBenchOMP(RSOpts *Opts) {
     return;
   }
 
+  #ifdef _DEBUG_
+  std::cout << "===============================================" << std::endl;
+  std::cout << "sizeof(a) = " << sizeof(a) << std::endl;
+  std::cout << "===============================================" << std::endl;
+  #endif
+
   // Execute the benchmark
-  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+  if (!RS->execute(
+    Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS,
+    a, b, c, idx1, idx2, idx3, scalar
+  )) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP" << std::endl;
-    RS->freeData();
+    RS->freeData(a, b, c, idx1, idx2, idx3);
     delete RS;
     return;
   }
@@ -107,7 +116,7 @@ void runBenchOMP(RSOpts *Opts) {
   }
 
   // Free the data
-  if (!RS->freeData()) {
+  if (!RS->freeData(a, b, c, idx1, idx2, idx3)) {
     std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_OMP" << std::endl;
     delete RS;
     return;
