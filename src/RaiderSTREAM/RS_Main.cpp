@@ -67,13 +67,17 @@ void printTiming(const std::string& kernelName, double totalRuntime, const doubl
 #ifdef _ENABLE_OMP_
 void runBenchOMP(RSOpts *Opts) {
   // Initialize the RS_OMP object
-  RS_OMP *RS = new RS_OMP(Opts->getKernelName(), Opts->getKernelType());
+  RS_OMP *RS = new RS_OMP(*Opts);
+  // RS_OMP *RS = new RS_OMP(Opts->getKernelName(), Opts->getKernelType());
   if (!RS) {
     std::cout << "ERROR: COULD NOT ALLOCATE RS_OMP OBJECT" << std::endl;
     return;
   }
 
-  // Allocate the data
+  #ifdef _DEBUG_
+    Opts->printOpts();
+  #endif
+
   double *a = nullptr;
   double *b = nullptr;
   double *c = nullptr;

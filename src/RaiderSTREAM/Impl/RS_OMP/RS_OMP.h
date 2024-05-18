@@ -16,12 +16,57 @@
 #include <omp.h>
 
 #include "RaiderSTREAM/RSBaseImpl.h"
+#include "RaiderSTREAM/RSOpts.h"
 
 /**
  * @brief RaiderSTREAM OpenMP implementation class
  *
  * This class provides the implementation of the RaiderSTREAM benchmark using OpenMP.
  */
+class RS_OMP : public RSBaseImpl {
+private:
+  double *a;
+  double *b;
+  double *c;
+  ssize_t *idx1;
+  ssize_t *idx2;
+  ssize_t *idx3;
+  int scalar;
+
+  // command line options
+  std::string kernelName;
+  ssize_t streamArraySize;
+  int numTimes;
+  std::string streamType;
+  int numPEs;
+  int lArgc;
+  char **lArgv;
+
+public:
+  // RaiderSTREAM OMP constructor
+  RS_OMP(const RSOpts& opts);
+  // RS_OMP(
+  //   std::string implName,
+  //   RSBaseImpl::RSKernelType kType
+  // );
+
+  // RaiderSTREAM OMP destructor
+  ~RS_OMP();
+
+  // RaiderSTREAM OMP execute
+  virtual bool execute( double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS ) override;
+  // virtual bool execute(
+  //   double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS,
+  //   double *a, double *b, double *c, double *idx1, double *idx2, double *idx3, double scalar
+  // ) override;
+
+  virtual bool allocateData(
+    double *a, double *b, double *c,
+    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3
+  ) override;
+
+  virtual bool freeData() override;
+};
 
 extern "C" {
   void seqCopy(
@@ -137,47 +182,6 @@ extern "C" {
     ssize_t stream_array_size, double scalar
   );
 }
-
-class RS_OMP : public RSBaseImpl {
-private:
-  // arrays and variables
-  double *a;
-  double *b;
-  double *c;
-  ssize_t *idx1;
-  ssize_t *idx2;
-  ssize_t *idx3;
-  int scalar;
-
-  // command line options
-  std::string kernelName;
-  ssize_t streamArraySize;
-  int numTimes;
-  std::string streamType;
-  int numPEs;
-  int lArgc;
-  char **lArgv;
-
-public:
-  // RaiderSTREAM OMP constructor
-  RS_OMP(
-    std::string implName,
-    RSBaseImpl::RSKernelType kType
-  );
-
-  // RaiderSTREAM OMP destructor
-  ~RS_OMP();
-
-  // RaiderSTREAM OMP execute
-  virtual bool execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS) override;
-
-  virtual bool allocateData(
-    double *a, double *b, double *c,
-    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3
-  ) override;
-
-  virtual bool freeData() override;
-};
 
 #endif // _RS_OMP_H_
 #endif // _ENABLE_OMP_

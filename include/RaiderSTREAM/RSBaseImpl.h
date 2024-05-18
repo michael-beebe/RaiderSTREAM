@@ -79,11 +79,13 @@ public:
   } RSKernelType;
 
   // Default constructor
-  RSBaseImpl(
-    std::string implName,
-    RSBaseImpl::RSKernelType kType)
-    : Impl(implName), KType(kType
-  ) {}
+  RSBaseImpl(const std::string& implName, RSKernelType kType)
+    : Impl(implName), KType(kType) {}
+  // RSBaseImpl(
+  //   std::string implName,
+  //   RSBaseImpl::RSKernelType kType)
+  //   : Impl(implName), KType(kType
+  // ) {}
 
   // Default virtual destructor
   virtual ~RSBaseImpl() {}

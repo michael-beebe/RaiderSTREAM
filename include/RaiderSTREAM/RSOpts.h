@@ -48,13 +48,13 @@ extern BenchType BenchTypeTable[];
 class RSOpts {
 private:
   RSBaseImpl::RSKernelType kernelType = RSBaseImpl::RS_ALL;
-  bool isHelp = false;                    ///< Flag to determine if the help option has been selected
-  bool isList = false;                    ///< Flag to list the benchmarks
-  std::string kernelName;                 ///< Kernel name
-  ssize_t streamArraySize = 1000000;      ///< STREAM array size
-  int numPEs = 1;                             ///< Number of PEs
-  int lArgc;                              ///< Main argc
-  char **lArgv;                           ///< Main argv
+  bool isHelp = false;
+  bool isList = false;
+  std::string kernelName;
+  ssize_t streamArraySize = 1000000;
+  int numPEs = 1;
+  int lArgc;
+  char **lArgv;
 
   void printHelp();
 
@@ -72,11 +72,38 @@ public:
 
   bool enableBenchmark(std::string benchName);
 
-  /**
-   * @brief Array of memory transfer times (bytes).
-   *
-   * This array stores the memory transfer times for different benchmark kernels.
-   */
+	void printOpts();
+
+/****************************************************
+ * 									 Getters 
+****************************************************/
+  int getArgc() { return lArgc; }
+  char **getArgv() { return lArgv; }
+  bool getIsHelp() { return isHelp; }
+  bool getIsList() { return isList; }
+
+  RSBaseImpl::RSKernelType getKernelType() const { return getKernelTypeFromName(kernelName); }
+
+  std::string getKernelName() const { return kernelName; }
+
+	RSBaseImpl::RSKernelType getKernelTypeFromName(const std::string& kernelName) const;
+
+  ssize_t getStreamArraySize() const { return streamArraySize; }
+
+  int getNumPEs() const { return numPEs; }
+
+/****************************************************
+ * 									 Setters
+****************************************************/
+  void setStreamArraySize(ssize_t size) { streamArraySize = size; }
+
+  void setNumPEs(int nprocs) { numPEs = nprocs; }
+
+  void setKernelType(RSBaseImpl::RSKernelType type) { kernelType = type; }
+
+	void setKernelName(std::string name) { kernelName = name; }
+
+
   double BYTES[NUM_KERNELS] = {
 		// Original Kernels
 		static_cast<double>(2 * sizeof(double) * streamArraySize), // Copy
@@ -134,43 +161,8 @@ public:
   };
 
 	double MBPS[NUM_KERNELS];
-
 	double FLOPS[NUM_KERNELS];
-
 	double TIMES[NUM_KERNELS];
-
-/****************************************************
- * 									 Getters 
-****************************************************/
-  int getArgc() { return lArgc; }
-
-  char **getArgv() { return lArgv; }
-
-  bool getIsHelp() { return isHelp; }
-
-  bool getIsList() { return isList; }
-
-  RSBaseImpl::RSKernelType getKernelType() const { return kernelType; }
-
-  std::string getKernelName() { return kernelName; }
-
-  ssize_t getStreamArraySize() { return streamArraySize; }
-
-  int getNumPEs() { return numPEs; }
-
-  // FIXME: not sure if we need the below two arrays
-  double* getBytes() { return BYTES; }
-
-  double* getFloatOps() { return FLOATOPS; }
-
-/****************************************************
- * 									 Setters
-****************************************************/
-  void setStreamArraySize(ssize_t size) { streamArraySize = size; }
-
-  void setNumPEs(int nprocs) { numPEs = nprocs; }
-
-  void setKernelType(RSBaseImpl::RSKernelType type) { kernelType = type; }
 };
 
 #endif // _RSOPTS_H_

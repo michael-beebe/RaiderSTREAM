@@ -9,6 +9,7 @@ cd build
 # Test the --list flag
 cmake \
   -DENABLE_OMP=ON \
+  -DDEBUG=ON \
   ../
 
 make

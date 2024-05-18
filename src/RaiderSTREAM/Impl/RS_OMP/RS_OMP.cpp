@@ -15,16 +15,13 @@
 #include <sys/types.h>
 
 // RaiderSTREAM OpenMP implementation class constructor
-RS_OMP::RS_OMP(
-  std::string implName,
-  RSBaseImpl::RSKernelType kType
-) : 
-  RSBaseImpl("RS_OMP", kType),
-  kernelName("all"),
-  streamArraySize(1000000),
+RS_OMP::RS_OMP(const RSOpts& opts) :
+  RSBaseImpl("RS_OMP", opts.getKernelTypeFromName(opts.getKernelName())),
+  kernelName(opts.getKernelName()),
+  streamArraySize(opts.getStreamArraySize()),
   numTimes(10),
   streamType("double"),
-  numPEs(1),
+  numPEs(opts.getNumPEs()),
   lArgc(0),
   lArgv(nullptr),
   a(nullptr),
@@ -35,6 +32,26 @@ RS_OMP::RS_OMP(
   idx3(nullptr),
   scalar(3.0)
 {}
+// RS_OMP::RS_OMP(
+//   std::string implName,
+//   RSBaseImpl::RSKernelType kType
+// ) : 
+//   RSBaseImpl("RS_OMP", kType),
+//   kernelName("all"),
+//   streamArraySize(1000000),
+//   numTimes(10),
+//   streamType("double"),
+//   numPEs(1),
+//   lArgc(0),
+//   lArgv(nullptr),
+//   a(nullptr),
+//   b(nullptr),
+//   c(nullptr),
+//   idx1(nullptr),
+//   idx2(nullptr),
+//   idx3(nullptr),
+//   scalar(3.0)
+// {}
 
 RS_OMP::~RS_OMP() {}
 
@@ -59,6 +76,17 @@ bool RS_OMP::allocateData(
   idx1 = this->idx1;
   idx2 = this->idx2;
   idx3 = this->idx3;
+
+  // a = (double *) malloc(streamArraySize * sizeof(double));
+  // b = (double *) malloc(streamArraySize * sizeof(double));
+  // c = (double *) malloc(streamArraySize * sizeof(double));
+  // idx1 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+  // idx2 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+  // idx3 = (ssize_t *) malloc(streamArraySize * sizeof(ssize_t));
+
+  // initStreamArray(a, streamArraySize, 1.0);
+  // initStreamArray(b, streamArraySize, 2.0);
+  // initStreamArray(c, streamArraySize, 0.0);
 
   return true;
 }

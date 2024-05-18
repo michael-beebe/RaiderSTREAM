@@ -45,20 +45,18 @@ RSOpts::RSOpts()
 // RSOpts Destructor
 RSOpts::~RSOpts() {}
 
-// bool RSOpts::enableBenchmark(std::string benchName) {
-//   unsigned Idx = 0;
-//   while (BenchTypeTable[Idx].KType != RSBaseImpl::RS_NB) {
-//     if (BenchTypeTable[Idx].Name == benchName) {
-//       BenchTypeTable[Idx].Enabled = true;
-//       return true;
-//     }
-//     Idx++;
-//   }
-//   std::cout << "Invalid benchmark name: " << benchName << std::endl;
-//   return false;
-// }
 
-// FIXME: this is not working
+RSBaseImpl::RSKernelType RSOpts::getKernelTypeFromName(const std::string& kernelName) const {
+  unsigned Idx = 0;
+  while (BenchTypeTable[Idx].Name != ".") {
+      if (BenchTypeTable[Idx].Name == kernelName) {
+          return BenchTypeTable[Idx].KType;
+      }
+      Idx++;
+  }
+  return RSBaseImpl::RS_NB; // Return RS_NB if kernel name not found
+}
+
 bool RSOpts::enableBenchmark(std::string benchName) {
   unsigned Idx = 0;
   std::transform(benchName.begin(), benchName.end(), benchName.begin(), ::tolower); // Convert benchName to lowercase
@@ -104,7 +102,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
         return false;
       }
       // Set the kernelName after successfully enabling the benchmark
-      kernelName = P;
+      setKernelName( P );
       i++;
     }
     // Get the stream array size
@@ -139,6 +137,42 @@ bool RSOpts::parseOpts(int argc, char **argv) {
   }
 
   return true; // Options are valid
+}
+
+void RSOpts::printOpts() {
+  std::cout << "===================================================================================" << std::endl;
+  std::cout << "RaiderSTREAM Options:" << std::endl;
+  std::cout << "===================================================================================" << std::endl;
+  std::cout << "Kernel Name: " << kernelName << std::endl;
+  std::cout << "Kernel Type: " << static_cast<int>(getKernelType()) << std::endl;
+  std::cout << "Stream Array Size: " << streamArraySize << std::endl;
+  std::cout << "Number of PEs: " << numPEs << std::endl;
+  std::cout << "===================================================================================" << std::endl;
+  std::cout << "BYTES:" << std::endl;
+  for (int i = 0; i < NUM_KERNELS; i++) {
+      std::cout << "  " << BenchTypeTable[i].Notes << ": " << BYTES[i] << std::endl;
+  }
+  std::cout << "===================================================================================" << std::endl;
+  std::cout << "FLOATOPS:" << std::endl;
+  for (int i = 0; i < NUM_KERNELS; i++) {
+      std::cout << "  " << BenchTypeTable[i].Notes << ": " << FLOATOPS[i] << std::endl;
+  }
+  std::cout << "===================================================================================" << std::endl;
+  std::cout << "MBPS:" << std::endl;
+  for (int i = 0; i < NUM_KERNELS; i++) {
+      std::cout << "  " << BenchTypeTable[i].Notes << ": " << MBPS[i] << std::endl;
+  }
+  std::cout << "===================================================================================" << std::endl;
+  std::cout << "FLOPS:" << std::endl;
+  for (int i = 0; i < NUM_KERNELS; i++) {
+      std::cout << "  " << BenchTypeTable[i].Notes << ": " << FLOPS[i] << std::endl;
+  }
+  std::cout << "===================================================================================" << std::endl;
+  std::cout << "TIMES:" << std::endl;
+  for (int i = 0; i < NUM_KERNELS; i++) {
+      std::cout << "  " << BenchTypeTable[i].Notes << ": " << TIMES[i] << std::endl;
+  }
+  std::cout << "===================================================================================" << std::endl;
 }
 
 void RSOpts::printBench() {
