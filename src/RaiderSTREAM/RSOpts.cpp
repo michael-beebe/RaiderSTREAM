@@ -45,8 +45,6 @@ RSOpts::RSOpts()
 // RSOpts Destructor
 RSOpts::~RSOpts() {}
 
-
-
 // bool RSOpts::enableBenchmark(std::string benchName) {
 //   unsigned Idx = 0;
 //   while (BenchTypeTable[Idx].KType != RSBaseImpl::RS_NB) {
@@ -60,6 +58,7 @@ RSOpts::~RSOpts() {}
 //   return false;
 // }
 
+// FIXME: this is not working
 bool RSOpts::enableBenchmark(std::string benchName) {
   unsigned Idx = 0;
   std::transform(benchName.begin(), benchName.end(), benchName.begin(), ::tolower); // Convert benchName to lowercase
@@ -135,7 +134,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
     return false;
   }
   if (numPEs < 1) {
-    std::cout << "Error: numPEs must be greater than 0" << std::endl;
+    std::cout << "Error: numPEs must be greater than or equal to 1" << std::endl;
     return false;
   }
 

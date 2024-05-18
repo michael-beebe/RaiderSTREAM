@@ -17,4 +17,6 @@ export RS=bin/raiderstream
 
 cd ../
 
+
+echo
 ./run.sh
