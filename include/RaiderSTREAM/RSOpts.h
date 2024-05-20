@@ -160,9 +160,9 @@ public:
 		2.0 * streamArraySize,             // CENTRAL Triad
   };
 
-	double MBPS[NUM_KERNELS];
-	double FLOPS[NUM_KERNELS];
-	double TIMES[NUM_KERNELS];
+	double MBPS[NUM_KERNELS]  = {0};
+	double FLOPS[NUM_KERNELS] = {0};
+	double TIMES[NUM_KERNELS] = {0};
 };
 
 #endif // _RSOPTS_H_

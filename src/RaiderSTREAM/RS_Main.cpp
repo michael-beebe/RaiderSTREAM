@@ -42,31 +42,33 @@
 #include "Impl/RS_MPI_CUDA/RS_MPI_CUDA.cuh"
 #endif
 
-// FIXME: printTiming
-void printTiming(const std::string& kernelName, double totalRuntime, const double* MBPS, const double* FLOPS) {
-  std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
-  std::cout << std::setfill(' ');
-  std::cout << std::left << std::setw(20) << "Kernel";
-  std::cout << std::right << std::setw(20) << "Total Runtime (s)";
-  std::cout << std::right << std::setw(20) << "MB/s";
-  std::cout << std::right << std::setw(20) << "FLOP/s";
-  std::cout << std::endl;
-  std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
-  std::cout << std::setfill(' ');
+/* FIXME: printTiming */
+void printTiming(const std::string& kernelName, double totalRuntime, const double* MBPS, const double* FLOPS, RSBaseImpl::RSKernelType kernelType, RSBaseImpl::RSKernelType runKernelType) {
+  if (kernelType == runKernelType) {
+    std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
+    std::cout << std::setfill(' ');
+    std::cout << std::left << std::setw(20) << "Kernel";
+    std::cout << std::right << std::setw(20) << "Total Runtime (s)";
+    std::cout << std::right << std::setw(20) << "MB/s";
+    std::cout << std::right << std::setw(20) << "FLOP/s";
+    std::cout << std::endl;
+    std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
+    std::cout << std::setfill(' ');
 
-  std::cout << std::left << std::setw(20) << kernelName;
-  std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(6) << totalRuntime;
-  std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << MBPS[RSBaseImpl::RS_SEQ_COPY];
-  std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << FLOPS[RSBaseImpl::RS_SEQ_COPY];
-  std::cout << std::endl;
+    std::cout << std::left << std::setw(20) << kernelName;
+    std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(6) << totalRuntime;
+    std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << MBPS[kernelType];
+    std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << FLOPS[kernelType];
+    std::cout << std::endl;
 
-  std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
+    std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef _ENABLE_OMP_
 void runBenchOMP(RSOpts *Opts) {
-  // Initialize the RS_OMP object
+  /* Initialize the RS_OMP object */
   RS_OMP *RS = new RS_OMP(*Opts);
   if (!RS) {
     std::cout << "ERROR: COULD NOT ALLOCATE RS_OMP OBJECT" << std::endl;
@@ -74,55 +76,41 @@ void runBenchOMP(RSOpts *Opts) {
   }
 
   #ifdef _DEBUG_
-    Opts->printOpts();
+  Opts->printOpts();
   #endif
 
-  double *a;
-  double *b;
-  double *c;
-  ssize_t *idx1;
-  ssize_t *idx2;
-  ssize_t *idx3;
-  double scalar = 3.0;
-
-  if (!RS->allocateData(a, b, c, idx1, idx2, idx3)) {
+  if (!RS->allocateData()) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OMP" << std::endl;
     delete RS;
     return;
   }
 
-  #ifdef _DEBUG_
-  std::cout << "===============================================" << std::endl;
-  std::cout << "sizeof(a) = " << sizeof(a) << std::endl;
-  std::cout << "===============================================" << std::endl;
-  #endif
-
-  // Execute the benchmark
+  /* Execute the benchmark */ 
   if (!RS->execute(
-    Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS,
-    a, b, c, idx1, idx2, idx3, scalar
+    Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS
   )) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP" << std::endl;
-    RS->freeData(a, b, c, idx1, idx2, idx3);
+    RS->freeData();
     delete RS;
     return;
   }
 
-  // Print the timing
+  /* Print the timing */
+  RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   for (int i = 0; i < RSBaseImpl::RS_ALL; i++) {
     RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
     std::string kernelName = BenchTypeTable[i].Notes;
-    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS);
+    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType);
   }
 
-  // Free the data
-  if (!RS->freeData(a, b, c, idx1, idx2, idx3)) {
+  /* Free the data */
+  if (!RS->freeData()) {
     std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_OMP" << std::endl;
     delete RS;
     return;
   }
 
-  // Free the RS_OMP object
+  /* Free the RS_OMP object */
   delete RS;
 }
 #endif

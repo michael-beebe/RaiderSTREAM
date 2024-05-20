@@ -13,26 +13,26 @@
 
 BenchType BenchTypeTable[] = {
   // {  Name, Arg, Notes, KType, Enabled, ReqArq }
-  { "seq_copy", "", "Sequential copy",      RSBaseImpl::RS_SEQ_COPY, false, false },
-  { "seq_scale", "", "Sequential scale",    RSBaseImpl::RS_SEQ_SCALE, false, false },
-  { "seq_add", "", "Sequential add",        RSBaseImpl::RS_SEQ_ADD, false, false },
-  { "seq_triad", "", "Sequential triad",    RSBaseImpl::RS_SEQ_TRIAD, false, false },
-  { "gather_copy", "", "Gather copy",       RSBaseImpl::RS_GATHER_COPY, false, false },
-  { "gather_scale", "", "Gather scale",     RSBaseImpl::RS_GATHER_SCALE, false, false },
-  { "gather_add", "", "Gather add",         RSBaseImpl::RS_GATHER_ADD, false, false },
-  { "gather_triad", "", "Gather triad",     RSBaseImpl::RS_GATHER_TRIAD, false, false },
-  { "scatter_copy", "", "Scatter copy",     RSBaseImpl::RS_SCATTER_COPY, false, false },
-  { "scatter_scale", "", "Scatter scale",   RSBaseImpl::RS_SCATTER_SCALE, false, false },
-  { "scatter_add", "", "Scatter add",       RSBaseImpl::RS_SCATTER_ADD, false, false },
-  { "scatter_triad", "", "Scatter triad",   RSBaseImpl::RS_SCATTER_TRIAD, false, false },
-  { "sg_copy", "", "Scatter-Gather copy",   RSBaseImpl::RS_SG_COPY, false, false },
-  { "sg_scale", "", "Scatter-Gather scale", RSBaseImpl::RS_SG_SCALE, false, false },
-  { "sg_add", "", "Scatter-Gather add",     RSBaseImpl::RS_SG_ADD, false, false },
-  { "sg_triad", "", "Scatter-Gather triad", RSBaseImpl::RS_SG_TRIAD, false, false },
-  { "central_copy", "", "Central copy",     RSBaseImpl::RS_CENTRAL_COPY, false, false },
-  { "central_scale", "", "Central scale",   RSBaseImpl::RS_CENTRAL_SCALE, false, false },
-  { "central_add", "", "Central add",       RSBaseImpl::RS_CENTRAL_ADD, false, false },
-  { "central_triad", "", "Central triad",   RSBaseImpl::RS_CENTRAL_TRIAD, false, false },
+  { "seq_copy", "", "Sequential Copy",      RSBaseImpl::RS_SEQ_COPY, false, false },
+  { "seq_scale", "", "Sequential Scale",    RSBaseImpl::RS_SEQ_SCALE, false, false },
+  { "seq_add", "", "Sequential Add",        RSBaseImpl::RS_SEQ_ADD, false, false },
+  { "seq_triad", "", "Sequential Triad",    RSBaseImpl::RS_SEQ_TRIAD, false, false },
+  { "gather_copy", "", "Gather Copy",       RSBaseImpl::RS_GATHER_COPY, false, false },
+  { "gather_scale", "", "Gather Scale",     RSBaseImpl::RS_GATHER_SCALE, false, false },
+  { "gather_add", "", "Gather Add",         RSBaseImpl::RS_GATHER_ADD, false, false },
+  { "gather_triad", "", "Gather Triad",     RSBaseImpl::RS_GATHER_TRIAD, false, false },
+  { "scatter_copy", "", "Scatter Copy",     RSBaseImpl::RS_SCATTER_COPY, false, false },
+  { "scatter_scale", "", "Scatter Scale",   RSBaseImpl::RS_SCATTER_SCALE, false, false },
+  { "scatter_add", "", "Scatter Add",       RSBaseImpl::RS_SCATTER_ADD, false, false },
+  { "scatter_triad", "", "Scatter Triad",   RSBaseImpl::RS_SCATTER_TRIAD, false, false },
+  { "sg_copy", "", "Scatter-Gather Copy",   RSBaseImpl::RS_SG_COPY, false, false },
+  { "sg_scale", "", "Scatter-Gather Scale", RSBaseImpl::RS_SG_SCALE, false, false },
+  { "sg_add", "", "Scatter-Gather Add",     RSBaseImpl::RS_SG_ADD, false, false },
+  { "sg_triad", "", "Scatter-Gather Triad", RSBaseImpl::RS_SG_TRIAD, false, false },
+  { "central_copy", "", "Central Copy",     RSBaseImpl::RS_CENTRAL_COPY, false, false },
+  { "central_scale", "", "Central Scale",   RSBaseImpl::RS_CENTRAL_SCALE, false, false },
+  { "central_add", "", "Central Add",       RSBaseImpl::RS_CENTRAL_ADD, false, false },
+  { "central_triad", "", "Central Triad",   RSBaseImpl::RS_CENTRAL_TRIAD, false, false },
   { "all", "", "All",                       RSBaseImpl::RS_ALL, false, false },
   { ".", "", ".",                           RSBaseImpl::RS_NB, false, false }
 };
@@ -140,37 +140,12 @@ bool RSOpts::parseOpts(int argc, char **argv) {
 
 void RSOpts::printOpts() {
   std::cout << "===================================================================================" << std::endl;
-  std::cout << "RaiderSTREAM Options:" << std::endl;
+  std::cout << " RaiderSTREAM Options:" << std::endl;
   std::cout << "===================================================================================" << std::endl;
   std::cout << "Kernel Name: " << kernelName << std::endl;
   std::cout << "Kernel Type: " << static_cast<int>(getKernelType()) << std::endl;
   std::cout << "Stream Array Size: " << streamArraySize << std::endl;
   std::cout << "Number of PEs: " << numPEs << std::endl;
-  std::cout << "===================================================================================" << std::endl;
-  std::cout << "BYTES:" << std::endl;
-  for (int i = 0; i < NUM_KERNELS; i++) {
-      std::cout << "  " << BenchTypeTable[i].Notes << ": " << BYTES[i] << std::endl;
-  }
-  std::cout << "===================================================================================" << std::endl;
-  std::cout << "FLOATOPS:" << std::endl;
-  for (int i = 0; i < NUM_KERNELS; i++) {
-      std::cout << "  " << BenchTypeTable[i].Notes << ": " << FLOATOPS[i] << std::endl;
-  }
-  std::cout << "===================================================================================" << std::endl;
-  std::cout << "MBPS:" << std::endl;
-  for (int i = 0; i < NUM_KERNELS; i++) {
-      std::cout << "  " << BenchTypeTable[i].Notes << ": " << MBPS[i] << std::endl;
-  }
-  std::cout << "===================================================================================" << std::endl;
-  std::cout << "FLOPS:" << std::endl;
-  for (int i = 0; i < NUM_KERNELS; i++) {
-      std::cout << "  " << BenchTypeTable[i].Notes << ": " << FLOPS[i] << std::endl;
-  }
-  std::cout << "===================================================================================" << std::endl;
-  std::cout << "TIMES:" << std::endl;
-  for (int i = 0; i < NUM_KERNELS; i++) {
-      std::cout << "  " << BenchTypeTable[i].Notes << ": " << TIMES[i] << std::endl;
-  }
   std::cout << "===================================================================================" << std::endl;
 }
 

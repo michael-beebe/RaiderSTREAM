@@ -28,6 +28,13 @@ private:
   int numPEs;
   int lArgc;
   char **lArgv;
+  double *a;
+  double *b;
+  double *c;
+  ssize_t *idx1;
+  ssize_t *idx2;
+  ssize_t *idx3;
+  ssize_t scalar;
 
 public:
   // RaiderSTREAM OMP constructor
@@ -38,20 +45,12 @@ public:
 
   // RaiderSTREAM OMP execute
   virtual bool execute(
-    double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS,
-    double *a, double *b, double *c, ssize_t *idx1, ssize_t *idx2, ssize_t *idx3, double scalar
-  ) override;
-  // virtual bool execute( double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS ) override;
-
-  virtual bool allocateData(
-    double *a, double *b, double *c,
-    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3
+    double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS
   ) override;
 
-  virtual bool freeData(
-    double *a, double *b, double *c,
-    ssize_t *idx1, ssize_t *idx2, ssize_t *idx3
-  ) override;
+  virtual bool allocateData() override;
+
+  virtual bool freeData() override;
 };
 
 extern "C" {
