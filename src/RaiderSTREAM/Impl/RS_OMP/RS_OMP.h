@@ -25,7 +25,6 @@ class RS_OMP : public RSBaseImpl {
 private:
   std::string kernelName;
   ssize_t streamArraySize;
-  int numPEs;
   int lArgc;
   char **lArgv;
   double *a;
@@ -37,13 +36,10 @@ private:
   ssize_t scalar;
 
 public:
-  // RaiderSTREAM OMP constructor
   RS_OMP(const RSOpts& opts);
 
-  // RaiderSTREAM OMP destructor
   ~RS_OMP();
 
-  // RaiderSTREAM OMP execute
   virtual bool execute(
     double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS
   ) override;
@@ -51,6 +47,7 @@ public:
   virtual bool allocateData() override;
 
   virtual bool freeData() override;
+
 };
 
 extern "C" {

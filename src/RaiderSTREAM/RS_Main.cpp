@@ -42,30 +42,43 @@
 #include "Impl/RS_MPI_CUDA/RS_MPI_CUDA.cuh"
 #endif
 
-/* FIXME: printTiming */
-void printTiming(const std::string& kernelName, double totalRuntime, const double* MBPS, const double* FLOPS, RSBaseImpl::RSKernelType kernelType, RSBaseImpl::RSKernelType runKernelType) {
-  if (kernelType == runKernelType) {
-    std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
-    std::cout << std::setfill(' ');
-    std::cout << std::left << std::setw(20) << "Kernel";
-    std::cout << std::right << std::setw(20) << "Total Runtime (s)";
-    std::cout << std::right << std::setw(20) << "MB/s";
-    std::cout << std::right << std::setw(20) << "FLOP/s";
-    std::cout << std::endl;
-    std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
-    std::cout << std::setfill(' ');
+void printTiming(
+  const std::string& kernelName,
+  double totalRuntime, const double* MBPS, const double* FLOPS,
+  RSBaseImpl::RSKernelType kernelType, RSBaseImpl::RSKernelType runKernelType,
+  bool& headerPrinted
+) {
+  if (runKernelType == RSBaseImpl::RS_ALL || kernelType == runKernelType) {
+    if (!headerPrinted) {
+      std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
+      std::cout << std::setfill(' ');
+      std::cout << std::left << std::setw(30) << "Benchmark Kernel";
+      std::cout << std::right << std::setw(20) << "Total Runtime (s)";
+      std::cout << std::right << std::setw(20) << "MB/s";
+      std::cout << std::right << std::setw(20) << "FLOP/s";
+      std::cout << std::endl;
+      std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
+      std::cout << std::setfill(' ');
+      headerPrinted = true;
+    }
 
-    std::cout << std::left << std::setw(20) << kernelName;
-    std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(6) << totalRuntime;
-    std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << MBPS[kernelType];
-    std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << FLOPS[kernelType];
-    std::cout << std::endl;
-
-    std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
+    if (kernelName.find("Copy") != std::string::npos) {
+      std::cout << std::left << std::setw(30) << kernelName;
+      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(6) << totalRuntime;
+      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(0) << MBPS[kernelType];
+      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(0) << "-";
+      std::cout << std::endl;
+    }
+    else if (kernelName != "All") {
+      std::cout << std::left << std::setw(30) << kernelName;
+      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(6) << totalRuntime;
+      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(0) << MBPS[kernelType];
+      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(0) << FLOPS[kernelType];
+      std::cout << std::endl;
+    }
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef _ENABLE_OMP_
 void runBenchOMP(RSOpts *Opts) {
   /* Initialize the RS_OMP object */
@@ -86,9 +99,7 @@ void runBenchOMP(RSOpts *Opts) {
   }
 
   /* Execute the benchmark */ 
-  if (!RS->execute(
-    Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS
-  )) {
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP" << std::endl;
     RS->freeData();
     delete RS;
@@ -97,10 +108,11 @@ void runBenchOMP(RSOpts *Opts) {
 
   /* Print the timing */
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
-  for (int i = 0; i < RSBaseImpl::RS_ALL; i++) {
+  bool headerPrinted = false;
+  for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
     RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
     std::string kernelName = BenchTypeTable[i].Notes;
-    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType);
+    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
   }
 
   /* Free the data */
@@ -114,7 +126,6 @@ void runBenchOMP(RSOpts *Opts) {
   delete RS;
 }
 #endif
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef _ENABLE_MPI_OMP_
 void runBenchMPIOMP( RSOpts *Opts ) {
@@ -167,10 +178,6 @@ int main( int argc, char **argv ) {
   
   #ifdef _ENABLE_MPI_CUDA_
   runBenchMPICUDA( Opts );
-  #endif
-
-  #ifdef _DEBUG_
-    printf("Hello, RaiderSTREAM!\n");
   #endif
 
   return 0;

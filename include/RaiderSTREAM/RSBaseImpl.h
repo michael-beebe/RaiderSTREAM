@@ -83,28 +83,18 @@ public:
     RS_NB = 21
   } RSKernelType;
 
-  // Default constructor
   RSBaseImpl(const std::string& implName, RSKernelType kType)
     : Impl(implName), KType(kType) {}
 
-  // Default virtual destructor
   virtual ~RSBaseImpl() {}
+
+
 
   std::string getImplName() { return Impl; }
 
-
   virtual bool allocateData() = 0;
-  // virtual bool allocateData(
-  //   double*& a, double*& b, double*& c,
-  //   ssize_t*& idx1, ssize_t*& idx2, ssize_t*& idx3,
-  //   ssize_t streamArraySize
-  // ) = 0;
 
   virtual bool freeData() = 0;
-  // virtual bool freeData(
-  //   double *a, double *b, double *c,
-  //   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3
-  // ) = 0;
 
   virtual bool execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS) = 0;
 
@@ -184,30 +174,6 @@ public:
   }
 
   RSBaseImpl::RSKernelType getKernelType() { return KType; }
-
-  void printResults(const std::string& kernelName, double totalRuntime, double mbps, double flops) {
-    std::cout << std::left << std::setw(20) << kernelName;
-    std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(6) << totalRuntime;
-    std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << mbps;
-    std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(1) << flops;
-    std::cout << std::endl;
-  }
-
-  void printTable(const std::string& kernelName, double totalRuntime, const double* mbps, const double* flops) {
-    std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
-    std::cout << std::setfill(' ');
-    std::cout << std::left << std::setw(20) << "Kernel";
-    std::cout << std::right << std::setw(20) << "Total Runtime (s)";
-    std::cout << std::right << std::setw(20) << "MB/s";
-    std::cout << std::right << std::setw(20) << "FLOP/s";
-    std::cout << std::endl;
-    std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
-    std::cout << std::setfill(' ');
-
-    printResults(kernelName, totalRuntime, mbps[RSBaseImpl::RS_SEQ_COPY], flops[RSBaseImpl::RS_SEQ_COPY]);
-
-    std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
-  }
 
 private:
   std::string Impl;

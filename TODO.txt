@@ -1,2 +1,4 @@
 - Add a LICENSE
 
+- get the results to record properly for seq_copy
+- get the results table to print properly for the "-k all" case
