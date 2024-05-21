@@ -47,7 +47,118 @@ public:
 }
 
 extern "C" {
-  // TODO:
+  void seqCopy(
+    double *a, double *b, double *c,
+    ssize_t stream_array_size
+  );
+
+  void seqScale(
+    double *a, double *b, double *c,
+    ssize_t stream_array_size, double scalar
+  );
+
+  void seqAdd(
+    double *a, double *b, double *c,
+    ssize_t stream_array_size
+  );
+
+  void seqTriad(
+    double *a, double *b, double *c,
+    ssize_t stream_array_size, double scalar
+  );
+
+  void gatherCopy(
+    double *a, double *b, double *c,
+    ssize_t *IDX1,
+    ssize_t stream_array_size
+  );
+
+  void gatherScale(
+    double *a, double *b, double *c,
+    ssize_t *IDX1,
+    ssize_t stream_array_size, double scalar
+  );
+
+  void gatherAdd(
+    double *a, double *b, double *c,
+    ssize_t *IDX1, ssize_t *IDX2,
+    ssize_t stream_array_size
+  );
+
+  void gatherTriad(
+    double *a, double *b, double *c,
+    ssize_t *IDX1, ssize_t *IDX2,
+    ssize_t stream_array_size, double scalar
+  );
+
+  void scatterCopy(
+    double *a, double *b, double *c,
+    ssize_t *IDX1,
+    ssize_t stream_array_size
+  );
+
+  void scatterScale(
+    double *a, double *b, double *c,
+    ssize_t *IDX1,
+    ssize_t stream_array_size, double scalar
+  );
+
+  void scatterAdd(
+    double *a, double *b, double *c,
+    ssize_t *IDX1,
+    ssize_t stream_array_size
+  );
+
+  void scatterTriad(
+    double *a, double *b, double *c,
+    ssize_t *IDX1,
+    ssize_t stream_array_size, double scalar
+  );
+
+  void sgCopy(
+    double *a, double *b, double *c,
+    ssize_t *IDX1, ssize_t *IDX2,
+    ssize_t stream_array_size
+  );
+
+  void sgScale(
+    double *a, double *b, double *c,
+    ssize_t *IDX1, ssize_t *IDX2,
+    ssize_t stream_array_size, double scalar
+  );
+
+  void sgAdd(
+    double *a, double *b, double *c,
+    ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
+    ssize_t stream_array_size
+  );
+
+  void sgTriad(
+    double *a, double *b, double *c,
+    ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
+    ssize_t stream_array_size, double scalar
+  );
+
+  void centralCopy(
+    double *a, double *b, double *c,
+    ssize_t stream_array_size
+  );
+
+  void centralScale(
+    double *a, double *b, double *c,
+    ssize_t stream_array_size,
+    double scalar
+  );
+
+  void centralAdd(
+    double *a, double *b, double *c,
+    ssize_t stream_array_size
+  );
+
+  void centralTriad(
+    double *a, double *b, double *c,
+    ssize_t stream_array_size, double scalar
+  );
 }
 
 #endif // _RS_MPI_OMP_H_
