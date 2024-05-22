@@ -38,10 +38,11 @@ bool RS_MPI_OMP::allocateData() {
     return false;
   }
 
-  MPI_Init( NULL, NULL );
-  MPI_Comm_rank(MPI_COMM_WORLD,&myRank);
-  MPI_Comm_size(MPI_COMM_WORLD,&size);
-  MPI_Barrier(MPI_COMM_WORLD);
+  // FIXME: maybe let's do this in RS_Main.cpp
+  // MPI_Init( NULL, NULL );
+  // MPI_Comm_rank(MPI_COMM_WORLD,&myRank);
+  // MPI_Comm_size(MPI_COMM_WORLD,&size);
+  // MPI_Barrier(MPI_COMM_WORLD);
 
   /* Calculate the chunk size for each rank */
   ssize_t chunkSize  = streamArraySize / size;

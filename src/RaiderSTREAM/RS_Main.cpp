@@ -133,6 +133,8 @@ void runBenchOMP(RSOpts *Opts) {
 /************************************************************************************/
 #ifdef _ENABLE_MPI_OMP_
 void runBenchMPIOMP( RSOpts *Opts ) { // TODO: runBenchMPIOMP()
+  // TODO: initialize MPI
+
   /* Initialize the RS_MPI_OMP object */
   RS_MPI_OMP *RS = new RS_MPI_OMP(*Opts);
   if (!RS) {
