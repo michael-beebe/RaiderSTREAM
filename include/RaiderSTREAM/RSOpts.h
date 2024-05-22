@@ -16,11 +16,14 @@
 #include <vector>
 #include <cstdlib>
 #include <getopt.h>
+#include <string>
+#include <iomanip>
+
 
 #include "RSBaseImpl.h"
 
-#define RS_VERSION_MAJOR 0
-#define RS_VERSION_MINOR 2
+#define RS_VERSION_MAJOR 1
+#define RS_VERSION_MINOR 0
 
 /**
  * @brief BenchType struct: defines an individual benchmark table entry
@@ -73,6 +76,8 @@ public:
   bool enableBenchmark(std::string benchName);
 
 	void printOpts();
+
+	void printLogo();
 
 /****************************************************
  * 									 Getters 
@@ -165,4 +170,4 @@ public:
 	double TIMES[NUM_KERNELS] = {0};
 };
 
-#endif // _RSOPTS_H_
+#endif /* _RSOPTS_H_ */

@@ -88,11 +88,7 @@ void runBenchOMP(RSOpts *Opts) {
   if (!RS) {
     std::cout << "ERROR: COULD NOT ALLOCATE RS_OMP OBJECT" << std::endl;
     return;
-  }
-
-  #ifdef _DEBUG_
-    Opts->printOpts();
-  #endif
+  }  
 
   /* Allocate Data */
   if (!RS->allocateData()) {
@@ -117,6 +113,7 @@ void runBenchOMP(RSOpts *Opts) {
   }
 
   /* Print the timing */
+  Opts->printOpts();
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   bool headerPrinted = false;
   for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
@@ -132,18 +129,17 @@ void runBenchOMP(RSOpts *Opts) {
 
 /************************************************************************************/
 #ifdef _ENABLE_MPI_OMP_
-void runBenchMPIOMP( RSOpts *Opts ) { // TODO: runBenchMPIOMP()
-  // TODO: initialize MPI
+void runBenchMPIOMP( RSOpts *Opts ) {
+  /* Initialize MPI */
+  MPI_Init( NULL, NULL );
+  int myRank = -1;
+  MPI_Comm_rank( MPI_COMM_WORLD, &myRank );
 
   /* Initialize the RS_MPI_OMP object */
   RS_MPI_OMP *RS = new RS_MPI_OMP(*Opts);
   if (!RS) {
     std::cout << "ERROR: COULD NOT ALLOCATE RS_MPI_OMP OBJECT" << std::endl;
   }
-
-  #ifdef _DEBUG_
-    Opts->printOpts();
-  #endif 
 
   /* Allocate Data */
   if (!RS->allocateData()) {
@@ -170,10 +166,10 @@ void runBenchMPIOMP( RSOpts *Opts ) { // TODO: runBenchMPIOMP()
     return;
   }
 
-  /* Print the timing */
-  int myRank = -1;
-  MPI_Comm_rank( MPI_COMM_WORLD, &myRank );
+  /* Benchmark output */
   if ( myRank == 0  ) {
+    Opts->printLogo();
+    Opts->printOpts();
     RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
     bool headerPrinted = false;
     for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
@@ -221,27 +217,28 @@ int main( int argc, char **argv ) {
   }
   
   #ifdef _ENABLE_OMP_
-  runBenchOMP( Opts );
+    runBenchOMP( Opts );
   #endif
 
   #ifdef _ENABLE_MPI_OMP_
-  runBenchMPIOMP( Opts );
+    runBenchMPIOMP( Opts );
   #endif
   
   #ifdef _ENABLE_OPENSHMEM_
-  runBenchOpenSHMEM( Opts );
+    runBenchOpenSHMEM( Opts );
   #endif
   
   #ifdef _ENABLE_CUDA_
-  runBenchCUDA( Opts );
+    runBenchCUDA( Opts );
   #endif
   
   #ifdef _ENABLE_MPI_CUDA_
-  runBenchMPICUDA( Opts );
+    runBenchMPICUDA( Opts );
   #endif
 
   return 0;
 }
 /************************************************************************************/
 
-// EOF
+/* EOF */
+

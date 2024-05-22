@@ -12,7 +12,7 @@
 #include <algorithm>
 
 BenchType BenchTypeTable[] = {
-  // {  Name, Arg, Notes, KType, Enabled, ReqArq }
+  /* {  Name, Arg, Notes, KType, Enabled, ReqArq } */
   { "seq_copy", "", "Sequential Copy",      RSBaseImpl::RS_SEQ_COPY, false, false },
   { "seq_scale", "", "Sequential Scale",    RSBaseImpl::RS_SEQ_SCALE, false, false },
   { "seq_add", "", "Sequential Add",        RSBaseImpl::RS_SEQ_ADD, false, false },
@@ -37,12 +37,12 @@ BenchType BenchTypeTable[] = {
   { ".", "", ".",                           RSBaseImpl::RS_NB, false, false }
 };
 
-// RSOpts Constructor
+/* RSOpts Constructor */
 RSOpts::RSOpts()
   : isHelp(false), isList(false), streamArraySize(1000000),
     numPEs(1), lArgc(0), lArgv(nullptr) {}
 
-// RSOpts Destructor
+/* RSOpts Destructor */ 
 RSOpts::~RSOpts() {}
 
 
@@ -79,7 +79,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
   for (int i = 1; i < argc; i++) {
     std::string s(argv[i]);
 
-    // Check if the user wants to print the help message
+    /* Check if the user wants to print the help message */
     if ((s == "-h") || (s == "--help")) {
       isHelp = true;
       printHelp();
@@ -90,7 +90,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
       printBench();
       return true;
     }
-    // Check for the kernels the user wants to run
+    /* Check for the kernels the user wants to run */
     else if ((s == "-k") || (s == "--kernel")) {
       if (i + 1 > (argc - 1)) {
         std::cout << "Error: --kernel requires an argument" << std::endl;
@@ -104,18 +104,17 @@ bool RSOpts::parseOpts(int argc, char **argv) {
       setKernelName( P );
       i++;
     }
-    // Get the stream array size
+    /* Get the stream array size */
     else if ((s == "-s") || (s == "--size")) {
       setStreamArraySize(atoi(argv[i + 1]));
       i++;
     }
-    // Get the number of PEs
+    /* Get the number of PEs */
     else if ((s == "-np") || (s == "--pes")) {
       if (i + 1 > (argc - 1)) {
         std::cout << "Error: --pes requires an argument" << std::endl;
         return false;
       }
-      // numPEs = atoi(argv[i + 1]);
       setNumPEs(atoi(argv[i + 1]));
       i++;
     }
@@ -125,7 +124,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
     }
   }
 
-  // Sanity checks for the options
+  /* Sanity checks for the options */
   if (streamArraySize == 0) {
     std::cout << "Error: STREAM Array Size cannot be 0" << std::endl;
     return false;
@@ -135,24 +134,26 @@ bool RSOpts::parseOpts(int argc, char **argv) {
     return false;
   }
 
-  return true; // Options are valid
+  return true; /* Options are valid */
 }
 
 void RSOpts::printOpts() {
-  std::cout << "===================================================================================" << std::endl;
+  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
   std::cout << " RaiderSTREAM Options:" << std::endl;
-  std::cout << "===================================================================================" << std::endl;
+  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
   std::cout << "Kernel Name: " << kernelName << std::endl;
   std::cout << "Kernel Type: " << static_cast<int>(getKernelType()) << std::endl;
   std::cout << "Stream Array Size: " << streamArraySize << std::endl;
   std::cout << "Number of PEs: " << numPEs << std::endl;
-  std::cout << "===================================================================================" << std::endl;
+  char* ompNumThreads = getenv("OMP_NUM_THREADS");
+  if (ompNumThreads != nullptr) { std::cout << "OMP_NUM_THREADS: " << ompNumThreads << std::endl; }
+  else { std::cout << "OMP_NUM_THREADS: (not set)" << std::endl; }
 }
 
 void RSOpts::printBench() {
-  std::cout << "===================================================================================" << std::endl;
+  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
   std::cout << "BENCHMARK KERNEL | DESCRIPTION" << std::endl;
-  std::cout << "===================================================================================" << std::endl;
+  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
   unsigned Idx = 0;
   while (BenchTypeTable[Idx].Name != "") {
     std::cout << "  " << BenchTypeTable[Idx].Name;
@@ -164,22 +165,47 @@ void RSOpts::printBench() {
     }
     Idx++;
   }
-  std::cout << "===================================================================================" << std::endl;
+  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
 }
 
 void RSOpts::printHelp() {
   unsigned major = RS_VERSION_MAJOR;
   unsigned minor = RS_VERSION_MINOR;
-  std::cout << "===================================================================================" << std::endl;
-  std::cout << " RaiderSTREAM v" << major << "." << minor << std::endl;
-  std::cout << "===================================================================================" << std::endl;
+  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
   std::cout << " Usage: ./raiderstream [OPTIONS]" << std::endl;
-  std::cout << "-----------------------------------------------------------------------------------" << std::endl;
+  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
   std::cout << " Options:" << std::endl;
   std::cout << "  -h, --help                Print this help message" << std::endl;
   std::cout << "  -l, --list                List the benchmarks" << std::endl;
   std::cout << "  -k, --kernel              Specify the kernel to run" << std::endl;
   std::cout << "  -s, --size                Specify the size of the STREAM array" << std::endl;
   std::cout << "  -np, --pes                Specify the number of PEs" << std::endl;
-  std::cout << "-----------------------------------------------------------------------------------" << std::endl;
+  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
 }
+
+void RSOpts::printLogo() {
+  unsigned major = RS_VERSION_MAJOR;
+  unsigned minor = RS_VERSION_MINOR;
+  // std::cout << "===================================================================================" << std::endl;
+  std::cout << std::setfill('=') << std::setw(90) << "=" << std::endl;
+  std::cout << "                                  RaiderSTREAM v" << major << "." << minor << std::endl;
+  std::cout << std::setfill('=') << std::setw(90) << "=" << std::endl;
+  // std::cout << "===================================================================================" << std::endl;
+
+  // std::cout << "**              _____          _   _____       _     _                       **" << std::endl;
+  // std::cout << "**             |  __ \        | | |  __ \     (_)   | |                      **" << std::endl;
+  // std::cout << "**             | |__) |___  __| | | |__) |__ _ _  __| | ___ _ __             **" << std::endl;
+  // std::cout << "**             |  _  // _ \/ _` | |  _  // _` | |/ _` |/ _ \ '__|            **" << std::endl;
+  // std::cout << "**             | | \ \  __/ (_| | | | \ \ (_| | | (_| |  __/ |               **" << std::endl;
+  // std::cout << "**             |_|  \_\___|\__,_| |_|  \_\__,_|_|\__,_|\___|_|               **" << std::endl;
+  // std::cout << "**                                                                           **" << std::endl;
+
+  // std::cout << "**              _____       _     _                       **" << std::endl;
+  // std::cout << "**             |  __ \     (_)   | |                      **" << std::endl;
+  // std::cout << "**             | |__) |__ _ _  __| | ___ _ __             **" << std::endl;
+  // std::cout << "**             |  _  // _` | |/ _` |/ _ \ '__|            **" << std::endl;
+  // std::cout << "**             | | \ \ (_| | | (_| |  __/ |               **" << std::endl;
+  // std::cout << "**             |_|  \_\__,_|_|\__,_|\___|_|               **" << std::endl;
+  // std::cout << "**                                                        **" << std::endl;
+}
+
