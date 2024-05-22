@@ -6,8 +6,8 @@ if (ENABLE_MPI_OMP)
   add_subdirectory(RS_MPI_OMP)
 endif()
 
-if (ENABLE_OPENSHMEM)
-  add_subdirectory(RS_OPENSHMEM)
+if (ENABLE_SHMEM_OMP)
+  add_subdirectory(RS_SHMEM_OMP)
 endif()
 
 if (ENABLE_CUDA)

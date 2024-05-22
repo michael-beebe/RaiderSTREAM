@@ -1,5 +1,5 @@
 //
-// _RS_MPI_OMP_IMPL_C_
+// _RS_SHMEM_OMP_IMPL_C_
 //
 // Copyright (C) 2022-2024 Texas Tech University
 // All Rights Reserved

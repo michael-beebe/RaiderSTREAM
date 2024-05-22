@@ -80,14 +80,13 @@ else()
   message(STATUS "DISABLING MPI/OpenMP Implementation")
 endif()
 
-if (ENABLE_OPENSHMEM)
-  # need to find or write a FindOpenSHMEM.cmake module or specify the paths manually
-  # find_package(OpenSHMEM REQUIRED) # Example line if a FindOpenSHMEM.cmake is available
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_ENABLE_OPENSHMEM_")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ENABLE_OPENSHMEM_")
-  message(STATUS "ENABLING OpenSHMEM Implementation")
+if (ENABLE_SHMEM_OMP)
+  #find_package(OpenSHMEM REQUIRED) # need to find or write a FindOpenSHMEM.cmake module or specify the paths manually
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_ENABLE_SHMEM_OMP_")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ENABLE_SHMEM_OMP_")
+  message(STATUS "ENABLING OpenSHMEM/OpenMP Implementation")
 else()
-  message(STATUS "DISABLING OpenSHMEM Implementation")
+  message(STATUS "DISABLING OpenSHMEM/OpenMP Implementation")
 endif()
 
 if (ENABLE_CUDA)

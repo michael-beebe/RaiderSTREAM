@@ -16,6 +16,7 @@ RS_OMP::RS_OMP(const RSOpts& opts) :
   RSBaseImpl("RS_OMP", opts.getKernelTypeFromName(opts.getKernelName())),
   kernelName(opts.getKernelName()),
   streamArraySize(opts.getStreamArraySize()),
+  numPEs(opts.getNumPEs()),
   lArgc(0),
   lArgv(nullptr),
   a(nullptr),

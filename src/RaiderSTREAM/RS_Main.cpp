@@ -30,8 +30,8 @@
 #include "Impl/RS_MPI_OMP/RS_MPI_OMP.h"
 #endif
 
-#ifdef _ENABLE_OPENSHMEM_
-#include "Impl/RS_OPENSHMEM/RS_SHMEM.h"
+#ifdef _ENABLE_SHMEM_OMP_
+#include "Impl/RS_SHMEM_OMP/RS_SHMEM_OMP.h"
 #endif
 
 #ifdef _ENABLE_CUDA_
@@ -51,14 +51,14 @@ void printTiming(
 ) {
   if (runKernelType == RSBaseImpl::RS_ALL || kernelType == runKernelType) {
     if (!headerPrinted) {
-      std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
+      std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
       std::cout << std::setfill(' ');
       std::cout << std::left << std::setw(30) << "Benchmark Kernel";
       std::cout << std::right << std::setw(20) << "Total Runtime (s)";
       std::cout << std::right << std::setw(20) << "MB/s";
       std::cout << std::right << std::setw(20) << "FLOP/s";
       std::cout << std::endl;
-      std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
+      std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
       std::cout << std::setfill(' ');
       headerPrinted = true;
     }
@@ -83,6 +83,9 @@ void printTiming(
 /************************************************************************************/
 #ifdef _ENABLE_OMP_
 void runBenchOMP(RSOpts *Opts) {
+  /* Initialize OpenMP */
+  omp_get_num_threads();
+
   /* Initialize the RS_OMP object */
   RS_OMP *RS = new RS_OMP(*Opts);
   if (!RS) {
@@ -113,7 +116,16 @@ void runBenchOMP(RSOpts *Opts) {
   }
 
   /* Print the timing */
+  Opts->printLogo();
+
   Opts->printOpts();
+  #pragma omp parallel
+  {
+    #pragma omp single
+    {
+      std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads() << std::endl;
+    }
+  }
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   bool headerPrinted = false;
   for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
@@ -134,6 +146,9 @@ void runBenchMPIOMP( RSOpts *Opts ) {
   MPI_Init( NULL, NULL );
   int myRank = -1;
   MPI_Comm_rank( MPI_COMM_WORLD, &myRank );
+
+  /* Initialize OpenMP */
+  omp_get_num_threads();
 
   /* Initialize the RS_MPI_OMP object */
   RS_MPI_OMP *RS = new RS_MPI_OMP(*Opts);
@@ -170,6 +185,13 @@ void runBenchMPIOMP( RSOpts *Opts ) {
   if ( myRank == 0  ) {
     Opts->printLogo();
     Opts->printOpts();
+    #pragma omp parallel
+    {
+      #pragma omp single
+      {
+        std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads() << std::endl;
+      }
+    }
     RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
     bool headerPrinted = false;
     for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
@@ -186,9 +208,69 @@ void runBenchMPIOMP( RSOpts *Opts ) {
 #endif
 
 /************************************************************************************/
-#ifdef _ENABLE_OPENSHMEM_
-void runBenchOpenSHMEM( RSOpts *Opts ) {
-  // TODO: runBenchOpenSHMEM()
+#ifdef _ENABLE_SHMEM_OMP_
+void runBenchSHMEMOMP( RSOpts *Opts ) {
+  /* Initialize OpenSHMEM */
+  shmem_init();
+  int myRank = shmem_my_pe();
+
+  /* Initialize OpenMP */
+  omp_get_num_threads();
+
+  /* Initialize the RS_SHMEM_OMP object */
+  RS_SHMEM_OMP *RS = new RS_SHMEM_OMP(*Opts);
+  if (!RS) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RS_SHMEM_OMP OBJECT" << std::endl;
+  }
+
+  /* Allocate Data */
+  if (!RS->allocateData()) {
+    std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_SHMEM_OMP" << std::endl;
+    shmem_finalize();
+    delete RS;
+    return;
+  }
+
+  /* Execute the benchmark */
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_SHMEM_OMP" << std::endl;
+    RS->freeData();
+    shmem_finalize();
+    delete RS;
+    return;
+  }
+
+  /* Free the data */
+  if (!RS->freeData()) {
+    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_SHMEM_OMP" << std::endl;
+    shmem_finalize();
+    delete RS;
+    return;
+  }
+
+  /* Benchmark output */
+  if (myRank == 0) {
+    Opts->printLogo();
+    Opts->printOpts();
+    #pragma omp parallel
+    {
+      #pragma omp single
+      {
+        std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads() << std::endl;
+      }
+    }
+    RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
+    bool headerPrinted = false;
+    for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
+      RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+      std::string kernelName = BenchTypeTable[i].Notes;
+      printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+    }
+  }
+
+  /* Free the RS_SHMEM_OMP object, finalize OpenSHMEM */
+  shmem_finalize();
+  delete RS;
 }
 #endif
 
@@ -224,8 +306,8 @@ int main( int argc, char **argv ) {
     runBenchMPIOMP( Opts );
   #endif
   
-  #ifdef _ENABLE_OPENSHMEM_
-    runBenchOpenSHMEM( Opts );
+  #ifdef _ENABLE_SHMEM_OMP_
+    runBenchSHMEMOMP( Opts );
   #endif
   
   #ifdef _ENABLE_CUDA_

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Load required modules
-#module load cmake
+module load cmake
 
 # Remove and recreate the build directory
 rm -rf build
@@ -10,11 +10,14 @@ cd build
 
 # Configure the project with CMake
 cmake \
-  -DENABLE_MPI_OMP=ON \
-  -DDEBUG=ON \
- -DCMAKE_C_COMPILER=`which mpicc` \
- -DCMAKE_CXX_COMPILER=`which mpicxx` \
- ../
+  -DENABLE_SHMEM_OMP=ON \
+  -DCMAKE_C_COMPILER=`which oshcc` \
+  -DCMAKE_CXX_COMPILER=`which oshc++` \
+  ../
+
+# cmake \
+#   -DENABLE_OMP=ON \
+#  ../
 
 # Build the project
 make
@@ -26,5 +29,5 @@ export RS=bin/raiderstream
 cd ../
 
 # Run the executable
-echo ; ./run.sh
+echo ; ./run.sh ; echo ; echo
 

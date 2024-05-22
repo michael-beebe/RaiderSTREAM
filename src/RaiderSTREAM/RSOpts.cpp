@@ -129,18 +129,21 @@ bool RSOpts::parseOpts(int argc, char **argv) {
     std::cout << "Error: STREAM Array Size cannot be 0" << std::endl;
     return false;
   }
-  if (numPEs < 1) {
-    std::cout << "Error: numPEs must be greater than or equal to 1" << std::endl;
-    return false;
-  }
+  #ifdef _ENABLE_OMP_
+  #else
+    if (numPEs < 1) {
+      std::cout << "Error: numPEs must be greater than or equal to 1" << std::endl;
+      return false;
+    }
+  #endif
 
   return true; /* Options are valid */
 }
 
 void RSOpts::printOpts() {
-  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
-  std::cout << " RaiderSTREAM Options:" << std::endl;
-  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
+  std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
+  std::cout << "RaiderSTREAM Options:" << std::endl;
+  std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   std::cout << "Kernel Name: " << kernelName << std::endl;
   std::cout << "Kernel Type: " << static_cast<int>(getKernelType()) << std::endl;
   std::cout << "Stream Array Size: " << streamArraySize << std::endl;
@@ -151,9 +154,9 @@ void RSOpts::printOpts() {
 }
 
 void RSOpts::printBench() {
-  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
+  std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   std::cout << "BENCHMARK KERNEL | DESCRIPTION" << std::endl;
-  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
+  std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   unsigned Idx = 0;
   while (BenchTypeTable[Idx].Name != "") {
     std::cout << "  " << BenchTypeTable[Idx].Name;
@@ -165,47 +168,69 @@ void RSOpts::printBench() {
     }
     Idx++;
   }
-  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
+  std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
 }
 
 void RSOpts::printHelp() {
   unsigned major = RS_VERSION_MAJOR;
   unsigned minor = RS_VERSION_MINOR;
-  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
+  std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   std::cout << " Usage: ./raiderstream [OPTIONS]" << std::endl;
-  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
+  std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   std::cout << " Options:" << std::endl;
   std::cout << "  -h, --help                Print this help message" << std::endl;
   std::cout << "  -l, --list                List the benchmarks" << std::endl;
   std::cout << "  -k, --kernel              Specify the kernel to run" << std::endl;
   std::cout << "  -s, --size                Specify the size of the STREAM array" << std::endl;
   std::cout << "  -np, --pes                Specify the number of PEs" << std::endl;
-  std::cout << std::setfill('-') << std::setw(90) << "-" << std::endl;
+  std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
 }
 
 void RSOpts::printLogo() {
-  unsigned major = RS_VERSION_MAJOR;
-  unsigned minor = RS_VERSION_MINOR;
-  // std::cout << "===================================================================================" << std::endl;
-  std::cout << std::setfill('=') << std::setw(90) << "=" << std::endl;
-  std::cout << "                                  RaiderSTREAM v" << major << "." << minor << std::endl;
-  std::cout << std::setfill('=') << std::setw(90) << "=" << std::endl;
-  // std::cout << "===================================================================================" << std::endl;
-
-  // std::cout << "**              _____          _   _____       _     _                       **" << std::endl;
-  // std::cout << "**             |  __ \        | | |  __ \     (_)   | |                      **" << std::endl;
-  // std::cout << "**             | |__) |___  __| | | |__) |__ _ _  __| | ___ _ __             **" << std::endl;
-  // std::cout << "**             |  _  // _ \/ _` | |  _  // _` | |/ _` |/ _ \ '__|            **" << std::endl;
-  // std::cout << "**             | | \ \  __/ (_| | | | \ \ (_| | | (_| |  __/ |               **" << std::endl;
-  // std::cout << "**             |_|  \_\___|\__,_| |_|  \_\__,_|_|\__,_|\___|_|               **" << std::endl;
-  // std::cout << "**                                                                           **" << std::endl;
-
-  // std::cout << "**              _____       _     _                       **" << std::endl;
-  // std::cout << "**             |  __ \     (_)   | |                      **" << std::endl;
-  // std::cout << "**             | |__) |__ _ _  __| | ___ _ __             **" << std::endl;
-  // std::cout << "**             |  _  // _` | |/ _` |/ _ \ '__|            **" << std::endl;
-  // std::cout << "**             | | \ \ (_| | | (_| |  __/ |               **" << std::endl;
-  // std::cout << "**             |_|  \_\__,_|_|\__,_|\___|_|               **" << std::endl;
-  // std::cout << "**                                                        **" << std::endl;
+  std::cout << std::endl;
+  std::cout << R"(
+ _______           __       __                    ______  ________ _______  ________  ______  __       __ 
+|       \         |  \     |  \                  /      \|        \       \|        \/      \|  \     /  \
+| ▓▓▓▓▓▓▓\ ______  \▓▓ ____| ▓▓ ______   ______ |  ▓▓▓▓▓▓\\▓▓▓▓▓▓▓▓ ▓▓▓▓▓▓▓\ ▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓\ ▓▓\   /  ▓▓
+| ▓▓__| ▓▓|      \|  \/      ▓▓/      \ /      \| ▓▓___\▓▓  | ▓▓  | ▓▓__| ▓▓ ▓▓__   | ▓▓__| ▓▓ ▓▓▓\ /  ▓▓▓
+| ▓▓    ▓▓ \▓▓▓▓▓▓\ ▓▓  ▓▓▓▓▓▓▓  ▓▓▓▓▓▓\  ▓▓▓▓▓▓\\▓▓    \   | ▓▓  | ▓▓    ▓▓ ▓▓  \  | ▓▓    ▓▓ ▓▓▓▓\  ▓▓▓▓
+| ▓▓▓▓▓▓▓\/      ▓▓ ▓▓ ▓▓  | ▓▓ ▓▓    ▓▓ ▓▓   \▓▓_\▓▓▓▓▓▓\  | ▓▓  | ▓▓▓▓▓▓▓\ ▓▓▓▓▓  | ▓▓▓▓▓▓▓▓ ▓▓\▓▓ ▓▓ ▓▓
+| ▓▓  | ▓▓  ▓▓▓▓▓▓▓ ▓▓ ▓▓__| ▓▓ ▓▓▓▓▓▓▓▓ ▓▓     |  \__| ▓▓  | ▓▓  | ▓▓  | ▓▓ ▓▓_____| ▓▓  | ▓▓ ▓▓ \▓▓▓| ▓▓
+| ▓▓  | ▓▓\▓▓    ▓▓ ▓▓\▓▓    ▓▓\▓▓     \ ▓▓      \▓▓    ▓▓  | ▓▓  | ▓▓  | ▓▓ ▓▓     \ ▓▓  | ▓▓ ▓▓  \▓ | ▓▓
+ \▓▓   \▓▓ \▓▓▓▓▓▓▓\▓▓ \▓▓▓▓▓▓▓ \▓▓▓▓▓▓▓\▓▓       \▓▓▓▓▓▓    \▓▓   \▓▓   \▓▓\▓▓▓▓▓▓▓▓\▓▓   \▓▓\▓▓      \▓▓
+  )";
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << std::endl;
 }
 
+// void RSOpts::printLogo() {
+//   std::cout << std::setfill('=') << std::setw(110) << "=" << std::endl;
+//   std::cout << R"(
+//          ___        _     _            ___  _____  ___  ___  ___  __  __ 
+//         | _ \ __ _ (_) __| | ___  _ _ / __||_   _|| _ \| __|/   \|  \/  |
+//         |   // _` || |/ _` |/ -_)| '_|\__ \  | |  |   /| _| | - || |\/| |
+//         |_|_\\__/_||_|\__/_|\___||_|  |___/  |_|  |_|_\|___||_|_||_|  |_|
+//   )";
+//   std::cout << std::endl;
+//   std::cout << std::endl;
+//   std::cout << std::setfill('=') << std::setw(110) << "=" << std::endl;
+// }
+
+// void RSOpts::printLogo() {
+//   std::cout << std::setfill('=') << std::setw(110) << "=" << std::endl;
+//   std::cout << R"(
+//               ╔═══╗         ╔╗       ╔═══╗╔════╗╔═══╗╔═══╗╔═══╗╔═╗╔═╗
+//               ║╔═╗║         ║║       ║╔═╗║║╔╗╔╗║║╔═╗║║╔══╝║╔═╗║║║╚╝║║
+//               ║╚═╝║╔══╗ ╔╗╔═╝║╔══╗╔═╗║╚══╗╚╝║║╚╝║╚═╝║║╚══╗║║ ║║║╔╗╔╗║
+//               ║╔╗╔╝╚ ╗║ ╠╣║╔╗║║╔╗║║╔╝╚══╗║  ║║  ║╔╗╔╝║╔══╝║╚═╝║║║║║║║
+//               ║║║╚╗║╚╝╚╗║║║╚╝║║║═╣║║ ║╚═╝║ ╔╝╚╗ ║║║╚╗║╚══╗║╔═╗║║║║║║║
+//               ╚╝╚═╝╚═══╝╚╝╚══╝╚══╝╚╝ ╚═══╝ ╚══╝ ╚╝╚═╝╚═══╝╚╝ ╚╝╚╝╚╝╚╝
+//   )";
+//   std::cout << std::endl;
+//   std::cout << std::endl;
+//   std::cout << std::setfill('=') << std::setw(110) << "=" << std::endl;
+// }
+                                                                                                          
+                                                                                                          
+                                                                                                          

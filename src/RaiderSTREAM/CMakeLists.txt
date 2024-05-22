@@ -18,8 +18,8 @@ if (ENABLE_MPI_OMP)
   add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_MPI_OMP_OBJS>)
 endif()
 
-if (ENABLE_OPENSHMEM)
-  add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_OPENSHMEM_OBJS>)
+if (ENABLE_SHMEM_OMP)
+  add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_SHMEM_OBJS>)
 endif()
 
 if (ENABLE_CUDA)

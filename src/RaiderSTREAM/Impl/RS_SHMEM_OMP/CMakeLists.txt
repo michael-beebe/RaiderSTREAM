@@ -1,8 +1,8 @@
 set(RSSHMEMSrcs
 )
 
-if (ENABLE_OPENSHMEM)
-  set(RSSHMEMSrcs ${RSSHMEMSrcs} RS_SHMEM.h RS_SHMEM.cpp RS_SHMEM_IMPL.c)
+if (ENABLE_SHMEM_OMP)
+  set(RSSHMEMSrcs ${RSSHMEMSrcs} RS_SHMEM_OMP.h RS_SHMEM_OMP.cpp RS_SHMEM_OMP_IMPL.c)
 endif()
 
 include_directories(${RS_INCLUDE_PATH})
