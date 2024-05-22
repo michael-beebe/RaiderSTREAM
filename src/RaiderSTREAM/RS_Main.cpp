@@ -42,6 +42,7 @@
 #include "Impl/RS_MPI_CUDA/RS_MPI_CUDA.cuh"
 #endif
 
+/************************************************************************************/
 void printTiming(
   const std::string& kernelName,
   double totalRuntime, const double* MBPS, const double* FLOPS,
@@ -79,6 +80,7 @@ void printTiming(
   }
 }
 
+/************************************************************************************/
 #ifdef _ENABLE_OMP_
 void runBenchOMP(RSOpts *Opts) {
   /* Initialize the RS_OMP object */
@@ -89,9 +91,10 @@ void runBenchOMP(RSOpts *Opts) {
   }
 
   #ifdef _DEBUG_
-  Opts->printOpts();
+    Opts->printOpts();
   #endif
 
+  /* Allocate Data */
   if (!RS->allocateData()) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OMP" << std::endl;
     delete RS;
@@ -106,6 +109,13 @@ void runBenchOMP(RSOpts *Opts) {
     return;
   }
 
+  /* Free the data */
+  if (!RS->freeData()) {
+    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_OMP" << std::endl;
+    delete RS;
+    return;
+  }
+
   /* Print the timing */
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   bool headerPrinted = false;
@@ -115,42 +125,90 @@ void runBenchOMP(RSOpts *Opts) {
     printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
   }
 
-  /* Free the data */
-  if (!RS->freeData()) {
-    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_OMP" << std::endl;
-    delete RS;
-    return;
-  }
-
   /* Free the RS_OMP object */
   delete RS;
 }
 #endif
 
+/************************************************************************************/
 #ifdef _ENABLE_MPI_OMP_
-void runBenchMPIOMP( RSOpts *Opts ) {
-  // TODO: runBenchMPIOMP()
+void runBenchMPIOMP( RSOpts *Opts ) { // TODO: runBenchMPIOMP()
+  /* Initialize the RS_MPI_OMP object */
+  RS_MPI_OMP *RS = new RS_MPI_OMP(*Opts);
+  if (!RS) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RS_MPI_OMP OBJECT" << std::endl;
+  }
+
+  #ifdef _DEBUG_
+    Opts->printOpts();
+  #endif 
+
+  /* Allocate Data */
+  if (!RS->allocateData()) {
+    std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_MPI_OMP" << std::endl;
+    MPI_Finalize();
+    delete RS;
+    return;
+  }
+
+  /* Execute the benchmark */ 
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_MPI_OMP" << std::endl;
+    RS->freeData();
+    MPI_Finalize();
+    delete RS;
+    return;
+  }
+
+  /* Free the data */
+  if (!RS->freeData()) {
+    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_MPI_OMP" << std::endl;
+    MPI_Finalize();
+    delete RS;
+    return;
+  }
+
+  /* Print the timing */
+  int myRank = -1;
+  MPI_Comm_rank( MPI_COMM_WORLD, &myRank );
+  if ( myRank == 0  ) {
+    RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
+    bool headerPrinted = false;
+    for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
+      RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+      std::string kernelName = BenchTypeTable[i].Notes;
+      printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+    }
+  }
+
+  /* Free the RS_MPI_OMP object, finalize MPI */
+  MPI_Finalize();
+  delete RS;
 }
 #endif
 
+/************************************************************************************/
 #ifdef _ENABLE_OPENSHMEM_
 void runBenchOpenSHMEM( RSOpts *Opts ) {
   // TODO: runBenchOpenSHMEM()
 }
 #endif
 
+/************************************************************************************/
 #ifdef _ENABLE_CUDA_
 void runBenchCUDA( RSOpts *Opts ) {
   // TODO: runBenchCUDA()
 }
 #endif
 
+/************************************************************************************/
 #ifdef _ENABLE_MPI_CUDA_
 void runBenchMPICUDA( RSOpts *Opts ) {
   // TODO: runBenchMPICUDA()
 }
 #endif
 
+/************************************************************************************/
 int main( int argc, char **argv ) {
   RSOpts *Opts = new RSOpts();
   
@@ -182,5 +240,6 @@ int main( int argc, char **argv ) {
 
   return 0;
 }
+/************************************************************************************/
 
 // EOF

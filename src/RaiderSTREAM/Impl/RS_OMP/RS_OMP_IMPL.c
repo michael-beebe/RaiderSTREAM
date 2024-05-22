@@ -312,4 +312,5 @@ void centralTriad(
     a[0] = b[0] + scalar * c[0];
 }
 
-// EOF
+/* EOF */
+

@@ -2,7 +2,7 @@ set(RSMPISrcs
 )
 
 if (ENABLE_MPI_OMP)
-  set(RSMPIOMPSrcs ${RSMPIOMPSrcs} RS_MPI.h RS_MPI.cpp RS_MPI_IMPL.c)
+  set(RSMPIOMPSrcs ${RSMPIOMPSrcs} RS_MPI_OMP.h RS_MPI_OMP.cpp RS_MPI_OMP_IMPL.c)
 endif()
 
 include_directories(${RS_INCLUDE_PATH})

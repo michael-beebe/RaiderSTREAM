@@ -12,14 +12,14 @@
 #ifndef _RS_MPI_OMP_H_
 #define _RS_MPI_OMP_H_
 
-#include <mpih.h>
+#include <mpi.h>
 #include <omp.h>
 
 #include "RaiderSTREAM/RaiderSTREAM.h"
 
 class RS_MPI_OMP : public RSBaseImpl {
 private:
-  std::string kernelNameClass
+  std::string kernelName;
   ssize_t streamArraySize;
   int lArgc;
   char **lArgv;
@@ -35,7 +35,7 @@ private:
 public:
   RS_MPI_OMP(const RSOpts& opts);
 
-  ~RS_OMP();
+  ~RS_MPI_OMP();
 
   virtual bool execute(
     double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS
@@ -44,122 +44,122 @@ public:
   virtual bool allocateData() override;
 
   virtual bool freeData() override;
-}
+};
 
-extern "C" {
+extern "C" { // FIXME: these might need to take in a `int numPEs` argument
   void seqCopy(
     double *a, double *b, double *c,
-    ssize_t stream_array_size
+    ssize_t chunkSize
   );
 
   void seqScale(
     double *a, double *b, double *c,
-    ssize_t stream_array_size, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void seqAdd(
     double *a, double *b, double *c,
-    ssize_t stream_array_size
+    ssize_t chunkSize
   );
 
   void seqTriad(
     double *a, double *b, double *c,
-    ssize_t stream_array_size, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void gatherCopy(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t stream_array_size
+    ssize_t chunkSize
   );
 
   void gatherScale(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t stream_array_size, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void gatherAdd(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t stream_array_size
+    ssize_t chunkSize
   );
 
   void gatherTriad(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t stream_array_size, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void scatterCopy(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t stream_array_size
+    ssize_t chunkSize
   );
 
   void scatterScale(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t stream_array_size, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void scatterAdd(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t stream_array_size
+    ssize_t chunkSize
   );
 
   void scatterTriad(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t stream_array_size, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void sgCopy(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t stream_array_size
+    ssize_t chunkSize
   );
 
   void sgScale(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t stream_array_size, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void sgAdd(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
-    ssize_t stream_array_size
+    ssize_t chunkSize
   );
 
   void sgTriad(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
-    ssize_t stream_array_size, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void centralCopy(
     double *a, double *b, double *c,
-    ssize_t stream_array_size
+    ssize_t chunkSize
   );
 
   void centralScale(
     double *a, double *b, double *c,
-    ssize_t stream_array_size,
+    ssize_t chunkSize,
     double scalar
   );
 
   void centralAdd(
     double *a, double *b, double *c,
-    ssize_t stream_array_size
+    ssize_t chunkSize
   );
 
   void centralTriad(
     double *a, double *b, double *c,
-    ssize_t stream_array_size, double scalar
+    ssize_t chunkSize, double scalar
   );
 }
 
-#endif // _RS_MPI_OMP_H_
-#endif // _ENABLE_MPI_OMP_
+#endif /* _RS_MPI_OMP_H_ */
+#endif /* _ENABLE_MPI_OMP_ */
