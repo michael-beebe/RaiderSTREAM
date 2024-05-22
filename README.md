@@ -2,31 +2,6 @@
 ---------------------------
 RaiderSTREAM is a variation of the STREAM benchmark for high-performance computing (HPC), developed in the Data-Intensive Scalable Computing Laboratory at Texas Tech University.
 
-## Table of Contents
-- [RaiderSTREAM](#raiderstream)
-  - [Table of Contents](#table-of-contents)
-  - [How is RaiderSTREAM different from STREAM?](#how-is-raiderstream-different-from-stream)
-  - [Benchmark Kernels](#benchmark-kernels)
-  - [How are bytes counted?](#how-are-bytes-counted)
-  - [Setting Problem Size](#setting-problem-size)
-  - [Building RaiderSTREAM](#building-raiderstream)
-    - [Original STREAM Implementation](#original-stream-implementation)
-    - [Pure OpenMP](#pure-openmp)
-    - [MPI](#mpi)
-    - [OpenSHMEM](#openshmem)
-    - [CUDA (Single GPU)](#cuda-single-gpu)
-    - [CUDA (Multi-Node, Mutli-GPU)](#cuda-multi-node-mutli-gpu)
-    - [Clean build directory:](#clean-build-directory)
-    - [Clean output directory:](#clean-output-directory)
-    - [Empty IDX1.txt, IDX2.txt, IDX3.txt:](#empty-idx1txt-idx2txt-idx3txt)
-  - [Compiler Flags and Environment Variables](#compiler-flags-and-environment-variables)
-  - [Run Rules](#run-rules)
-  - [Irregular Memory Access Patterns](#irregular-memory-access-patterns)
-  - [Multi-Node Support](#multi-node-support)
-  - [Custom Memory Access Patterns](#custom-memory-access-patterns)
-  - [Citing RaiderSTREAM](#citing-raiderstream)
-  - [Acknowledgements](#acknowledgements)
-
 ## How is RaiderSTREAM different from STREAM?<a id="rstream_vs_stream"></a>
 
 There are two primary limitations of STREAM with respect to HPC.
@@ -35,9 +10,7 @@ There are two primary limitations of STREAM with respect to HPC.
 
 With RaiderSTREAM, we address these two limitations by:
 * Adding <i><b>gather</b></i> and <i><b>scatter</b></i> variations of the STREAM kernels to mimic the irregular memory behavior found in most scientific applications.
-* Adding multi-node support by reimplementing the benchmark using the <i><b>MPI</b></i> and <i><b>OpenSHMEM</b></i> programming models
-
-We have also added multi-node GPU support to better accomodate 
+* Adding multi-process support by reimplementing the benchmark using the <i><b>MPI</b></i> and <i><b>OpenSHMEM</b></i> programming models.
 
 ## Benchmark Kernels<a id="kernels"></a>
 | Name | Kernel  | Bytes/Iter | FLOPs/Iter |
@@ -70,127 +43,28 @@ We have also added multi-node GPU support to better accomodate
 * $\gamma$ = size in bytes of `STREAM_TYPE` (8 bytes for double, 4 bytes for int) 
 * $\lambda$ = `STREAM_ARRAY_SIZE`
 
-## Setting Problem Size<a id="setting_problem_size"></a>
-Different from the original STREAM implementation, we allow users to set the problem size at runtime to make RaiderSTREAM more suitable for automating the testing of scalability using different problem size. The easiest way to run RaiderSTREAM is using and modifying the run script to meet your use cases. You can change the `STREAM_ARRAY_SIZE` variable to set the problem size at runtime.
 
-If you insist on compiling files individually, you can set the problem size using the `-n` flag at runtime. For example:
-```
-mpirun -np 2 ./stream.exe -n <STREAM_ARRAY_SIZE>
-```
+<!-- TODO: ## Building RaiderSTREAM<a id="build"></a> -->
 
-## Building RaiderSTREAM<a id="build"></a>
-Running 
-```
-make
-```
-or 
-```
-make all
-```
+<!-- TODO: ## RaiderSTREAM Options<a id="build"></a> -->
 
-from the project root directory will build each RaiderSTREAM implementation.
-
-To build a single implementations, the following commands are available:
-
-### Original STREAM Implementation
-```
-make stream_original
-```
-
-### Pure OpenMP
-```
-make stream_omp
-```
-
-### MPI
-```
-make stream_mpi
-```
-
-### OpenSHMEM
-```
-make stream_oshmem
-```
-
-### CUDA (Single GPU)
-```
-make stream_cuda
-```
-
-### CUDA (Multi-Node, Mutli-GPU)
-```
-make stream_cuda_mpi
-```
-
-### Clean build directory:
-```
-make clean_build
-```
-### Clean output directory:
-```
-make clean_outputs
-```
-### Empty IDX1.txt, IDX2.txt, IDX3.txt:
-```
-make clean_inputs
-```
-
-## Compiler Flags and Environment Variables<a id="flags"></a>
-* `NTIMES`: the kernels are run on each element of the STREAM arrays `NTIMES` times. The best MB/s for each kernel amongst all `NTIMES` runs is reported in the benchmark's output.
-    * Ex: `-DNTIMES=10`
-<br/>
-
-* `DEBUG`: prints "debug" output
-    * Ex: `-DDEBUG`
-<br/>
-
-* `VERBOSE`: prints "verbose" memory usage and validation output
-    * Ex: `-DBERBOSE`
-<br/>
-
-* `TUNED`: if you look at the bottom of the .c source files, there are additional blank functions that users can write in their own custom kernels. If you want to run your custom kernels, pass in this flag.
-    * Ex: `-DTUNED`
-
-* `CUSTOM`: enable this flag to use your own IDX arrays for the scatter/gather kernels. The source code will read inputs from IDX1.txt and IDX2.txt.
-    * Ex: `-DTUNED`
-
-* `NUM_GPUS`: sets the number of GPUs to be used per node. If not set, it will be set to 1.
-    * Ex: `-DNUM_GPUS=2`
 
 ## Run Rules<a id="run_rules"></a>
-STREAM is intended to measure the bandwidth from main memory. However, it can be used to measure cache bandwidth as well by the adjusting the  STREAM_ARRAY_SIZE such that the memory needed to allocate the arrays can fit in the cache level of interest. The general rule for STREAM_ARRAY_SIZE is that each array must be at least 4x the size of the sum of all the lastlevel caches, or 1 million elements – whichever is larger
+STREAM is intended to measure the bandwidth from main memory. However, it can be used to measure cache bandwidth as well by the adjusting the STREAM array size such that the memory needed to allocate the arrays can fit in the cache level of interest. The general rule for STREAM array size is that each array must be at least 4x the size of the sum of all the lastlevel caches, or 1 million elements – whichever is larger
 
 ## Irregular Memory Access Patterns<a id="irregular_mem_access"></a>
 The gather and scatter benchmark kernels are similar in that they both provide insight into the real-world performance one can expect from a given system in a scientific computing setting. However, there are differences between these two memory access patterns that should be understood.
 * The gather memory access pattern is characterized by randomly indexed loads coupled with sequential stores. This can help give us an understanding of read performance from sparse datasets such as arrays or matrices.
 * The scatter memory access pattern can be considered the inverse of its gather counterpart, and is characterized by the combination of sequential loads coupled together with randomly indexed stores. This pattern can give us an understanding of write performance to sparse datasets.
+<!-- TODO: Scater-gather -->
+<!-- TODO: Central -->
 
 ![Gather Scatter](.github/readme_images/gather_scatter.png)
 
-## Multi-Node Support<a id="multi_node_support"></a>
-RadierSTREAM does not currently use any inter-process communication routines such as MPI_SEND or SHMEM_PUT within the benchmark kernels. Instead, the programming models are essentially leveraged as a <b>resource allocator</b>. It is worth noting that for the multi-node implementations, each processing element DOES NOT get its own copy of the STREAM arrays. The STREAM arrays are distributed evenly across a user-specified number of processing elements (PEs), each PE computes the kernel and writes the result back to its own array segment.
+## Multi-process Support<a id="multi_node_support"></a>
+RadierSTREAM does not currently use any inter-process communication routines such as MPI_SEND or SHMEM_PUT within the benchmark kernels. Instead, the programming models are essentially leveraged as a <b>resource allocator</b>. It is worth noting that for the multi-process implementations, each processing element DOES NOT get its own copy of the STREAM arrays. The STREAM arrays are distributed evenly across a user-specified number of processing elements (PEs), each PE computes the kernel and writes the result back to its own array segment.
 
-![Multi-Node Support](.github/readme_images/oshrun.png)
-
-## Custom Memory Access Patterns<a id="custom"></a>
-To make RaiderSTREAM more configurable. We have added a simple way to input your own IDX array indices. If `-DCUSTOM` is enabled at compile time, the source code will read in the contents of IDX1.txt and IDX2.txt to the respective IDX arrays used simulate irregularity in the scatter/gather kernels.
-
-For the OpenMP implementation, the number of array indices must match the user-specified STREAM_ARRAY_SIZE, and each array index must be on its own line in the file, otherwise an error will occur.
-
-For the MPI and OpenSHMEM implementations, the number of indices in the IDX files only needs to match STREAM_ARRAY_SIZE/numbPEs. 
-
-To make it easier to populate these input files, we have included a file called arraygen.c, where you can write your own function for producing the indices in a way that matches your use case of interest. If that is done properly, you can populate the IDX files like so:
-```
-gcc arraygen.c -o arraygen.exe
-./arraygen.exe > IDX1.txt
-./arraygen.exe > IDX2.txt
-./arraygen.exe > IDX3.txt
-```
-
-Or you could use `arraygen.sh` script (that simply does the above) to save yourelf from having to enter a few extra commands:
-```
-source arraygen.sh
-```
+![Multi-process Support](.github/readme_images/oshrun.png)
 
 ## Citing RaiderSTREAM<a id="citing"></a>
 To properly cite RaiderSTREAM, please use the following reference:
