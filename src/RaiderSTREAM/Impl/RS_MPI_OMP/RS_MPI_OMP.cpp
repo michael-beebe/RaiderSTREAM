@@ -82,7 +82,12 @@ bool RS_MPI_OMP::allocateData() {
 }
 
 bool RS_MPI_OMP::freeData() {
-  // TODO: RS_MPI_OMP::freeData
+  if ( a ) { MPI_Free_mem( a ); }
+  if ( b ) { MPI_Free_mem( b ); }
+  if ( c ) { MPI_Free_mem( c ); }
+  if ( idx1 ) { MPI_Free_mem( idx1 ); }
+  if ( idx2 ) { MPI_Free_mem( idx2 ); }
+  if ( idx3 ) { MPI_Free_mem( idx3 ); }
   return true;
 }
 
