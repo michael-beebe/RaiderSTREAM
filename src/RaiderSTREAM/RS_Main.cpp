@@ -224,6 +224,17 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
   }
 
   /* Allocate Data */
+  double *SHMEM_TIMES = static_cast<double*>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_MBPS = static_cast<double*>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_FLOPS = static_cast<double*>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+
+  double *SHMEM_BYTES = static_cast<double*>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_FLOATOPS = static_cast<double*>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  for (int i = 0; i < NUM_KERNELS; i++) {
+    SHMEM_BYTES[i] = Opts->BYTES[i];
+    SHMEM_FLOATOPS[i] = Opts->FLOATOPS[i];
+  }
+
   if (!RS->allocateData()) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_SHMEM_OMP" << std::endl;
     shmem_finalize();
@@ -232,13 +243,21 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
   }
 
   /* Execute the benchmark */
-  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+  // FIXME:
+  if (!RS->execute(SHMEM_TIMES, SHMEM_MBPS, SHMEM_FLOPS, SHMEM_BYTES, SHMEM_FLOATOPS)) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_SHMEM_OMP" << std::endl;
     RS->freeData();
     shmem_finalize();
     delete RS;
     return;
   }
+  // if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+  //   std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_SHMEM_OMP" << std::endl;
+  //   RS->freeData();
+  //   shmem_finalize();
+  //   delete RS;
+  //   return;
+  // }
 
   /* Free the data */
   if (!RS->freeData()) {
@@ -252,6 +271,7 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
   if (myRank == 0) {
     Opts->printLogo();
     Opts->printOpts();
+    // std::cout << "Symmetric heap size: " << shmem_info_get_heap_size() << std::endl;
     #pragma omp parallel
     {
       #pragma omp single
@@ -269,6 +289,13 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
   }
 
   /* Free the RS_SHMEM_OMP object, finalize OpenSHMEM */
+  // FIXME:
+  shmem_free(SHMEM_TIMES);
+  shmem_free(SHMEM_MBPS);
+  shmem_free(SHMEM_FLOPS);
+  shmem_free(SHMEM_BYTES);
+  shmem_free(SHMEM_FLOATOPS);
+
   shmem_finalize();
   delete RS;
 }

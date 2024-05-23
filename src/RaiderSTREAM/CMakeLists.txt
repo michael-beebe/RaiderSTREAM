@@ -31,3 +31,4 @@ if (ENABLE_MPI_CUDA)
 endif()
 
 install(TARGETS raiderstream DESTINATION bin)
+

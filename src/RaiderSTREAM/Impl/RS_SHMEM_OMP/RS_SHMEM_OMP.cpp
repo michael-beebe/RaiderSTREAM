@@ -96,8 +96,12 @@ bool RS_SHMEM_OMP::execute(
   int myRank  = shmem_my_pe(); /* Current rank */
   int size    = shmem_n_pes(); /* Number of shmem ranks */
   size_t syncSize = SHMEM_SYNC_SIZE;
-  double *pWrk = new double[size];
-  long *pSync = new long[syncSize];
+
+  double *pWrk = static_cast<double*>(shmem_malloc(size * sizeof(double)));
+  long *pSync = static_cast<long*>(shmem_malloc(syncSize * sizeof(long)));
+  for (size_t i = 0; i < syncSize; ++i) {
+    pSync[i] = SHMEM_SYNC_VALUE;
+  }
 
   shmem_barrier_all();
 
@@ -115,10 +119,10 @@ bool RS_SHMEM_OMP::execute(
   switch ( kType ) {
     /* SEQUENTIAL KERNELS */
     case RSBaseImpl::RS_SEQ_COPY:
-      shmem_barrier_all(); // Synchronize all PEs
+      shmem_barrier_all();
       startTime = this->mySecond();
       seqCopy(a, b, c, chunkSize);
-      shmem_barrier_all(); // Synchronize all PEs
+      shmem_barrier_all();
       endTime = this->mySecond();
 
       runTime = this->calculateRunTime(startTime, endTime);
@@ -133,8 +137,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_COPY], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_COPY], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_SEQ_SCALE:
@@ -156,8 +160,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_SCALE], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_SCALE], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_SEQ_ADD:
@@ -179,8 +183,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_ADD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_ADD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_SEQ_TRIAD:
@@ -202,8 +206,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_TRIAD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_TRIAD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     /* GATHER KERNELS */
@@ -226,8 +230,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_COPY], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_COPY], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_GATHER_SCALE:
@@ -249,8 +253,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_SCALE], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_SCALE], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_GATHER_ADD:
@@ -272,8 +276,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_ADD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_ADD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_GATHER_TRIAD:
@@ -295,8 +299,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_TRIAD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_TRIAD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
     
     /* SCATTER KERNELS */
@@ -319,8 +323,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_COPY], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_COPY], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_SCATTER_SCALE:
@@ -342,8 +346,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_SCALE], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_SCALE], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_SCATTER_ADD:
@@ -365,8 +369,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_ADD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_ADD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_SCATTER_TRIAD:
@@ -388,8 +392,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_TRIAD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_TRIAD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
     
     /* SCATTER-GATHER KERNELS */
@@ -412,8 +416,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_COPY], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_COPY], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_SG_SCALE:
@@ -435,8 +439,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_SCALE], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_SCALE], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_SG_ADD:
@@ -458,8 +462,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_ADD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_ADD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_SG_TRIAD:
@@ -481,8 +485,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_TRIAD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_TRIAD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
     
     /* CENTRAL KERNELS */
@@ -505,8 +509,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_COPY], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_COPY], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_CENTRAL_SCALE:
@@ -528,8 +532,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_SCALE], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_SCALE], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_CENTRAL_ADD:
@@ -551,8 +555,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_ADD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_ADD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
     case RSBaseImpl::RS_CENTRAL_TRIAD:
@@ -574,8 +578,8 @@ bool RS_SHMEM_OMP::execute(
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_TRIAD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_TRIAD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
       break;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -596,15 +600,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_COPY], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_COPY], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_COPY], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_SEQ_SCALE */
       shmem_barrier_all();
@@ -621,15 +625,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_SCALE], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_SCALE], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_SCALE], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_SEQ_ADD */
       shmem_barrier_all();
@@ -646,15 +650,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_ADD], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_ADD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_ADD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_SEQ_TRIAD */
       shmem_barrier_all();
@@ -671,15 +675,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_TRIAD], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_TRIAD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_TRIAD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_GATHER_COPY */
       shmem_barrier_all();
@@ -696,15 +700,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_COPY], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_COPY], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_COPY], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_GATHER_SCALE */
       shmem_barrier_all();
@@ -721,15 +725,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_SCALE], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_SCALE], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_SCALE], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_GATHER_ADD */
       shmem_barrier_all();
@@ -746,15 +750,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_ADD], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_ADD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_ADD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_GATHER_TRIAD */
       shmem_barrier_all();
@@ -771,15 +775,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_TRIAD], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_TRIAD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_TRIAD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_SCATTER_COPY */
       shmem_barrier_all();
@@ -796,15 +800,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_COPY], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_COPY], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_COPY], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_SCATTER_SCALE */
       shmem_barrier_all();
@@ -821,15 +825,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_SCALE], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_SCALE], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_SCALE], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_SCATTER_ADD */
       shmem_barrier_all();
@@ -846,15 +850,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_ADD], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_ADD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_ADD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_SCATTER_TRIAD */
       shmem_barrier_all();
@@ -871,15 +875,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_TRIAD], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_TRIAD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_TRIAD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_SG_COPY */
       shmem_barrier_all();
@@ -896,15 +900,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_COPY], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_COPY], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_COPY], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_SG_SCALE */
       shmem_barrier_all();
@@ -921,15 +925,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_SCALE], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_SCALE], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_SCALE], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_SG_ADD */
       shmem_barrier_all();
@@ -946,15 +950,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_ADD], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_ADD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_ADD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_SG_TRIAD */
       shmem_barrier_all();
@@ -971,15 +975,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_TRIAD], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_TRIAD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_TRIAD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_CENTRAL_COPY */
       shmem_barrier_all();
@@ -996,15 +1000,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_COPY], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_COPY], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_COPY], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_CENTRAL_SCALE */
       shmem_barrier_all();
@@ -1021,15 +1025,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_SCALE], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_SCALE], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_SCALE], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_CENTRAL_ADD */
       shmem_barrier_all();
@@ -1046,15 +1050,15 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_ADD], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_ADD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_ADD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
+      shmem_free(pWrk);
+      shmem_free(pSync);
 
       /* RS_CENTRAL_TRIAD */
       shmem_barrier_all();
@@ -1071,15 +1075,13 @@ bool RS_SHMEM_OMP::execute(
       localMbps = mbps;
       localFlops = flops;
 
-      pWrk = new double[size];
-      pSync = new long[syncSize];
+      pWrk = static_cast<double*>(shmem_malloc( size * sizeof(double) ));
+      pSync = static_cast<long*>(shmem_malloc( size * sizeof(long) ));
 
       shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_TRIAD], &localRunTime, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_TRIAD], &localMbps, 1, 0, 0, size, pWrk, pSync);
       shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_TRIAD], &localFlops, 1, 0, 0, size, pWrk, pSync);
 
-      delete[] pWrk;
-      delete[] pSync;
       break;
 
     /* NO KERNELS, SOMETHING IS WRONG */
@@ -1089,6 +1091,9 @@ bool RS_SHMEM_OMP::execute(
       }
       return false;
   }
+
+  shmem_free(pWrk);
+  shmem_free(pSync);
   return true;
 }
 
