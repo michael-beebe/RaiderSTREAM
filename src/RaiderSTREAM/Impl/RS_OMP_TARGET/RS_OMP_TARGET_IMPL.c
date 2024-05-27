@@ -20,9 +20,12 @@ void seqCopy(
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[j] = a[j];
+  #pragma omp target data map(tofrom: a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize])
+  {
+    #pragma omp parallel for
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[j] = a[j];
+  }
 }
 
 /**************************************************
@@ -35,9 +38,12 @@ void seqScale(
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    b[j] = scalar * c[j];
+  #pragma omp target data map(tofrom: a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize])
+  {
+    #pragma omp parallel for
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      b[j] = scalar * c[j];
+  }
 }
 
 /**************************************************
