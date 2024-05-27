@@ -61,12 +61,31 @@ bool RS_MPI_OMP::allocateData() {
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx3);
 
   /* Initialize the local chunks */
-  initStreamArray(a, chunkSize, 1.0);
-  initStreamArray(b, chunkSize, 2.0);
-  initStreamArray(c, chunkSize, 0.0);
-  initRandomIdxArray(idx1, chunkSize);
-  initRandomIdxArray(idx2, chunkSize);
-  initRandomIdxArray(idx3, chunkSize);
+  #ifdef _ARRAYGEN_
+    initReadIdxArray(idx1, chunkSize, "RaiderSTREAM/arraygen/IDX1.txt");
+    initReadIdxArray(idx2, chunkSize, "RaiderSTREAM/arraygen/IDX2.txt");
+    initReadIdxArray(idx3, chunkSize, "RaiderSTREAM/arraygen/IDX3.txt");
+  #else
+    initRandomIdxArray(idx1, chunkSize);
+    initRandomIdxArray(idx2, chunkSize);
+    initRandomIdxArray(idx3, chunkSize);
+  #endif
+
+  #ifdef _DEBUG_
+    if ( myRank == 0 ) {
+      std::cout << "===================================================================================" << std::endl;
+      std::cout << " RaiderSTREAM Array Info:" << std::endl;
+      std::cout << "===================================================================================" << std::endl;
+      std::cout << "streamArraySize         = " << streamArraySize << std::endl;
+      std::cout << "a[streamArraySize-1]    = " << a[streamArraySize-1] << std::endl;
+      std::cout << "b[streamArraySize-1]    = " << b[streamArraySize-1] << std::endl;
+      std::cout << "c[streamArraySize-1]    = " << c[streamArraySize-1] << std::endl;
+      std::cout << "idx1[streamArraySize-1] = " << idx1[streamArraySize-1] << std::endl;
+      std::cout << "idx2[streamArraySize-1] = " << idx2[streamArraySize-1] << std::endl;
+      std::cout << "idx3[streamArraySize-1] = " << idx3[streamArraySize-1] << std::endl;
+      std::cout << "===================================================================================" << std::endl;
+    }
+  #endif
 
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -111,7 +130,7 @@ bool RS_MPI_OMP::execute(
     chunkSize += remainder;
   }
 
-  RSBaseImpl::RSKernelType kType = this->getKernelType();
+  RSBaseImpl::RSKernelType kType = getKernelType();
 
   switch ( kType ) {
     /* SEQUENTIAL KERNELS */
@@ -122,9 +141,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -142,9 +161,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -162,9 +181,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -182,9 +201,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -203,9 +222,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -223,9 +242,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -243,9 +262,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -263,9 +282,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -284,9 +303,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -304,9 +323,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -324,9 +343,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -344,9 +363,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -365,9 +384,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -385,9 +404,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -405,9 +424,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -425,9 +444,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -446,9 +465,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -466,9 +485,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -486,9 +505,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -506,9 +525,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -529,9 +548,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -548,9 +567,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -567,9 +586,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -586,9 +605,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -605,9 +624,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -624,9 +643,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -643,9 +662,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -662,9 +681,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -681,9 +700,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -700,9 +719,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -719,9 +738,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -738,9 +757,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -757,9 +776,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -776,9 +795,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -795,9 +814,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -814,9 +833,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -833,9 +852,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -852,9 +871,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -871,9 +890,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -890,9 +909,9 @@ bool RS_MPI_OMP::execute(
       MPI_Barrier(MPI_COMM_WORLD);
       endTime = MPI_Wtime();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -906,7 +925,7 @@ bool RS_MPI_OMP::execute(
     /* NO KERNELS, SOMETHING IS WRONG */
     default:
       if ( myRank == 0 ) {
-        std::cout << "RS_OMP::execute() - ERROR: KERNEL NOT SET" << std::endl;
+        std::cout << "RS_MPI_OMP::execute() - ERROR: KERNEL NOT SET" << std::endl;
       }
       return false;
   }

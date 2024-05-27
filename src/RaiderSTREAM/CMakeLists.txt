@@ -1,4 +1,5 @@
 add_subdirectory(Impl)
+add_subdirectory(Arraygen)
 
 include_directories(${RS_INCLUDE_PATH})
 

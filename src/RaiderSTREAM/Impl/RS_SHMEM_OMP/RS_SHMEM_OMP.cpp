@@ -61,9 +61,32 @@ bool RS_SHMEM_OMP::allocateData() {
   initStreamArray(a, chunkSize, 1.0);
   initStreamArray(b, chunkSize, 2.0);
   initStreamArray(c, chunkSize, 0.0);
-  initRandomIdxArray(idx1, chunkSize);
-  initRandomIdxArray(idx2, chunkSize);
-  initRandomIdxArray(idx3, chunkSize);
+
+  #ifdef _ARRAYGEN_
+    initReadIdxArray(idx1, chunkSize, "RaiderSTREAM/arraygen/IDX1.txt");
+    initReadIdxArray(idx2, chunkSize, "RaiderSTREAM/arraygen/IDX2.txt");
+    initReadIdxArray(idx3, chunkSize, "RaiderSTREAM/arraygen/IDX3.txt");
+  #else
+    initRandomIdxArray(idx1, chunkSize);
+    initRandomIdxArray(idx2, chunkSize);
+    initRandomIdxArray(idx3, chunkSize);
+  #endif
+
+  #ifdef _DEBUG_
+    if ( myRank == 0 ) {
+      std::cout << "===================================================================================" << std::endl;
+      std::cout << " RaiderSTREAM Array Info:" << std::endl;
+      std::cout << "===================================================================================" << std::endl;
+      std::cout << "streamArraySize         = " << streamArraySize << std::endl;
+      std::cout << "a[streamArraySize-1]    = " << a[streamArraySize-1] << std::endl;
+      std::cout << "b[streamArraySize-1]    = " << b[streamArraySize-1] << std::endl;
+      std::cout << "c[streamArraySize-1]    = " << c[streamArraySize-1] << std::endl;
+      std::cout << "idx1[streamArraySize-1] = " << idx1[streamArraySize-1] << std::endl;
+      std::cout << "idx2[streamArraySize-1] = " << idx2[streamArraySize-1] << std::endl;
+      std::cout << "idx3[streamArraySize-1] = " << idx3[streamArraySize-1] << std::endl;
+      std::cout << "===================================================================================" << std::endl;
+    }
+  #endif
 
   shmem_barrier_all();
 
@@ -114,20 +137,20 @@ bool RS_SHMEM_OMP::execute(
     chunkSize += remainder;
   }
 
-  RSBaseImpl::RSKernelType kType = this->getKernelType();
+  RSBaseImpl::RSKernelType kType = getKernelType();
 
   switch ( kType ) {
     /* SEQUENTIAL KERNELS */
     case RSBaseImpl::RS_SEQ_COPY:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqCopy(a, b, c, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
 
       localRunTime = runTime;
       localMbps = mbps;
@@ -143,14 +166,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_SEQ_SCALE:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqScale(a, b, c, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -166,14 +189,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_SEQ_ADD:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqAdd(a, b, c, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -189,14 +212,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_SEQ_TRIAD:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqTriad(a, b, c, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -213,14 +236,14 @@ bool RS_SHMEM_OMP::execute(
     /* GATHER KERNELS */
     case RSBaseImpl::RS_GATHER_COPY:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherCopy(a, b, c, idx1, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -236,14 +259,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_GATHER_SCALE:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherScale(a, b, c, idx1, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -259,14 +282,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_GATHER_ADD:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherAdd(a, b, c, idx1, idx2, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -282,14 +305,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_GATHER_TRIAD:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -306,14 +329,14 @@ bool RS_SHMEM_OMP::execute(
     /* SCATTER KERNELS */
     case RSBaseImpl::RS_SCATTER_COPY:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterCopy(a, b, c, idx1, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -329,14 +352,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_SCATTER_SCALE:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterScale(a, b, c, idx1, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -352,14 +375,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_SCATTER_ADD:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterAdd(a, b, c, idx1, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -375,14 +398,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_SCATTER_TRIAD:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterTriad(a, b, c, idx1, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -399,14 +422,14 @@ bool RS_SHMEM_OMP::execute(
     /* SCATTER-GATHER KERNELS */
     case RSBaseImpl::RS_SG_COPY:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgCopy(a, b, c, idx1, idx2, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -422,14 +445,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_SG_SCALE:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgScale(a, b, c, idx1, idx2, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -445,14 +468,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_SG_ADD:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgAdd(a, b, c, idx1, idx2, idx3, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -468,14 +491,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_SG_TRIAD:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -492,14 +515,14 @@ bool RS_SHMEM_OMP::execute(
     /* CENTRAL KERNELS */
     case RSBaseImpl::RS_CENTRAL_COPY:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralCopy(a, b, c, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -515,14 +538,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_CENTRAL_SCALE:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralScale(a, b, c, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -538,14 +561,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_CENTRAL_ADD:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralAdd(a, b, c, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -561,14 +584,14 @@ bool RS_SHMEM_OMP::execute(
 
     case RSBaseImpl::RS_CENTRAL_TRIAD:
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralTriad(a, b, c, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -587,14 +610,14 @@ bool RS_SHMEM_OMP::execute(
     case RSBaseImpl::RS_ALL:
       /* RS_SEQ_COPY */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqCopy(a, b, c, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -612,14 +635,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_SEQ_SCALE */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqScale(a, b, c, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -637,14 +660,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_SEQ_ADD */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqAdd(a, b, c, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -662,14 +685,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_SEQ_TRIAD */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqTriad(a, b, c, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -687,14 +710,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_GATHER_COPY */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherCopy(a, b, c, idx1, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -712,14 +735,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_GATHER_SCALE */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherScale(a, b, c, idx1, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -737,14 +760,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_GATHER_ADD */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherAdd(a, b, c, idx1, idx2, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -762,14 +785,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_GATHER_TRIAD */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -787,14 +810,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_SCATTER_COPY */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterCopy(a, b, c, idx1, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -812,14 +835,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_SCATTER_SCALE */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterScale(a, b, c, idx1, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -837,14 +860,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_SCATTER_ADD */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterAdd(a, b, c, idx1, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -862,14 +885,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_SCATTER_TRIAD */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterTriad(a, b, c, idx1, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -887,14 +910,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_SG_COPY */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgCopy(a, b, c, idx1, idx2, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -912,14 +935,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_SG_SCALE */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgScale(a, b, c, idx1, idx2, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -937,14 +960,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_SG_ADD */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgAdd(a, b, c, idx1, idx2, idx3, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -962,14 +985,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_SG_TRIAD */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -987,14 +1010,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_CENTRAL_COPY */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralCopy(a, b, c, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -1012,14 +1035,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_CENTRAL_SCALE */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralScale(a, b, c, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -1037,14 +1060,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_CENTRAL_ADD */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralAdd(a, b, c, chunkSize);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -1062,14 +1085,14 @@ bool RS_SHMEM_OMP::execute(
 
       /* RS_CENTRAL_TRIAD */
       shmem_barrier_all();
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralTriad(a, b, c, chunkSize, scalar);
       shmem_barrier_all();
-      endTime = this->mySecond();
+      endTime = mySecond();
 
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
       
       localRunTime = runTime;
       localMbps = mbps;
@@ -1087,7 +1110,7 @@ bool RS_SHMEM_OMP::execute(
     /* NO KERNELS, SOMETHING IS WRONG */
     default:
       if ( myRank == 0 ) {
-        std::cout << "RS_OMP::execute() - ERROR: KERNEL NOT SET" << std::endl;
+        std::cout << "RS_SHMEM_OMP::execute() - ERROR: KERNEL NOT SET" << std::endl;
       }
       return false;
   }

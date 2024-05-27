@@ -37,13 +37,15 @@ bool RS_OMP::allocateData() {
   idx2 = new ssize_t[streamArraySize];
   idx3 = new ssize_t[streamArraySize];
 
-  initStreamArray(a, streamArraySize, 1.0);
-  this->initStreamArray(b, streamArraySize, 2.0);
-  this->initStreamArray(c, streamArraySize, 0.0);
-
-  this->initRandomIdxArray(idx1, streamArraySize);
-  this->initRandomIdxArray(idx2, streamArraySize);
-  this->initRandomIdxArray(idx3, streamArraySize);
+  #ifdef _ARRAYGEN_
+    initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
+    initReadIdxArray(idx2, streamArraySize, "RaiderSTREAM/arraygen/IDX2.txt");
+    initReadIdxArray(idx3, streamArraySize, "RaiderSTREAM/arraygen/IDX3.txt");
+  #else
+    initRandomIdxArray(idx1, streamArraySize);
+    initRandomIdxArray(idx2, streamArraySize);
+    initRandomIdxArray(idx3, streamArraySize);
+  #endif
 
   #ifdef _DEBUG_
   std::cout << "===================================================================================" << std::endl;
@@ -81,53 +83,53 @@ bool RS_OMP::execute(
   double mbps       = 0.0;
   double flops      = 0.0;
 
-  RSBaseImpl::RSKernelType kType = this->getKernelType();
+  RSBaseImpl::RSKernelType kType = getKernelType();
 
   switch ( kType ) {
     /* SEQUENTIAL KERNELS */
     case RSBaseImpl::RS_SEQ_COPY:
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqCopy(a, b, c, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
       TIMES[RSBaseImpl::RS_SEQ_COPY] = runTime;
       MBPS[RSBaseImpl::RS_SEQ_COPY] = mbps;
       FLOPS[RSBaseImpl::RS_SEQ_COPY] = flops;
       break;
 
     case RSBaseImpl::RS_SEQ_SCALE:
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqScale(a, b, c, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
       TIMES[RSBaseImpl::RS_SEQ_SCALE] = runTime;
       MBPS[RSBaseImpl::RS_SEQ_SCALE] = mbps;
       FLOPS[RSBaseImpl::RS_SEQ_SCALE] = flops;
       break;
 
     case RSBaseImpl::RS_SEQ_ADD:
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqAdd(a, b, c, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
       TIMES[RSBaseImpl::RS_SEQ_ADD] = runTime;
       MBPS[RSBaseImpl::RS_SEQ_ADD] = mbps;
       FLOPS[RSBaseImpl::RS_SEQ_ADD] = flops;
       break;
 
     case RSBaseImpl::RS_SEQ_TRIAD:
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqTriad(a, b, c, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
       TIMES[RSBaseImpl::RS_SEQ_TRIAD] = runTime;
       MBPS[RSBaseImpl::RS_SEQ_TRIAD] = mbps;
       FLOPS[RSBaseImpl::RS_SEQ_TRIAD] = flops;
@@ -135,48 +137,48 @@ bool RS_OMP::execute(
 
     /* GATHER KERNELS */
     case RSBaseImpl::RS_GATHER_COPY:
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherCopy(a, b, c, idx1, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
       TIMES[RSBaseImpl::RS_GATHER_COPY] = runTime;
       MBPS[RSBaseImpl::RS_GATHER_COPY] = mbps;
       FLOPS[RSBaseImpl::RS_GATHER_COPY] = flops;
       break;
 
     case RSBaseImpl::RS_GATHER_SCALE:
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherScale(a, b, c, idx1, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
       TIMES[RSBaseImpl::RS_GATHER_SCALE] = runTime;
       MBPS[RSBaseImpl::RS_GATHER_SCALE] = mbps;
       FLOPS[RSBaseImpl::RS_GATHER_SCALE] = flops;
       break;
 
     case RSBaseImpl::RS_GATHER_ADD:
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherAdd(a, b, c, idx1, idx2, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
       TIMES[RSBaseImpl::RS_GATHER_ADD] = runTime;
       MBPS[RSBaseImpl::RS_GATHER_ADD] = mbps;
       FLOPS[RSBaseImpl::RS_GATHER_ADD] = flops;
       break;
 
     case RSBaseImpl::RS_GATHER_TRIAD:
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherTriad(a, b, c, idx1, idx2, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
       TIMES[RSBaseImpl::RS_GATHER_TRIAD] = runTime;
       MBPS[RSBaseImpl::RS_GATHER_TRIAD] = mbps;
       FLOPS[RSBaseImpl::RS_GATHER_TRIAD] = flops;
@@ -184,48 +186,48 @@ bool RS_OMP::execute(
     
     /* SCATTER KERNELS */
     case RSBaseImpl::RS_SCATTER_COPY:
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterCopy(a, b, c, idx1, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
       TIMES[RSBaseImpl::RS_SCATTER_COPY] = runTime;
       MBPS[RSBaseImpl::RS_SCATTER_COPY] = mbps;
       FLOPS[RSBaseImpl::RS_SCATTER_COPY] = flops;
       break;
 
     case RSBaseImpl::RS_SCATTER_SCALE:
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterScale(a, b, c, idx1, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
       TIMES[RSBaseImpl::RS_SCATTER_SCALE] = runTime;
       MBPS[RSBaseImpl::RS_SCATTER_SCALE] = mbps;
       FLOPS[RSBaseImpl::RS_SCATTER_SCALE] = flops;
       break;
 
     case RSBaseImpl::RS_SCATTER_ADD:
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterAdd(a, b, c, idx1, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
       TIMES[RSBaseImpl::RS_SCATTER_ADD] = runTime;
       MBPS[RSBaseImpl::RS_SCATTER_ADD] = mbps;
       FLOPS[RSBaseImpl::RS_SCATTER_ADD] = flops;
       break;
 
     case RSBaseImpl::RS_SCATTER_TRIAD:
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterTriad(a, b, c, idx1, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
       TIMES[RSBaseImpl::RS_SCATTER_TRIAD] = runTime;
       MBPS[RSBaseImpl::RS_SCATTER_TRIAD] = mbps;
       FLOPS[RSBaseImpl::RS_SCATTER_TRIAD] = flops;
@@ -233,48 +235,48 @@ bool RS_OMP::execute(
     
     /* SCATTER-GATHER KERNELS */
     case RSBaseImpl::RS_SG_COPY:
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgCopy(a, b, c, idx1, idx2, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
       TIMES[RSBaseImpl::RS_SG_COPY] = runTime;
       MBPS[RSBaseImpl::RS_SG_COPY] = mbps;
       FLOPS[RSBaseImpl::RS_SG_COPY] = flops;
       break;
 
     case RSBaseImpl::RS_SG_SCALE:
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgScale(a, b, c, idx1, idx2, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
       TIMES[RSBaseImpl::RS_SG_SCALE] = runTime;
       MBPS[RSBaseImpl::RS_SG_SCALE] = mbps;
       FLOPS[RSBaseImpl::RS_SG_SCALE] = flops;
       break;
 
     case RSBaseImpl::RS_SG_ADD:
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgAdd(a, b, c, idx1, idx2, idx3, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
       TIMES[RSBaseImpl::RS_SG_ADD] = runTime;
       MBPS[RSBaseImpl::RS_SG_ADD] = mbps;
       FLOPS[RSBaseImpl::RS_SG_ADD] = flops;
       break;
 
     case RSBaseImpl::RS_SG_TRIAD:
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgTriad(a, b, c, idx1, idx2, idx3, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
       TIMES[RSBaseImpl::RS_SG_TRIAD] = runTime;
       MBPS[RSBaseImpl::RS_SG_TRIAD] = mbps;
       FLOPS[RSBaseImpl::RS_SG_TRIAD] = flops;
@@ -282,48 +284,48 @@ bool RS_OMP::execute(
     
     /* CENTRAL KERNELS */
     case RSBaseImpl::RS_CENTRAL_COPY:
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralCopy(a, b, c, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
       TIMES[RSBaseImpl::RS_CENTRAL_COPY] = runTime;
       MBPS[RSBaseImpl::RS_CENTRAL_COPY] = mbps;
       FLOPS[RSBaseImpl::RS_CENTRAL_COPY] = flops;
       break;
 
     case RSBaseImpl::RS_CENTRAL_SCALE:
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralScale(a, b, c, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
       TIMES[RSBaseImpl::RS_CENTRAL_SCALE] = runTime;
       MBPS[RSBaseImpl::RS_CENTRAL_SCALE] = mbps;
       FLOPS[RSBaseImpl::RS_CENTRAL_SCALE] = flops;   
       break;
 
     case RSBaseImpl::RS_CENTRAL_ADD:
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralAdd(a, b, c, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
       TIMES[RSBaseImpl::RS_CENTRAL_ADD] = runTime;
       MBPS[RSBaseImpl::RS_CENTRAL_ADD] = mbps;
       FLOPS[RSBaseImpl::RS_CENTRAL_ADD] = flops;   
       break;
 
     case RSBaseImpl::RS_CENTRAL_TRIAD:
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralTriad(a, b, c, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
       TIMES[RSBaseImpl::RS_CENTRAL_TRIAD] = runTime;
       MBPS[RSBaseImpl::RS_CENTRAL_TRIAD] = mbps;
       FLOPS[RSBaseImpl::RS_CENTRAL_TRIAD] = flops;   
@@ -332,221 +334,221 @@ bool RS_OMP::execute(
     /* ALL KERNELS */
     case RSBaseImpl::RS_ALL:
       /* RS_SEQ_COPY */
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqCopy(a, b, c, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
       TIMES[RSBaseImpl::RS_SEQ_COPY] = runTime;
       MBPS[RSBaseImpl::RS_SEQ_COPY] = mbps;
       FLOPS[RSBaseImpl::RS_SEQ_COPY] = flops;
 
       /* RS_SEQ_SCALE */
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqScale(a, b, c, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
       TIMES[RSBaseImpl::RS_SEQ_SCALE] = runTime;
       MBPS[RSBaseImpl::RS_SEQ_SCALE] = mbps;
       FLOPS[RSBaseImpl::RS_SEQ_SCALE] = flops;
 
       /* RS_SEQ_ADD */
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqAdd(a, b, c, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
       TIMES[RSBaseImpl::RS_SEQ_ADD] = runTime;
       MBPS[RSBaseImpl::RS_SEQ_ADD] = mbps;
       FLOPS[RSBaseImpl::RS_SEQ_ADD] = flops;
 
       /* RS_SEQ_TRIAD */
-      startTime = this->mySecond();
+      startTime = mySecond();
       seqTriad(a, b, c, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
       TIMES[RSBaseImpl::RS_SEQ_TRIAD] = runTime;
       MBPS[RSBaseImpl::RS_SEQ_TRIAD] = mbps;
       FLOPS[RSBaseImpl::RS_SEQ_TRIAD] = flops;
 
       /* RS_GATHER_COPY */
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherCopy(a, b, c, idx1, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
       TIMES[RSBaseImpl::RS_GATHER_COPY] = runTime;
       MBPS[RSBaseImpl::RS_GATHER_COPY] = mbps;
       FLOPS[RSBaseImpl::RS_GATHER_COPY] = flops;
 
       /* RS_GATHER_SCALE */
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherScale(a, b, c, idx1, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
       TIMES[RSBaseImpl::RS_GATHER_SCALE] = runTime;
       MBPS[RSBaseImpl::RS_GATHER_SCALE] = mbps;
       FLOPS[RSBaseImpl::RS_GATHER_SCALE] = flops;
 
       /* RS_GATHER_ADD */
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherAdd(a, b, c, idx1, idx2, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
       TIMES[RSBaseImpl::RS_GATHER_ADD] = runTime;
       MBPS[RSBaseImpl::RS_GATHER_ADD] = mbps;
       FLOPS[RSBaseImpl::RS_GATHER_ADD] = flops;
 
       /* RS_GATHER_TRIAD */
-      startTime = this->mySecond();
+      startTime = mySecond();
       gatherTriad(a, b, c, idx1, idx2, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
       TIMES[RSBaseImpl::RS_GATHER_TRIAD] = runTime;
       MBPS[RSBaseImpl::RS_GATHER_TRIAD] = mbps;
       FLOPS[RSBaseImpl::RS_GATHER_TRIAD] = flops;
 
       /* RS_SCATTER_COPY */
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterCopy(a, b, c, idx1, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
       TIMES[RSBaseImpl::RS_SCATTER_COPY] = runTime;
       MBPS[RSBaseImpl::RS_SCATTER_COPY] = mbps;
       FLOPS[RSBaseImpl::RS_SCATTER_COPY] = flops;
 
       /* RS_SCATTER_SCALE */
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterScale(a, b, c, idx1, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
       TIMES[RSBaseImpl::RS_SCATTER_SCALE] = runTime;
       MBPS[RSBaseImpl::RS_SCATTER_SCALE] = mbps;
       FLOPS[RSBaseImpl::RS_SCATTER_SCALE] = flops;
 
       /* RS_SCATTER_ADD */
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterAdd(a, b, c, idx1, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
       TIMES[RSBaseImpl::RS_SCATTER_ADD] = runTime;
       MBPS[RSBaseImpl::RS_SCATTER_ADD] = mbps;
       FLOPS[RSBaseImpl::RS_SCATTER_ADD] = flops;
 
       /* RS_SCATTER_TRIAD */
-      startTime = this->mySecond();
+      startTime = mySecond();
       scatterTriad(a, b, c, idx1, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
       TIMES[RSBaseImpl::RS_SCATTER_TRIAD] = runTime;
       MBPS[RSBaseImpl::RS_SCATTER_TRIAD] = mbps;
       FLOPS[RSBaseImpl::RS_SCATTER_TRIAD] = flops;
 
       /* RS_SG_COPY */
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgCopy(a, b, c, idx1, idx2, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
       TIMES[RSBaseImpl::RS_SG_COPY] = runTime;
       MBPS[RSBaseImpl::RS_SG_COPY] = mbps;
       FLOPS[RSBaseImpl::RS_SG_COPY] = flops;
 
       /* RS_SG_SCALE */
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgScale(a, b, c, idx1, idx2, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
       TIMES[RSBaseImpl::RS_SG_SCALE] = runTime;
       MBPS[RSBaseImpl::RS_SG_SCALE] = mbps;
       FLOPS[RSBaseImpl::RS_SG_SCALE] = flops;
 
       /* RS_SG_ADD */
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgAdd(a, b, c, idx1, idx2, idx3, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
       TIMES[RSBaseImpl::RS_SG_ADD] = runTime;
       MBPS[RSBaseImpl::RS_SG_ADD] = mbps;
       FLOPS[RSBaseImpl::RS_SG_ADD] = flops;
 
       /* RS_SG_TRIAD */
-      startTime = this->mySecond();
+      startTime = mySecond();
       sgTriad(a, b, c, idx1, idx2, idx3, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
       TIMES[RSBaseImpl::RS_SG_TRIAD] = runTime;
       MBPS[RSBaseImpl::RS_SG_TRIAD] = mbps;
       FLOPS[RSBaseImpl::RS_SG_TRIAD] = flops;
 
       /* RS_CENTRAL_COPY */
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralCopy(a, b, c, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
       TIMES[RSBaseImpl::RS_CENTRAL_COPY] = runTime;
       MBPS[RSBaseImpl::RS_CENTRAL_COPY] = mbps;
       FLOPS[RSBaseImpl::RS_CENTRAL_COPY] = flops;
 
       /* RS_CENTRAL_SCALE */
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralScale(a, b, c, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
       TIMES[RSBaseImpl::RS_CENTRAL_SCALE] = runTime;
       MBPS[RSBaseImpl::RS_CENTRAL_SCALE] = mbps;
       FLOPS[RSBaseImpl::RS_CENTRAL_SCALE] = flops;   
 
       /* RS_CENTRAL_ADD */
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralAdd(a, b, c, streamArraySize);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
       TIMES[RSBaseImpl::RS_CENTRAL_ADD] = runTime;
       MBPS[RSBaseImpl::RS_CENTRAL_ADD] = mbps;
       FLOPS[RSBaseImpl::RS_CENTRAL_ADD] = flops;   
 
       /* RS_CENTRAL_TRIAD */
-      startTime = this->mySecond();
+      startTime = mySecond();
       centralTriad(a, b, c, streamArraySize, scalar);
-      endTime = this->mySecond();
-      runTime = this->calculateRunTime(startTime, endTime);
-      mbps = this->calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-      flops = this->calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      endTime = mySecond();
+      runTime = calculateRunTime(startTime, endTime);
+      mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
+      flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
       TIMES[RSBaseImpl::RS_CENTRAL_TRIAD] = runTime;
       MBPS[RSBaseImpl::RS_CENTRAL_TRIAD] = mbps;
       FLOPS[RSBaseImpl::RS_CENTRAL_TRIAD] = flops; 

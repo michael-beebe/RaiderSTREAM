@@ -1,5 +1,7 @@
 # RaiderSTREAM
----------------------------
+
+![Logo](.github/readme_images/rstream_logo2.jpeg)
+
 RaiderSTREAM is a variation of the STREAM benchmark for high-performance computing (HPC), developed in the Data-Intensive Scalable Computing Laboratory at Texas Tech University.
 
 ## How is RaiderSTREAM different from STREAM?<a id="rstream_vs_stream"></a>
@@ -62,12 +64,12 @@ The gather and scatter benchmark kernels are similar in that they both provide i
 ![Gather Scatter](.github/readme_images/gather_scatter.png)
 
 ## Multi-process Support<a id="multi_node_support"></a>
-RadierSTREAM does not currently use any inter-process communication routines such as MPI_SEND or SHMEM_PUT within the benchmark kernels. Instead, the programming models are essentially leveraged as a <b>resource allocator</b>. It is worth noting that for the multi-process implementations, each processing element DOES NOT get its own copy of the STREAM arrays. The STREAM arrays are distributed evenly across a user-specified number of processing elements (PEs), each PE computes the kernel and writes the result back to its own array segment.
+RadierSTREAM does not currently use any inter-process communication routines such as MPI_SEND or SHMEM_PUT within the benchmark kernels. Instead, the distributed programming models are essentially leveraged as a <b>resource allocator</b>. It is worth noting that for the multi-process implementations, each processing element DOES NOT get its own copy of the STREAM arrays. The STREAM arrays are distributed evenly across a user-specified number of processing elements (PEs), each PE computes the kernel and writes the result back to its own array segment.
 
 ![Multi-process Support](.github/readme_images/oshrun.png)
 
 ## Citing RaiderSTREAM<a id="citing"></a>
-To properly cite RaiderSTREAM, please use the following reference:
+To cite RaiderSTREAM, please use the following reference:
 * M. Beebe, B. Williams, S. Devaney, J. Leidel, Y. Chen and S. Poole, "RaiderSTREAM: Adapting the STREAM Benchmark to Modern HPC Systems," 2022 IEEE High Performance Extreme Computing Conference (HPEC), Waltham, MA, USA, 2022, pp. 1-7, doi: 10.1109/HPEC55821.2022.9926292.
 
 BibTeX citation:
