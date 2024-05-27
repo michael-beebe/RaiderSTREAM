@@ -150,7 +150,7 @@ void runBenchOMPTarget(RSOpts *Opts) {
   omp_get_num_threads();
 
   /* Initialize the RS_OMP object */
-  RS_OMP *RS = new RS_OMP_TARGET(*Opts);
+  RS_OMP_TARGET *RS = new RS_OMP_TARGET(*Opts);
   if (!RS) {
     std::cout << "ERROR: COULD NOT ALLOCATE RS_OMP_TARGET OBJECT" << std::endl;
     return;
