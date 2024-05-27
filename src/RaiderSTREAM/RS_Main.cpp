@@ -243,7 +243,6 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
   }
 
   /* Execute the benchmark */
-  // FIXME:
   if (!RS->execute(SHMEM_TIMES, SHMEM_MBPS, SHMEM_FLOPS, SHMEM_BYTES, SHMEM_FLOATOPS)) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_SHMEM_OMP" << std::endl;
     RS->freeData();
@@ -251,13 +250,6 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
     delete RS;
     return;
   }
-  // if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
-  //   std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_SHMEM_OMP" << std::endl;
-  //   RS->freeData();
-  //   shmem_finalize();
-  //   delete RS;
-  //   return;
-  // }
 
   /* Free the data */
   if (!RS->freeData()) {
@@ -289,7 +281,6 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
   }
 
   /* Free the RS_SHMEM_OMP object, finalize OpenSHMEM */
-  // FIXME:
   shmem_free(SHMEM_TIMES);
   shmem_free(SHMEM_MBPS);
   shmem_free(SHMEM_FLOPS);
