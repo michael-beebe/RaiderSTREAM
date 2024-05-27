@@ -15,6 +15,10 @@ if (ENABLE_OMP)
   add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_OMP_OBJS>)
 endif()
 
+if (ENABLE_OMP_TARGET)
+  add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_OMP_TARGET_OBJS>)
+endif()
+
 if (ENABLE_MPI_OMP)
   add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_MPI_OMP_OBJS>)
 endif()
