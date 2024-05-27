@@ -295,7 +295,48 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
 /************************************************************************************/
 #ifdef _ENABLE_CUDA_
 void runBenchCUDA( RSOpts *Opts ) {
-  // TODO: runBenchCUDA()
+  /* Initialize the RS_CUDA object */
+  RS_CUDA *RS = new RS_CUDA(*Opts);
+  if (!RS) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RS_OMP OBJECT" << std::endl;
+    return;
+  }  
+
+  /* Allocate Data */
+  if (!RS->allocateData()) {
+    std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OMP" << std::endl;
+    delete RS;
+    return;
+  }
+
+  /* Execute the benchmark */ 
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP" << std::endl;
+    RS->freeData();
+    delete RS;
+    return;
+  }
+
+  /* Free the data */
+  if (!RS->freeData()) {
+    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_OMP" << std::endl;
+    delete RS;
+    return;
+  }
+
+  /* Print the timing */
+  Opts->printLogo();
+  Opts->printOpts();
+  RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
+  bool headerPrinted = false;
+  for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
+    RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+    std::string kernelName = BenchTypeTable[i].Notes;
+    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+  }
+
+  /* Free the RS_OMP object */
+  delete RS;
 }
 #endif
 

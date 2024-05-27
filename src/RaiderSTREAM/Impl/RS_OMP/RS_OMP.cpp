@@ -21,6 +21,7 @@ RS_OMP::RS_OMP(const RSOpts& opts) :
   lArgv(nullptr),
   a(nullptr),
   b(nullptr),
+  c(nullptr),
   idx1(nullptr),
   idx2(nullptr),
   idx3(nullptr),

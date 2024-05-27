@@ -41,11 +41,11 @@ public:
 
   ~RS_OMP();
 
+  virtual bool allocateData() override;
+
   virtual bool execute(
     double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS
   ) override;
-
-  virtual bool allocateData() override;
 
   virtual bool freeData() override;
 };

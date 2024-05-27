@@ -118,6 +118,24 @@ bool RSOpts::parseOpts(int argc, char **argv) {
       setNumPEs(atoi(argv[i + 1]));
       i++;
     }
+#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+    else if ((s == "-b") || (s == "--blocks")) {
+      if (i + 1 > (argc -1)) {
+        std::cout << "Error: --blocks requires an argument" << std::endl;
+        return false;
+      }
+      setThreadBlocks(atoi[arvc[i + 1]]);
+      i++;
+    }
+    else if ((s == "-t") || (s == "--threads")) {
+      if (i + 1 > (argc -1)) {
+        std::cout << "Error: --threads requires an argument" << std::endl;
+        return false;
+      }
+      setThreadsPerBlocks(atoi[arvc[i + 1]]);
+      i++;
+    }
+#endif
     else {
       std::cout << "Error: invalid argument: " << s << std::endl;
       return false;

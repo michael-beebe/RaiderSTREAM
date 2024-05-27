@@ -56,8 +56,12 @@ private:
   std::string kernelName;
   ssize_t streamArraySize = 1000000;
   int numPEs = 1;
-  int lArgc;
+	int lArgc;
   char **lArgv;
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+		int threadBlocks;
+		int threadsPerBlock;
+	#endif
 
   void printHelp();
 
@@ -97,6 +101,11 @@ public:
 
   int getNumPEs() const { return numPEs; }
 
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+		bool getThreadBlocks() { return threadBlocks; }
+		bool getThreadsPerBlocks() { return threadsPerBlock; }
+	#endif
+
 /****************************************************
  * 									 Setters
 ****************************************************/
@@ -108,7 +117,14 @@ public:
 
 	void setKernelName(std::string name) { kernelName = name; }
 
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+		bool setThreadBlocks(int blocks ) { threadBlocks = blocks; }
+		bool setThreadsPerBlocks(int threads) { threadsPerBlock = threads; }
+	#endif
 
+/****************************************************
+ * 						Arrays used in kernels
+****************************************************/
   double BYTES[NUM_KERNELS] = {
 		// Original Kernels
 		static_cast<double>(2 * sizeof(double) * streamArraySize), // Copy
