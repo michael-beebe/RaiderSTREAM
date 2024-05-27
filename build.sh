@@ -12,11 +12,11 @@ cd build
 # --- Configure the project with CMake
 #-----------------------------------------
 # --- OpenMP ---
-cmake \
-  -DENABLE_OMP=ON \
-  -DCMAKE_C_FLAGS="-fopenmp" \
-  -DCMAKE_CXX_FLAGS="-fopenmp" \
-  ../
+# cmake \
+#   -DENABLE_OMP=ON \
+#   -DCMAKE_C_FLAGS="-fopenmp" \
+#   -DCMAKE_CXX_FLAGS="-fopenmp" \
+#   ../
 
 # --- MPI ---
 # cmake \
@@ -37,11 +37,12 @@ cmake \
 #   ../
 
 # --- CUDA ---
-# cmake \
-#   -DENABLE_CUDA=ON \
-#   -DCMAKE_CXX_COMPILER=`which nvcc` \
-#   -DCMAKE_EXE_LINKER_FLAGS="-lcudart -lcudadevrt" \
-#   ../
+cmake \
+  -DENABLE_CUDA=ON \
+  -DCMAKE_C_COMPILER=`which nvcc` \
+  -DCMAKE_CXX_COMPILER=`which nvcc` \
+  -DCMAKE_EXE_LINKER_FLAGS="-lcudart -lcudadevrt" \
+  ../
 
 # --- Build the project
 make
@@ -53,5 +54,7 @@ export RS=bin/raiderstream
 cd ../
 
 # --- Run the executable
-echo ; ./run.sh ; echo ; echo
+if [ -x $RS ] ; then
+  echo ; ./run.sh ; echo ; echo
+fi
 
