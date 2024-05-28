@@ -1,9 +1,6 @@
 #ifndef STREAM_OPENMP_H
 #define STREAM_OPENMP_H
 
-#define _LARGEFILE64_SOURCE
-
-
 # include <stdio.h>
 # include <stdlib.h>
 # include <unistd.h>
