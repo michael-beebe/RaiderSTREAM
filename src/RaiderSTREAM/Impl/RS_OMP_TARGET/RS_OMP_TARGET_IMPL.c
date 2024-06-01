@@ -20,7 +20,7 @@ void seqCopy(
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  #pragma omp target data map(tofrom: a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize])
+  // #pragma omp target data map(to: c[0:streamArraySize]) map(from: a[0:streamArraySize])
   {
     #pragma omp parallel for
     for (ssize_t j = 0; j < streamArraySize; j++)
