@@ -19,9 +19,9 @@ cd build
 #   ../
 
 # --- OpenMP + Offload ---
-cmake \
-  -DENABLE_OMP_TARGET=ON \
-  ../
+# cmake \
+#   -DENABLE_OMP_TARGET=ON \
+#   ../
 
 # --- MPI ---
 # cmake \
