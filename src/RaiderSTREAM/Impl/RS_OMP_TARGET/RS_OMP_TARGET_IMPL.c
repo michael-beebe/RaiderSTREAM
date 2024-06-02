@@ -104,7 +104,7 @@ void gatherCopy(
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(map(from: a[0:streamArraySize], idx[0:streamArraySize]) \
+  WITH_OFFLOAD(map(from: a[0:streamArraySize], idx1[0:streamArraySize]) \
                map(to: c[0:streamArraySize]))
   {
     #pragma omp parallel for simd
@@ -165,7 +165,7 @@ void gatherTriad(
 {
   WITH_OFFLOAD(map(from: b[0:streamArraySize], c[0:streamArraySize], \
                    idx1[0:streamArraySize], idx2[0:streamArraySize]) \
-               map(to: c[0:streamArraySize]))
+               map(to: a[0:streamArraySize]))
   {
     #pragma omp parallel for simd
     for (ssize_t j = 0; j < streamArraySize; j++)
@@ -242,8 +242,9 @@ void scatterTriad(
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(map(from: b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize]) \
-               map(to: c[0:streamArraySize]))
+  WITH_OFFLOAD(map(from: b[0:streamArraySize], c[0:streamArraySize], \
+                   idx1[0:streamArraySize])                          \
+               map(to: a[0:streamArraySize]))
   {
     #pragma omp parallel for simd
     for (ssize_t j = 0; j < streamArraySize; j++)
@@ -324,7 +325,7 @@ void sgTriad(
   WITH_OFFLOAD(map(from: b[0:streamArraySize], c[0:streamArraySize], \
                    idx1[0:streamArraySize], idx2[0:streamArraySize], \
                    idx3[0:streamArraySize]) \
-               map(to: c[0:streamArraySize]))
+               map(to: a[0:streamArraySize]))
   {
     #pragma omp parallel for simd
     for (ssize_t j = 0; j < streamArraySize; j++)
