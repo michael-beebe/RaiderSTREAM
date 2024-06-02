@@ -22,7 +22,7 @@
   DO_PRAGMA(omp target maps device(1))
 
 // Same, but for the inner loop after we're on-device.
-#define FOR_LOOP_PRAGMA DO_PRAGMA(omp parallel for simd)
+#define FOR_LOOP_PRAGMA DO_PRAGMA(omp distribute parallel for simd)
 
 
 /**************************************************
