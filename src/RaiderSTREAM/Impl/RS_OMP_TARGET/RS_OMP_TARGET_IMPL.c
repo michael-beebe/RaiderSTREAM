@@ -21,6 +21,9 @@
 #define WITH_OFFLOAD(maps) \
   DO_PRAGMA(omp target maps device(1))
 
+// Same, but for the inner loop after we're on-device.
+#define FOR_LOOP_PRAGMA DO_PRAGMA(omp parallel for simd)
+
 
 /**************************************************
  * @brief Copies data from one stream to another.
@@ -34,7 +37,7 @@ void seqCopy(
 {
   WITH_OFFLOAD(map(from: a[0:streamArraySize]) map(to: c[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       c[j] = a[j];
   }
@@ -52,7 +55,7 @@ void seqScale(
 {
   WITH_OFFLOAD(map(from: c[0:streamArraySize]) map(to: b[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       b[j] = scalar * c[j];
   }
@@ -70,7 +73,7 @@ void seqAdd(
   WITH_OFFLOAD(map(from: a[0:streamArraySize], b[0:streamArraySize]) \
                map(to: c[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       c[j] = a[j] + b[j];
   }
@@ -89,7 +92,7 @@ void seqTriad(
   WITH_OFFLOAD(map(from: b[0:streamArraySize], c[0:streamArraySize]) \
                map(to: a[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       a[j] = b[j] + scalar * c[j];
   }
@@ -107,7 +110,7 @@ void gatherCopy(
   WITH_OFFLOAD(map(from: a[0:streamArraySize], idx1[0:streamArraySize]) \
                map(to: c[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       c[j] = a[idx1[j]];
   }
@@ -126,7 +129,7 @@ void gatherScale(
 {
   WITH_OFFLOAD(map(from: c[0:streamArraySize]) map(to: b[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       b[j] = scalar * c[idx1[j]];
   }
@@ -146,7 +149,7 @@ void gatherAdd(
                    idx1[0:streamArraySize], idx2[0:streamArraySize]) \
                map(to: c[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       c[j] = a[idx1[j]] + b[idx2[j]];
   }
@@ -167,7 +170,7 @@ void gatherTriad(
                    idx1[0:streamArraySize], idx2[0:streamArraySize]) \
                map(to: a[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       a[j] = b[idx1[j]] + scalar * c[idx2[j]];
   }
@@ -186,7 +189,7 @@ void scatterCopy(
   WITH_OFFLOAD(map(from: a[0:streamArraySize], idx1[0:streamArraySize]) \
                map(to: c[0:streamArraySize]))
   {
-    #pragma omp parallel for
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       c[idx1[j]] = a[j];
   }
@@ -206,7 +209,7 @@ void scatterScale(
   WITH_OFFLOAD(map(from: c[0:streamArraySize], idx1[0:streamArraySize]) \
                map(to: b[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       b[idx1[j]] = scalar * c[j];
   }
@@ -225,7 +228,7 @@ void scatterAdd(
   WITH_OFFLOAD(map(from: a[0:streamArraySize], b[0:streamArraySize], idx1[0:streamArraySize]) \
                map(to: c[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       c[idx1[j]] = a[j] + b[j];
   }
@@ -246,7 +249,7 @@ void scatterTriad(
                    idx1[0:streamArraySize])                          \
                map(to: a[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       a[idx1[j]] = b[j] + scalar * c[j];
   }
@@ -265,7 +268,7 @@ void sgCopy(
   WITH_OFFLOAD(map(from: a[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize]) \
                map(to: c[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       c[idx1[j]] = a[idx2[j]];
   }
@@ -285,7 +288,7 @@ void sgScale(
   WITH_OFFLOAD(map(from: c[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize]) \
                map(to: b[0:streamArraySize]))
   {
-    #pragma omp parallel for
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       b[idx2[j]] = scalar * c[idx1[j]];
   }
@@ -305,7 +308,7 @@ void sgAdd(
                    idx1[0:streamArraySize], idx2[0:streamArraySize]) \
                map(to: c[0:streamArraySize]))
   {
-    #pragma omp parallel for
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
   }
@@ -327,7 +330,7 @@ void sgTriad(
                    idx3[0:streamArraySize]) \
                map(to: a[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
   }
@@ -344,7 +347,7 @@ void centralCopy(
 {
   WITH_OFFLOAD(map(from: a[0:streamArraySize]) map(to: c[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       c[0] = a[0];
   }
@@ -362,7 +365,7 @@ void centralScale(
 {
   WITH_OFFLOAD(map(from: c[0:streamArraySize]) map(to: b[0:streamArraySize]))
   {
-    #pragma omp parallel for simd
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       b[0] = scalar * c[0];
   }
@@ -379,7 +382,7 @@ void centralAdd(
 {
   WITH_OFFLOAD(map(from: a[0:streamArraySize], b[0:streamArraySize]) map(to: c[0:streamArraySize]))
   {
-    #pragma omp parallel for
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       c[0] = a[0] + b[0];
   }
@@ -397,7 +400,7 @@ void centralTriad(
 {
   WITH_OFFLOAD(map(from: b[0:streamArraySize], c[0:streamArraySize]) map(to: a[0:streamArraySize]))
   {
-    #pragma omp parallel for
+    FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
       a[0] = b[0] + scalar * c[0];
   }
