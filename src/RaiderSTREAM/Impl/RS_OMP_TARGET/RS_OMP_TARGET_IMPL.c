@@ -11,6 +11,17 @@
 #include <omp.h>
 #include <sys/types.h>
 
+#ifndef DO_PRAGMA
+// cpp stringification shenanigans
+#define DO_PRAGMA_(x) _Pragma(#x)
+#define DO_PRAGMA(x) DO_PRAGMA_(x)
+#endif
+// Below is the OMP offload pragma used for all
+// of this implementation. Modify this to modify all.
+#define WITH_OFFLOAD(maps) \
+  DO_PRAGMA(omp target maps device(1))
+
+
 /**************************************************
  * @brief Copies data from one stream to another.
  * 
@@ -18,9 +29,10 @@
  **************************************************/
 void seqCopy(
   double *a, double *b, double *c,
-  ssize_t streamArraySize)
+  ssize_t streamArraySize
+)
 {
-  // #pragma omp target data map(to: c[0:streamArraySize]) map(from: a[0:streamArraySize])
+  WITH_OFFLOAD(map(from: a[0:streamArraySize]) map(to: c[0:streamArraySize]))
   {
     #pragma omp parallel for
     for (ssize_t j = 0; j < streamArraySize; j++)
@@ -70,6 +82,7 @@ void seqTriad(
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
+  #pragma
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; j++)
     a[j] = b[j] + scalar * c[j];
