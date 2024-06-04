@@ -16,13 +16,16 @@
 #define DO_PRAGMA_(x) _Pragma(#x)
 #define DO_PRAGMA(x) DO_PRAGMA_(x)
 #endif
+
 // Below is the OMP offload pragma used for all
 // of this implementation. Modify this to modify all.
+//
+// TODO: Multiple GPU support. Investigate `teams` pragma clause.
 #define WITH_OFFLOAD(maps) \
-  DO_PRAGMA(omp target maps device(1))
+  DO_PRAGMA(omp target data maps device(0))
 
-// Same, but for the inner loop after we're on-device.
-#define FOR_LOOP_PRAGMA DO_PRAGMA(omp distribute parallel for simd)
+// Same as WITH_OFFLOAD, but for the inner loop after we're on-device.
+#define FOR_LOOP_PRAGMA DO_PRAGMA(omp parallel for simd)
 
 
 /**************************************************
@@ -32,8 +35,7 @@
  **************************************************/
 void seqCopy(
   double *a, double *b, double *c,
-  ssize_t streamArraySize
-)
+  ssize_t streamArraySize)
 {
   WITH_OFFLOAD(map(from: a[0:streamArraySize]) map(to: c[0:streamArraySize]))
   {
