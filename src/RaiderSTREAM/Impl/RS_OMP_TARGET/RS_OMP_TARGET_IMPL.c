@@ -22,10 +22,10 @@
 //
 // TODO: Multiple GPU support. Investigate `teams` pragma clause.
 #define WITH_OFFLOAD(maps) \
-  DO_PRAGMA(omp target data maps device(0))
+  DO_PRAGMA(omp target data maps)
 
 // Same as WITH_OFFLOAD, but for the inner loop after we're on-device.
-#define FOR_LOOP_PRAGMA DO_PRAGMA(omp parallel for simd)
+#define FOR_LOOP_PRAGMA DO_PRAGMA(omp target teams distribute parallel for)
 
 
 /**************************************************
@@ -129,7 +129,7 @@ void gatherScale(
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(map(from: c[0:streamArraySize]) map(to: b[0:streamArraySize]))
+  WITH_OFFLOAD(map(from: c[0:streamArraySize], idx1[0:streamArraySize]) map(to: b[0:streamArraySize]))
   {
     FOR_LOOP_PRAGMA
     for (ssize_t j = 0; j < streamArraySize; j++)
