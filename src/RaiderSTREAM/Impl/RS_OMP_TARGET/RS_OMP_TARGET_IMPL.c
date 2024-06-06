@@ -307,7 +307,7 @@ void sgAdd(
   ssize_t streamArraySize)
 {
   WITH_OFFLOAD(map(from: a[0:streamArraySize], b[0:streamArraySize], \
-                   idx1[0:streamArraySize], idx2[0:streamArraySize]) \
+                   idx1[0:streamArraySize], idx2[0:streamArraySize], idx3[0:streamArraySize]) \
                map(to: c[0:streamArraySize]))
   {
     FOR_LOOP_PRAGMA
