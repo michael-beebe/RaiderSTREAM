@@ -118,7 +118,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
       setNumPEs(atoi(argv[i + 1]));
       i++;
     }
-#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_
     else if ((s == "-b") || (s == "--blocks")) {
       if (i + 1 > (argc -1)) {
         std::cout << "Error: --blocks requires an argument" << std::endl;
