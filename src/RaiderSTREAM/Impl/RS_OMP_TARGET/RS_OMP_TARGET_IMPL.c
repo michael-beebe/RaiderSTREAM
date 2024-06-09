@@ -25,7 +25,7 @@
   DO_PRAGMA(omp target data maps)
 
 // Same as WITH_OFFLOAD, but for the inner loop after we're on-device.
-#define FOR_LOOP_PRAGMA DO_PRAGMA(omp target teams distribute parallel for)
+#define FOR_LOOP_PRAGMA DO_PRAGMA(omp target teams distribute num_teams(nteams) thread_limit(threads) parallel for)
 
 
 /**************************************************
@@ -34,6 +34,7 @@
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void seqCopy(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
@@ -52,6 +53,7 @@ void seqCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void seqScale(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
@@ -69,6 +71,7 @@ void seqScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void seqAdd(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
@@ -88,6 +91,7 @@ void seqAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void seqTriad(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
@@ -106,6 +110,7 @@ void seqTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void gatherCopy(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t streamArraySize)
 {
@@ -125,6 +130,7 @@ void gatherCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void gatherScale(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
@@ -143,6 +149,7 @@ void gatherScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void gatherAdd(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
@@ -164,6 +171,7 @@ void gatherAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void gatherTriad(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize, double scalar)
@@ -184,6 +192,7 @@ void gatherTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void scatterCopy(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize)
@@ -204,6 +213,7 @@ void scatterCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void scatterScale(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
@@ -223,6 +233,7 @@ void scatterScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void scatterAdd(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize)
@@ -243,6 +254,7 @@ void scatterAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void scatterTriad(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
@@ -263,6 +275,7 @@ void scatterTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void sgCopy(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
@@ -283,6 +296,7 @@ void sgCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void sgScale(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize, double scalar)
@@ -302,6 +316,7 @@ void sgScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void sgAdd(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t streamArraySize)
@@ -323,6 +338,7 @@ void sgAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void sgTriad(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t streamArraySize, double scalar)
@@ -344,6 +360,7 @@ void sgTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void centralCopy(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
@@ -362,6 +379,7 @@ void centralCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void centralScale(
+  int nteams, int threads,
   double *a,double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
@@ -379,6 +397,7 @@ void centralScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void centralAdd(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
@@ -397,6 +416,7 @@ void centralAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void centralTriad(
+  int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
