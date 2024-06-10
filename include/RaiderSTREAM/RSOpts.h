@@ -101,7 +101,7 @@ public:
 
   int getNumPEs() const { return numPEs; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_
 		bool getThreadBlocks() { return threadBlocks; }
 		bool getThreadsPerBlocks() { return threadsPerBlock; }
 	#endif

@@ -27,6 +27,8 @@ private:
   std::string kernelName;
   ssize_t streamArraySize;
   int numPEs;
+  int numTeams;
+  int threadsPerTeam;
   int lArgc;
   char **lArgv;
   double *a;
@@ -53,114 +55,134 @@ public:
 
 extern "C" {
   void seqCopy(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t streamArraySize
   );
 
   void seqScale(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t streamArraySize, double scalar
   );
 
   void seqAdd(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t streamArraySize
   );
 
   void seqTriad(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t streamArraySize, double scalar
   );
 
   void gatherCopy(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1,
     ssize_t streamArraySize
   );
 
   void gatherScale(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1,
     ssize_t streamArraySize, double scalar
   );
 
   void gatherAdd(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
     ssize_t streamArraySize
   );
 
   void gatherTriad(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
     ssize_t streamArraySize, double scalar
   );
 
   void scatterCopy(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1,
     ssize_t streamArraySize
   );
 
   void scatterScale(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1,
     ssize_t streamArraySize, double scalar
   );
 
   void scatterAdd(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1,
     ssize_t streamArraySize
   );
 
   void scatterTriad(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1,
     ssize_t streamArraySize, double scalar
   );
 
   void sgCopy(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
     ssize_t streamArraySize
   );
 
   void sgScale(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
     ssize_t streamArraySize, double scalar
   );
 
   void sgAdd(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
     ssize_t streamArraySize
   );
 
   void sgTriad(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
     ssize_t streamArraySize, double scalar
   );
 
   void centralCopy(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t streamArraySize
   );
 
   void centralScale(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t streamArraySize,
     double scalar
   );
 
   void centralAdd(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t streamArraySize
   );
 
   void centralTriad(
+    int nteams, int threads,
     double *a, double *b, double *c,
     ssize_t streamArraySize, double scalar
   );
