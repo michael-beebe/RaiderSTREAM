@@ -58,7 +58,7 @@ private:
   int numPEs = 1;
 	int lArgc;
   char **lArgv;
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_
 		int threadBlocks;
 		int threadsPerBlock;
 	#endif
@@ -117,7 +117,7 @@ public:
 
 	void setKernelName(std::string name) { kernelName = name; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_
 		bool setThreadBlocks(int blocks ) { threadBlocks = blocks; }
 		bool setThreadsPerBlocks(int threads) { threadsPerBlock = threads; }
 	#endif
