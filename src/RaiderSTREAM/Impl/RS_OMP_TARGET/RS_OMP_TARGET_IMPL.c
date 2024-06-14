@@ -25,7 +25,7 @@
   DO_PRAGMA(omp target data maps)
 
 // Same as WITH_OFFLOAD, but for the inner loop after we're on-device.
-#define FOR_LOOP_PRAGMA DO_PRAGMA(omp target teams distribute num_teams(nteams) thread_limit(threads) parallel for)
+#define FOR_LOOP_PRAGMA DO_PRAGMA(omp target teams distribute parallel for num_teams(nteams) thread_limit(threads) )
 
 
 /**************************************************
