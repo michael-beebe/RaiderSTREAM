@@ -124,7 +124,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
         std::cout << "Error: --blocks requires an argument" << std::endl;
         return false;
       }
-      setThreadBlocks(atoi[arvc[i + 1]]);
+      setThreadBlocks(atoi[argv[i + 1]]);
       i++;
     }
     else if ((s == "-t") || (s == "--threads")) {
@@ -132,7 +132,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
         std::cout << "Error: --threads requires an argument" << std::endl;
         return false;
       }
-      setThreadsPerBlocks(atoi[arvc[i + 1]]);
+      setThreadsPerBlocks(atoi[argv[i + 1]]);
       i++;
     }
 #endif
