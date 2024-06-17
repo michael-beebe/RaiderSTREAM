@@ -18,6 +18,10 @@ cd build
 #   -DCMAKE_CXX_FLAGS="-fopenmp" \
 #   ../
 
+# --- OpenMP + Offload ---
+# cmake \
+#   -DENABLE_OMP_TARGET=ON \
+#   ../
 # --- OpenACC ---
  cmake \
    -DENABLE_OACC=ON \
