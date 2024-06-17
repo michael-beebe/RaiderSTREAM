@@ -26,13 +26,12 @@
 #include "Impl/RS_OMP/RS_OMP.h"
 #endif
 
-<<<<<<< HEAD
 #ifdef _ENABLE_OACC_
 #include "Impl/RS_OACC/RS_OACC.h"
-=======
+#endif
+
 #ifdef _ENABLE_OMP_TARGET_
 #include "Impl/RS_OMP_TARGET/RS_OMP_TARGET.h"
->>>>>>> cafa0cc8e889dbe46f2f80c1786172569d34585f
 #endif
 
 #ifdef _ENABLE_MPI_OMP_
@@ -490,13 +489,12 @@ int main( int argc, char **argv ) {
     runBenchOMP( Opts );
   #endif
 
-<<<<<<< HEAD
-  #ifdef _ENABLE_OACC_
-    runBenchOACC( Opts );
-=======
   #ifdef _ENABLE_OMP_TARGET_
     runBenchOMPTarget( Opts );
->>>>>>> cafa0cc8e889dbe46f2f80c1786172569d34585f
+  #endif
+
+  #ifdef _ENABLE_OACC_
+    runBenchOACC( Opts );
   #endif
 
   #ifdef _ENABLE_MPI_OMP_

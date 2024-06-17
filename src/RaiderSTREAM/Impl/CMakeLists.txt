@@ -21,10 +21,7 @@ endif()
 if (ENABLE_MPI_CUDA)
   add_subdirectory(RS_MPI_CUDA)
 endif()
-<<<<<<< HEAD
 
 if (ENABLE_OACC)
   add_subdirectory(RS_OACC)
 endif()
-=======
->>>>>>> cafa0cc8e889dbe46f2f80c1786172569d34585f
