@@ -67,6 +67,7 @@ else()
   message(STATUS "DISABLING OpenMP Implementation")
 endif()
 
+<<<<<<< HEAD
 if (ENABLE_OACC)
   find_package(OpenACC REQUIRED)
   if (1)
@@ -77,6 +78,36 @@ if (ENABLE_OACC)
   endif()
 else()
   message(STATUS "DISABLING OpenACC Implementation")
+=======
+if (ENABLE_OMP_TARGET)
+  find_package(OpenMP REQUIRED)
+  if (OPENMP_FOUND)
+    # TODO: is there a cmake compiler-agnostic way of doing this?
+    # summarized from cmake#21784
+    set(offload_opts "")
+    set(OFFLOAD_TARGET "nvptx-none")
+
+    if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+      set(offload_opts "-fopenmp -fopenmp-targets=${OFFLOAD_TARGET}")
+    elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+      set(offload_opts "-fopenmp -foffload=${OFFLOAD_TARGET}")
+    elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "NVHPC")
+      set(offload_opts "-mp=gpu")
+    elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "PGI")
+      set(offload_opts "-mp=gpu")
+    else()
+      message(STATUS "Unknown compiler. Please manually set offload target flags!")
+    endif()
+    message(STATUS "Using ${offload_opts} to enable offload")
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -D_ENABLE_OMP_TARGET_ ${offload_opts}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -D_ENABLE_OMP_TARGET_ ${offload_opts}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}") #" ${OpenMP_EXE_LINKER_FLAGS}")
+    message(STATUS "ENABLING OpenMP + Offload Implementation")
+  endif()
+else()
+  message(STATUS "DISABLING OpenMP + Offload Implementation")
+>>>>>>> cafa0cc8e889dbe46f2f80c1786172569d34585f
 endif()
 
 if (ENABLE_MPI_OMP)

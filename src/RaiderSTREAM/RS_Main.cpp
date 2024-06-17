@@ -26,8 +26,13 @@
 #include "Impl/RS_OMP/RS_OMP.h"
 #endif
 
+<<<<<<< HEAD
 #ifdef _ENABLE_OACC_
 #include "Impl/RS_OACC/RS_OACC.h"
+=======
+#ifdef _ENABLE_OMP_TARGET_
+#include "Impl/RS_OMP_TARGET/RS_OMP_TARGET.h"
+>>>>>>> cafa0cc8e889dbe46f2f80c1786172569d34585f
 #endif
 
 #ifdef _ENABLE_MPI_OMP_
@@ -202,6 +207,64 @@ void runBenchOACC(RSOpts *Opts) {
   }
 
   /* Free the RS_OACC object */
+  delete RS;
+}
+#endif
+/************************************************************************************/
+#ifdef _ENABLE_OMP_TARGET_
+void runBenchOMPTarget(RSOpts *Opts) {
+  /* Initialize OpenMP */
+  omp_get_num_threads();
+
+  /* Initialize the RS_OMP object */
+  RS_OMP_TARGET *RS = new RS_OMP_TARGET(*Opts);
+  if (!RS) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RS_OMP_TARGET OBJECT" << std::endl;
+    return;
+  }
+
+  /* Allocate Data */
+  if (!RS->allocateData()) {
+    std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OMP_TARGET" << std::endl;
+    delete RS;
+    return;
+  }
+
+  /* Execute the benchmark */
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP_TARGET" << std::endl;
+    RS->freeData();
+    delete RS;
+    return;
+  }
+
+  /* Free the data */
+  if (!RS->freeData()) {
+    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_OMP_TARGET" << std::endl;
+    delete RS;
+    return;
+  }
+
+  /* Print the timing */
+  Opts->printLogo();
+
+  Opts->printOpts();
+  #pragma omp parallel
+  {
+    #pragma omp single
+    {
+      std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads() << std::endl;
+    }
+  }
+  RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
+  bool headerPrinted = false;
+  for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
+    RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+    std::string kernelName = BenchTypeTable[i].Notes;
+    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+  }
+
+  /* Free the RS_OMP object */
   delete RS;
 }
 #endif
@@ -427,8 +490,13 @@ int main( int argc, char **argv ) {
     runBenchOMP( Opts );
   #endif
 
+<<<<<<< HEAD
   #ifdef _ENABLE_OACC_
     runBenchOACC( Opts );
+=======
+  #ifdef _ENABLE_OMP_TARGET_
+    runBenchOMPTarget( Opts );
+>>>>>>> cafa0cc8e889dbe46f2f80c1786172569d34585f
   #endif
 
   #ifdef _ENABLE_MPI_OMP_

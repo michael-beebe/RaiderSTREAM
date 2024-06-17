@@ -58,3 +58,4 @@ outputs
 .vscode
 .idea
 .DS_Store
+.editorconfig

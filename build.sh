@@ -18,6 +18,7 @@ cd build
 #   -DCMAKE_CXX_FLAGS="-fopenmp" \
 #   ../
 
+<<<<<<< HEAD
 # --- OpenACC ---
  cmake \
    -DENABLE_OACC=ON \
@@ -26,6 +27,12 @@ cd build
    -DCMAKE_C_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
    -DCMAKE_CXX_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
    ../
+=======
+# --- OpenMP + Offload ---
+# cmake \
+#   -DENABLE_OMP_TARGET=ON \
+#   ../
+>>>>>>> cafa0cc8e889dbe46f2f80c1786172569d34585f
 
 # --- MPI ---
 # cmake \
