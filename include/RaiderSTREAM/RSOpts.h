@@ -118,8 +118,8 @@ public:
 	void setKernelName(std::string name) { kernelName = name; }
 
 	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_
-		bool setThreadBlocks(int blocks ) { threadBlocks = blocks; return blocks; }
-		bool setThreadsPerBlocks(int threads) { threadsPerBlock = threads; return threads; }
+		void setThreadBlocks(int blocks ) { threadBlocks = blocks; }
+		void setThreadsPerBlocks(int threads) { threadsPerBlock = threads; }
 	#endif
 
 /****************************************************
