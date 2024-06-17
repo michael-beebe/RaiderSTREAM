@@ -28,6 +28,9 @@
 
 #ifdef _ENABLE_OMP_TARGET_
 #include "Impl/RS_OMP_TARGET/RS_OMP_TARGET.h"
+
+#ifdef _ENABLE_OACC_
+#include "Impl/RS_OACC/RS_OACC.h"
 #endif
 
 #ifdef _ENABLE_MPI_OMP_
@@ -143,6 +146,68 @@ void runBenchOMP(RSOpts *Opts) {
 }
 #endif
 
+/***********************************************************************************/
+#ifdef _ENABLE_OACC_
+void runBenchOACC(RSOpts *Opts) {
+  /* Initialize the RS_OACC object */
+  RS_OACC *RS = new RS_OACC(*Opts);
+  if (!RS) {
+    std::cout << "ERROR" << std::endl;
+    return;
+  }
+  
+
+  /* Allocate Data */
+  if (!RS->allocateData()) {
+    std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OACC" << std::endl;
+    delete RS;
+    return;
+  }
+  /* Execute the Benchmark */
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+    std::cout <<"ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OACC" << std::endl;
+    RS->freeData();
+    delete RS;
+    return;
+  }
+
+  /* Free the data */
+  if (!RS->freeData()) {
+    std::cout <<" ERROR: COULD NOT FREE THE MEMORY FOR RS_OACC" << std::endl;
+    delete RS;
+    return;
+  }
+
+  /* Print the timing */
+  Opts->printLogo();
+  Opts->printOpts();
+  // #pragma acc parallel  CURRENTLY COMMENTED OUT
+  // {
+  //   int gang_num = acc_get_gang_num();  
+  //   int gang_size = acc_get_gang_size();  
+  //   int worker_num = acc_get_worker_num();  
+  //   int vector_length = acc_get_vector_length(); 
+
+  //   #pragma acc serial
+  //   {
+  //     std::cout << "Gang number: " << gang_num << std::endl;
+  //     std::cout << "Gang size: " << gang_size << std::endl;
+  //     std::cout << "Worker number: " << worker_num << std::endl;
+  //     std::cout << "Vector length: " << vector_length << std::endl;
+  //   }
+  // }
+  RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
+  bool headerPrinted = false;
+  for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
+    RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+    std::string kernelName = BenchTypeTable[i].Notes;
+    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+  }
+
+  /* Free the RS_OACC object */
+  delete RS;
+}
+#endif
 /************************************************************************************/
 #ifdef _ENABLE_OMP_TARGET_
 void runBenchOMPTarget(RSOpts *Opts) {
@@ -425,6 +490,8 @@ int main( int argc, char **argv ) {
 
   #ifdef _ENABLE_OMP_TARGET_
     runBenchOMPTarget( Opts );
+  #ifdef _ENABLE_OACC_
+    runBenchOACC( Opts );
   #endif
 
   #ifdef _ENABLE_MPI_OMP_
