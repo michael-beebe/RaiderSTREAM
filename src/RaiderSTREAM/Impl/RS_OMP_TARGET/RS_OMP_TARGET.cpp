@@ -64,6 +64,7 @@ bool RS_OMP_TARGET::allocateData() {
   std::cout << "===================================================================================" << std::endl;
   #endif
 
+
   return true;
 }
 
@@ -75,6 +76,10 @@ bool RS_OMP_TARGET::freeData() {
   if ( idx2 ) { delete[] idx2; }
   if ( idx3 ) { delete[] idx3; }
   return true;
+}
+
+void RS_OMP_TARGET::prepare() {
+  #pragma omp target update to(a, b, c, idx1, idx2, idx3)
 }
 
 bool RS_OMP_TARGET::execute(
