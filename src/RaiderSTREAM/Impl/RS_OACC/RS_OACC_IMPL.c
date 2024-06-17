@@ -19,8 +19,9 @@
 void seqCopy(
   double *a, double *b, double *c,
   ssize_t streamArraySize)
+//#pragma acc data copy(a[:streamArraySize]), copy(c[:streamArraySize])
 {
-  #pragma acc parallel loop copyin(a[0:streamArraySize]) copyout(c[0:streamArraySize])
+  #pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[j];
 }
@@ -79,7 +80,7 @@ void gatherCopy(
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t streamArraySize)
 {
-  #pragma acc parallel loop copyin(a[0:streamArraySize], idx1[0:streamArraySize]) copy(c[0:streamArraySize])
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[idx1[j]];
 }
@@ -96,7 +97,7 @@ void gatherScale(
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop copyin(b[0:streamArraySize], idx1[0:streamArraySize]) copy(c[0:streamArraySize])
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     b[j] = scalar * c[idx1[j]];
 }
@@ -112,7 +113,7 @@ void gatherAdd(
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
 {
-  #pragma acc parallel loop copyin(c[0:streamArraySize], idx1[0:streamArraySize]) copy(b[0:streamArraySize])
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[idx1[j]] + b[idx2[j]];
 }
@@ -129,7 +130,7 @@ void gatherTriad(
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop copyin(c[0:streamArraySize], idx1[0:streamArraySize]) copy(b[0:streamArraySize])
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     a[j] = b[idx1[j]] + scalar * c[idx2[j]];
 }
@@ -144,8 +145,9 @@ void scatterCopy(
   double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize)
+//#pragma acc data copy(c[:streamArraySize], idx1[:streamArraySize], a[:streamArraySize]) 
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[j];
 }
@@ -162,7 +164,7 @@ void scatterScale(
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     b[idx1[j]] = scalar * c[j];
 }
@@ -178,7 +180,7 @@ void scatterAdd(
   ssize_t *idx1,
   ssize_t streamArraySize)
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[j] + b[j];
 }
@@ -195,7 +197,7 @@ void scatterTriad(
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     a[idx1[j]] = b[j] + scalar * c[j];
 }
@@ -211,7 +213,7 @@ void sgCopy(
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[idx2[j]];
 }
@@ -228,7 +230,7 @@ void sgScale(
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     b[idx2[j]] = scalar * c[idx1[j]];
 }
@@ -244,7 +246,7 @@ void sgAdd(
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t streamArraySize)
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
 }
@@ -261,7 +263,7 @@ void sgTriad(
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
 }
@@ -276,7 +278,7 @@ void centralCopy(
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[0] = a[0];
 }
@@ -292,7 +294,7 @@ void centralScale(
   double *a,double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     b[0] = scalar * c[0];
 }
@@ -307,7 +309,7 @@ void centralAdd(
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[0] = a[0] + b[0];
 }
@@ -323,7 +325,7 @@ void centralTriad(
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop
+  //#pragma acc parallel loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     a[0] = b[0] + scalar * c[0];
 }

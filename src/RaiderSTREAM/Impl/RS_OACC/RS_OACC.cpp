@@ -17,20 +17,29 @@ RS_OACC::RS_OACC(const RSOpts& opts) :
   kernelName(opts.getKernelName()),
   streamArraySize(opts.getStreamArraySize()),
   numPEs(opts.getNumPEs()),
+  streamArrayMemSize(opts.getStreamArraySize() * sizeof(double)),
+  idxArrayMemSize(opts.getStreamArraySize() * sizeof(ssize_t)),
   lArgc(0),
   lArgv(nullptr),
   a(nullptr),
   b(nullptr),
   c(nullptr),
+  d_a(nullptr),
+  d_b(nullptr),
+  d_c(nullptr),
   idx1(nullptr),
   idx2(nullptr),
   idx3(nullptr),
+  d_idx1(nullptr),
+  d_idx2(nullptr),
+  d_idx3(nullptr),
   scalar(3.0)
 {}
 
 RS_OACC::~RS_OACC() {}
 
 bool RS_OACC::allocateData() {
+
   a =    new  double[streamArraySize];
   b =    new  double[streamArraySize];
   c =    new  double[streamArraySize];
@@ -38,6 +47,11 @@ bool RS_OACC::allocateData() {
   idx2 = new ssize_t[streamArraySize];
   idx3 = new ssize_t[streamArraySize];
 
+  #pragma acc enter data create(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize], idx3[0:streamArraySize])
+  #pragma acc host_data use_device(a, b, c, idx1, idx2, idx3)
+
+  streamArrayMemSize  = streamArraySize * sizeof(double);
+  idxArrayMemSize     = streamArraySize * sizeof(ssize_t);
   #ifdef _ARRAYGEN_
     initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
     initReadIdxArray(idx2, streamArraySize, "RaiderSTREAM/arraygen/IDX2.txt");
@@ -47,6 +61,37 @@ bool RS_OACC::allocateData() {
     initRandomIdxArray(idx2, streamArraySize);
     initRandomIdxArray(idx3, streamArraySize);
   #endif
+
+  /* a -> d_a */
+  double *d_a = (double *) acc_malloc(streamArrayMemSize);
+  acc_free(d_a);
+  acc_memcpy_to_device(d_a, a, streamArrayMemSize);
+
+    /* b -> d_b */
+  double *d_b = (double *) acc_malloc(streamArrayMemSize);
+  acc_free(d_b);
+  acc_memcpy_to_device(d_b, b, streamArrayMemSize);
+
+    /* c -> d_c */
+  double *d_c = (double *) acc_malloc(streamArrayMemSize);
+  acc_free(d_c);
+  acc_memcpy_to_device(d_c, c, streamArrayMemSize);
+
+    /* idx1 -> d_idx1 */
+  double *d_idx1 = (double *) acc_malloc(idxArrayMemSize);
+  acc_free(d_idx1);
+  acc_memcpy_to_device(d_idx1, idx1, idxArrayMemSize);
+
+    /* idx2 -> d_idx2 */
+  double *d_idx2 = (double *) acc_malloc(idxArrayMemSize);
+  acc_free(d_idx2);
+  acc_memcpy_to_device(d_idx2, idx2, idxArrayMemSize);
+
+    /* idx3 -> d_idx3 */
+  double *d_idx3 = (double *) acc_malloc(idxArrayMemSize);
+  acc_free(d_idx3);
+  acc_memcpy_to_device(d_idx3, idx3, idxArrayMemSize);
+
 
   #ifdef _DEBUG_
   std::cout << "===================================================================================" << std::endl;
@@ -62,6 +107,7 @@ bool RS_OACC::allocateData() {
   std::cout << "===================================================================================" << std::endl;
   #endif
 
+
   return true;
 }
 
@@ -72,6 +118,12 @@ bool RS_OACC::freeData() {
   if ( idx1 ) { delete[] idx1; }
   if ( idx2 ) { delete[] idx2; }
   if ( idx3 ) { delete[] idx3; }
+  if ( d_a ) { acc_free(d_a); }
+  if ( d_b ) { acc_free(d_b); }
+  if ( d_c ) { acc_free(d_c); }
+  if ( d_idx1 ) { acc_free(d_idx1); }
+  if ( d_idx2 ) { acc_free(d_idx2); }
+  if ( d_idx3 ) { acc_free(d_idx3); }
   return true;
 }
 
@@ -135,7 +187,7 @@ bool RS_OACC::execute(
       MBPS[RSBaseImpl::RS_SEQ_TRIAD] = mbps;
       FLOPS[RSBaseImpl::RS_SEQ_TRIAD] = flops;
       break;
-
+    
     /* GATHER KERNELS */
     case RSBaseImpl::RS_GATHER_COPY:
       startTime = mySecond();

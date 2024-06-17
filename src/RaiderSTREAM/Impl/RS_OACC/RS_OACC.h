@@ -1,5 +1,5 @@
 //
-// _RS_OMP_H_
+// _RS_OACC_H_
 //
 // Copyright (C) 2022-2024 Texas Tech University
 // All Rights Reserved
@@ -17,7 +17,7 @@
 #include "RaiderSTREAM/RaiderSTREAM.h"
 
 /**
- * @brief RaiderSTREAM OpenMP implementation class
+ * @brief RaiderSTREAM OpenACC implementation class
  *
  * This class provides the implementation of the RaiderSTREAM benchmark using OpenMP.
  */
@@ -27,13 +27,21 @@ private:
   ssize_t streamArraySize;
   int numPEs;
   int lArgc;
+  int streamArrayMemSize;
+  int idxArrayMemSize;
   char **lArgv;
   double *a;
   double *b;
   double *c;
+  double *d_a;
+  double *d_b;
+  double *d_c;
   ssize_t *idx1;
   ssize_t *idx2;
   ssize_t *idx3;
+  ssize_t *d_idx1;
+  ssize_t *d_idx2;
+  ssize_t *d_idx3;
   ssize_t scalar;
 
 public:
