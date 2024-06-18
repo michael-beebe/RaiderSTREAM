@@ -28,6 +28,7 @@
 
 #ifdef _ENABLE_OMP_TARGET_
 #include "Impl/RS_OMP_TARGET/RS_OMP_TARGET.h"
+#endif
 
 #ifdef _ENABLE_OACC_
 #include "Impl/RS_OACC/RS_OACC.h"
@@ -490,6 +491,8 @@ int main( int argc, char **argv ) {
 
   #ifdef _ENABLE_OMP_TARGET_
     runBenchOMPTarget( Opts );
+  #endif
+
   #ifdef _ENABLE_OACC_
     runBenchOACC( Opts );
   #endif

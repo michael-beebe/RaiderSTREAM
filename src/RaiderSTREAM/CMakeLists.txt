@@ -17,6 +17,8 @@ endif()
 
 if (ENABLE_OMP_TARGET)
   add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_OMP_TARGET_OBJS>)
+endif()
+
 if (ENABLE_OACC)
   add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_OACC_OBJS>)
 endif()

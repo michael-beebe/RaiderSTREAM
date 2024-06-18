@@ -95,6 +95,8 @@ if (ENABLE_OMP_TARGET)
   endif()
 else()
   message(STATUS "DISABLING OpenMP + Offload Implementation")
+endif()
+
 if (ENABLE_OACC)
   find_package(OpenACC REQUIRED)
   if (1)
@@ -254,3 +256,4 @@ add_subdirectory(include)
 add_subdirectory(test)
 
 # EOF
+
