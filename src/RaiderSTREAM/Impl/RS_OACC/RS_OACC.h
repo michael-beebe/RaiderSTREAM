@@ -29,6 +29,8 @@ private:
   int lArgc;
   int streamArrayMemSize;
   int idxArrayMemSize;
+  int numGangs;
+  int numWorkers;
   char **lArgv;
   double *a;
   double *b;
@@ -60,22 +62,22 @@ public:
 
 extern "C" {
   void seqCopy(
-    double *a, double *b, double *c,
+    int ngangs, int nworkers, double *a, double *b, double *c,
     ssize_t streamArraySize
   );
 
   void seqScale(
-    double *a, double *b, double *c,
+    int ngangs, int nworkers, double *a, double *b, double *c,
     ssize_t streamArraySize, double scalar
   );
 
   void seqAdd(
-    double *a, double *b, double *c,
+    int ngangs, int nworkers, double *a, double *b, double *c,
     ssize_t streamArraySize
   );
 
   void seqTriad(
-    double *a, double *b, double *c,
+    int ngangs, int nworkers, double *a, double *b, double *c,
     ssize_t streamArraySize, double scalar
   );
 

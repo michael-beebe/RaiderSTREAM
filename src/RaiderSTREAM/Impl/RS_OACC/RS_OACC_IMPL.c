@@ -17,11 +17,11 @@
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void seqCopy(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t streamArraySize)
 //#pragma acc data copy(a[:streamArraySize]), copy(c[:streamArraySize])
 {
-  #pragma acc parallel loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[j];
 }
@@ -33,10 +33,10 @@ void seqCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void seqScale(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     b[j] = scalar * c[j];
 }
@@ -47,10 +47,10 @@ void seqScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void seqAdd(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  #pragma acc parallel loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[j] + b[j];
 }
@@ -62,10 +62,10 @@ void seqAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void seqTriad(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     a[j] = b[j] + scalar * c[j];
 }
