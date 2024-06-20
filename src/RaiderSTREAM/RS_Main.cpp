@@ -26,12 +26,12 @@
 #include "Impl/RS_OMP/RS_OMP.h"
 #endif
 
-#ifdef _ENABLE_OACC_
-#include "Impl/RS_OACC/RS_OACC.h"
-#endif
-
 #ifdef _ENABLE_OMP_TARGET_
 #include "Impl/RS_OMP_TARGET/RS_OMP_TARGET.h"
+#endif
+
+#ifdef _ENABLE_OACC_
+#include "Impl/RS_OACC/RS_OACC.h"
 #endif
 
 #ifdef _ENABLE_MPI_OMP_

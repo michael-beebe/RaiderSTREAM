@@ -1,9 +1,0 @@
-root = true
-
-[**]
-insert_final_newline = true
-
-# from src/RaiderSTREAM/RS_Main.cpp
-[*.{c,h,cpp}]
-indent_style = space
-indent_size = 2
