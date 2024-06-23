@@ -87,12 +87,12 @@ bool RS_OMP_TARGET::freeData() {
   if ( idx1 ) { delete[] idx1; }
   if ( idx2 ) { delete[] idx2; }
   if ( idx3 ) { delete[] idx3; }
-  if ( aOnDevice ) { omp_target_free( a, -1 ); }
-  if ( bOnDevice ) { omp_target_free( b, -1 ); }
-  if ( cOnDevice ) { omp_target_free( c, -1 ); }
-  if ( idx1OnDevice ) { omp_target_free( idx1, -1 ); }
-  if ( idx2OnDevice ) { omp_target_free( idx2, -1 ); }
-  if ( idx3OnDevice ) { omp_target_free( idx3, -1 ); }
+  if ( aOnDevice ) { omp_target_free( aOnDevice, -1 ); }
+  if ( bOnDevice ) { omp_target_free( bOnDevice, -1 ); }
+  if ( cOnDevice ) { omp_target_free( cOnDevice, -1 ); }
+  if ( idx1OnDevice ) { omp_target_free( idx1OnDevice, -1 ); }
+  if ( idx2OnDevice ) { omp_target_free( idx2OnDevice, -1 ); }
+  if ( idx3OnDevice ) { omp_target_free( idx3OnDevice, -1 ); }
   return true;
 }
 
