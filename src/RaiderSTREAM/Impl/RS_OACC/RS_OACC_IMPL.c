@@ -1,5 +1,5 @@
 //
-// _RS_OMP_IMPL_C_
+// _RS_OACC_IMPL_C_
 //
 // Copyright (C) 2022-2024 Texas Tech University
 // All Rights Reserved
@@ -21,7 +21,7 @@ void seqCopy(
   ssize_t streamArraySize)
 //#pragma acc data copy(a[:streamArraySize]), copy(c[:streamArraySize])
 {
-  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers)
+  #pragma acc parallel loop present(a, c) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[j];
 }
@@ -36,7 +36,7 @@ void seqScale(
   int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers)
+  #pragma acc parallel loop present(a, c) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     b[j] = scalar * c[j];
 }
@@ -50,7 +50,7 @@ void seqAdd(
   int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers)
+  #pragma acc parallel loop present(a, b, c) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[j] + b[j];
 }
@@ -65,7 +65,7 @@ void seqTriad(
   int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers)
+  #pragma acc parallel loop present(a, b, c) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     a[j] = b[j] + scalar * c[j];
 }
@@ -77,10 +77,10 @@ void seqTriad(
  **************************************************/
 
 void gatherCopy(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1, ssize_t streamArraySize)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, c, idx1) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[idx1[j]];
 }
@@ -93,11 +93,11 @@ void gatherCopy(
  **************************************************/
 
 void gatherScale(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(b, c, idx1) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     b[j] = scalar * c[idx1[j]];
 }
@@ -109,11 +109,11 @@ void gatherScale(
  ************************i**************************/
 
 void gatherAdd(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, b, c, idx1, idx2) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[idx1[j]] + b[idx2[j]];
 }
@@ -126,11 +126,11 @@ void gatherAdd(
  **************************************************/
 
 void gatherTriad(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize, double scalar)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, b, c, idx1, idx2) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     a[j] = b[idx1[j]] + scalar * c[idx2[j]];
 }
@@ -142,12 +142,12 @@ void gatherTriad(
  **************************************************/
 
 void scatterCopy(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize)
 //#pragma acc data copy(c[:streamArraySize], idx1[:streamArraySize], a[:streamArraySize]) 
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, c, idx1) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[j];
 }
@@ -160,11 +160,11 @@ void scatterCopy(
  **************************************************/
 
 void scatterScale(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(b, c, idx1) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     b[idx1[j]] = scalar * c[j];
 }
@@ -176,11 +176,11 @@ void scatterScale(
  **************************************************/
 
 void scatterAdd(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, b, c, idx1) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[j] + b[j];
 }
@@ -193,11 +193,11 @@ void scatterAdd(
  **************************************************/
 
 void scatterTriad(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, b, c, idx1) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     a[idx1[j]] = b[j] + scalar * c[j];
 }
@@ -209,11 +209,11 @@ void scatterTriad(
  **************************************************/
 
 void sgCopy(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, c, idx1, idx2) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[idx2[j]];
 }
@@ -226,11 +226,11 @@ void sgCopy(
  **************************************************/
 
 void sgScale(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize, double scalar)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(b, c, idx1, idx2) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     b[idx2[j]] = scalar * c[idx1[j]];
 }
@@ -242,11 +242,11 @@ void sgScale(
  **************************************************/
 
 void sgAdd(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t streamArraySize)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, b, c, idx1, idx2, idx3) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
 }
@@ -259,11 +259,11 @@ void sgAdd(
  **************************************************/
 
 void sgTriad(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t streamArraySize, double scalar)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, b, c, idx1, idx2, idx3) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
 }
@@ -275,10 +275,10 @@ void sgTriad(
  **************************************************/
 
 void centralCopy(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, c) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[0] = a[0];
 }
@@ -291,10 +291,10 @@ void centralCopy(
  **************************************************/
 
 void centralScale(
-  double *a,double *b, double *c,
+  int ngangs, int nworkers, double *a,double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(b, c) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     b[0] = scalar * c[0];
 }
@@ -306,10 +306,10 @@ void centralScale(
  **************************************************/
 
 void centralAdd(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, b, c) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[0] = a[0] + b[0];
 }
@@ -322,10 +322,10 @@ void centralAdd(
  **************************************************/
 
 void centralTriad(
-  double *a, double *b, double *c,
+  int ngangs, int nworkers, double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  //#pragma acc parallel loop
+  #pragma acc parallel loop present(a, b, c) num_gangs(ngangs) num_workers(nworkers)
   for (ssize_t j = 0; j < streamArraySize; j++)
     a[0] = b[0] + scalar * c[0];
 }
