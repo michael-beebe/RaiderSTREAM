@@ -42,6 +42,16 @@ RS_OACC::~RS_OACC() {}
 
 bool RS_OACC::allocateData() {
 
+  streamArrayMemSize  = streamArraySize * sizeof(double);
+  idxArrayMemSize     = streamArraySize * sizeof(ssize_t);
+
+  double *a = (double *)malloc(streamArrayMemSize);
+  double *b = (double *)malloc(streamArrayMemSize);
+  double *c = (double *)malloc(streamArrayMemSize);
+  ssize_t *idx1 = (ssize_t *)malloc(idxArrayMemSize);
+  ssize_t *idx2 = (ssize_t *)malloc(idxArrayMemSize);
+  ssize_t *idx3 = (ssize_t *)malloc(idxArrayMemSize);
+
   a =    new  double[streamArraySize];
   b =    new  double[streamArraySize];
   c =    new  double[streamArraySize];
@@ -49,11 +59,6 @@ bool RS_OACC::allocateData() {
   idx2 = new ssize_t[streamArraySize];
   idx3 = new ssize_t[streamArraySize];
 
-  #pragma acc enter data create(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize], idx3[0:streamArraySize])
-  #pragma acc host_data use_device(a, b, c, idx1, idx2, idx3)
-
-  streamArrayMemSize  = streamArraySize * sizeof(double);
-  idxArrayMemSize     = streamArraySize * sizeof(ssize_t);
   #ifdef _ARRAYGEN_
     initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
     initReadIdxArray(idx2, streamArraySize, "RaiderSTREAM/arraygen/IDX2.txt");
@@ -63,35 +68,28 @@ bool RS_OACC::allocateData() {
     initRandomIdxArray(idx2, streamArraySize);
     initRandomIdxArray(idx3, streamArraySize);
   #endif
-
   /* a -> d_a */
   double *d_a = (double *) acc_malloc(streamArrayMemSize);
-  acc_free(d_a);
   acc_memcpy_to_device(d_a, a, streamArrayMemSize);
 
     /* b -> d_b */
   double *d_b = (double *) acc_malloc(streamArrayMemSize);
-  acc_free(d_b);
   acc_memcpy_to_device(d_b, b, streamArrayMemSize);
 
     /* c -> d_c */
   double *d_c = (double *) acc_malloc(streamArrayMemSize);
-  acc_free(d_c);
   acc_memcpy_to_device(d_c, c, streamArrayMemSize);
 
     /* idx1 -> d_idx1 */
-  double *d_idx1 = (double *) acc_malloc(idxArrayMemSize);
-  acc_free(d_idx1);
+  ssize_t *d_idx1 = (ssize_t *) acc_malloc(idxArrayMemSize);
   acc_memcpy_to_device(d_idx1, idx1, idxArrayMemSize);
 
     /* idx2 -> d_idx2 */
-  double *d_idx2 = (double *) acc_malloc(idxArrayMemSize);
-  acc_free(d_idx2);
+  ssize_t *d_idx2 = (ssize_t *) acc_malloc(idxArrayMemSize);
   acc_memcpy_to_device(d_idx2, idx2, idxArrayMemSize);
 
     /* idx3 -> d_idx3 */
-  double *d_idx3 = (double *) acc_malloc(idxArrayMemSize);
-  acc_free(d_idx3);
+  ssize_t *d_idx3 = (ssize_t *) acc_malloc(idxArrayMemSize);
   acc_memcpy_to_device(d_idx3, idx3, idxArrayMemSize);
 
 
@@ -144,7 +142,7 @@ bool RS_OACC::execute(
     /* SEQUENTIAL KERNELS */
     case RSBaseImpl::RS_SEQ_COPY:
       startTime = mySecond();
-      seqCopy(numGangs, numWorkers, a, b, c, streamArraySize);
+      seqCopy(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
@@ -156,7 +154,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_SEQ_SCALE:
       startTime = mySecond();
-      seqScale(numGangs, numWorkers, a, b, c, streamArraySize, scalar);
+      seqScale(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
@@ -168,7 +166,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_SEQ_ADD:
       startTime = mySecond();
-      seqAdd(numGangs, numWorkers, a, b, c, streamArraySize);
+      seqAdd(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
@@ -180,7 +178,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_SEQ_TRIAD:
       startTime = mySecond();
-      seqTriad(numGangs, numWorkers, a, b, c, streamArraySize, scalar);
+      seqTriad(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
@@ -193,7 +191,7 @@ bool RS_OACC::execute(
     /* GATHER KERNELS */
     case RSBaseImpl::RS_GATHER_COPY:
       startTime = mySecond();
-      gatherCopy(numGangs, numWorkers, a, b, c, idx1, streamArraySize);
+      gatherCopy(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
@@ -205,7 +203,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_GATHER_SCALE:
       startTime = mySecond();
-      gatherScale(numGangs, numWorkers, a, b, c, idx1, streamArraySize, scalar);
+      gatherScale(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
@@ -217,7 +215,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_GATHER_ADD:
       startTime = mySecond();
-      gatherAdd(numGangs, numWorkers, a, b, c, idx1, idx2, streamArraySize);
+      gatherAdd(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
@@ -229,7 +227,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_GATHER_TRIAD:
       startTime = mySecond();
-      gatherTriad(numGangs, numWorkers, a, b, c, idx1, idx2, streamArraySize, scalar);
+      gatherTriad(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
@@ -242,7 +240,7 @@ bool RS_OACC::execute(
     /* SCATTER KERNELS */
     case RSBaseImpl::RS_SCATTER_COPY:
       startTime = mySecond();
-      scatterCopy(numGangs, numWorkers, a, b, c, idx1, streamArraySize);
+      scatterCopy(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
@@ -254,7 +252,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_SCATTER_SCALE:
       startTime = mySecond();
-      scatterScale(numGangs, numWorkers, a, b, c, idx1, streamArraySize, scalar);
+      scatterScale(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
@@ -266,7 +264,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_SCATTER_ADD:
       startTime = mySecond();
-      scatterAdd(numGangs, numWorkers, a, b, c, idx1, streamArraySize);
+      scatterAdd(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
@@ -278,7 +276,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_SCATTER_TRIAD:
       startTime = mySecond();
-      scatterTriad(numGangs, numWorkers, a, b, c, idx1, streamArraySize, scalar);
+      scatterTriad(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
@@ -291,7 +289,7 @@ bool RS_OACC::execute(
     /* SCATTER-GATHER KERNELS */
     case RSBaseImpl::RS_SG_COPY:
       startTime = mySecond();
-      sgCopy(numGangs, numWorkers, a, b, c, idx1, idx2, streamArraySize);
+      sgCopy(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
@@ -303,7 +301,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_SG_SCALE:
       startTime = mySecond();
-      sgScale(numGangs, numWorkers, a, b, c, idx1, idx2, streamArraySize, scalar);
+      sgScale(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
@@ -315,7 +313,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_SG_ADD:
       startTime = mySecond();
-      sgAdd(numGangs, numWorkers, a, b, c, idx1, idx2, idx3, streamArraySize);
+      sgAdd(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
@@ -327,7 +325,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_SG_TRIAD:
       startTime = mySecond();
-      sgTriad(numGangs, numWorkers, a, b, c, idx1, idx2, idx3, streamArraySize, scalar);
+      sgTriad(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
@@ -340,7 +338,7 @@ bool RS_OACC::execute(
     /* CENTRAL KERNELS */
     case RSBaseImpl::RS_CENTRAL_COPY:
       startTime = mySecond();
-      centralCopy(numGangs, numWorkers, a, b, c, streamArraySize);
+      centralCopy(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
@@ -352,7 +350,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_CENTRAL_SCALE:
       startTime = mySecond();
-      centralScale(numGangs, numWorkers, a, b, c, streamArraySize, scalar);
+      centralScale(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
@@ -364,7 +362,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_CENTRAL_ADD:
       startTime = mySecond();
-      centralAdd(numGangs, numWorkers, a, b, c, streamArraySize);
+      centralAdd(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
@@ -376,7 +374,7 @@ bool RS_OACC::execute(
 
     case RSBaseImpl::RS_CENTRAL_TRIAD:
       startTime = mySecond();
-      centralTriad(numGangs, numWorkers, a, b, c, streamArraySize, scalar);
+      centralTriad(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
@@ -390,7 +388,7 @@ bool RS_OACC::execute(
     case RSBaseImpl::RS_ALL:
       /* RS_SEQ_COPY */
       startTime = mySecond();
-      seqCopy(numGangs, numWorkers, a, b, c, streamArraySize);
+      seqCopy(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
@@ -401,7 +399,7 @@ bool RS_OACC::execute(
 
       /* RS_SEQ_SCALE */
       startTime = mySecond();
-      seqScale(numGangs, numWorkers, a, b, c, streamArraySize, scalar);
+      seqScale(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
@@ -412,7 +410,7 @@ bool RS_OACC::execute(
 
       /* RS_SEQ_ADD */
       startTime = mySecond();
-      seqAdd(numGangs, numWorkers, a, b, c, streamArraySize);
+      seqAdd(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
@@ -423,7 +421,7 @@ bool RS_OACC::execute(
 
       /* RS_SEQ_TRIAD */
       startTime = mySecond();
-      seqTriad(numGangs, numWorkers, a, b, c, streamArraySize, scalar);
+      seqTriad(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
@@ -434,7 +432,7 @@ bool RS_OACC::execute(
 
       /* RS_GATHER_COPY */
       startTime = mySecond();
-      gatherCopy(numGangs, numWorkers, a, b, c, idx1, streamArraySize);
+      gatherCopy(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
@@ -445,7 +443,7 @@ bool RS_OACC::execute(
 
       /* RS_GATHER_SCALE */
       startTime = mySecond();
-      gatherScale(numGangs, numWorkers, a, b, c, idx1, streamArraySize, scalar);
+      gatherScale(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
@@ -456,7 +454,7 @@ bool RS_OACC::execute(
 
       /* RS_GATHER_ADD */
       startTime = mySecond();
-      gatherAdd(numGangs, numWorkers, a, b, c, idx1, idx2, streamArraySize);
+      gatherAdd(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
@@ -467,7 +465,7 @@ bool RS_OACC::execute(
 
       /* RS_GATHER_TRIAD */
       startTime = mySecond();
-      gatherTriad(numGangs, numWorkers, a, b, c, idx1, idx2, streamArraySize, scalar);
+      gatherTriad(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
@@ -478,7 +476,7 @@ bool RS_OACC::execute(
 
       /* RS_SCATTER_COPY */
       startTime = mySecond();
-      scatterCopy(numGangs, numWorkers, a, b, c, idx1, streamArraySize);
+      scatterCopy(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
@@ -489,7 +487,7 @@ bool RS_OACC::execute(
 
       /* RS_SCATTER_SCALE */
       startTime = mySecond();
-      scatterScale(numGangs, numWorkers, a, b, c, idx1, streamArraySize, scalar);
+      scatterScale(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
@@ -500,7 +498,7 @@ bool RS_OACC::execute(
 
       /* RS_SCATTER_ADD */
       startTime = mySecond();
-      scatterAdd(numGangs, numWorkers, a, b, c, idx1, streamArraySize);
+      scatterAdd(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
@@ -511,7 +509,7 @@ bool RS_OACC::execute(
 
       /* RS_SCATTER_TRIAD */
       startTime = mySecond();
-      scatterTriad(numGangs, numWorkers, a, b, c, idx1, streamArraySize, scalar);
+      scatterTriad(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
@@ -522,7 +520,7 @@ bool RS_OACC::execute(
 
       /* RS_SG_COPY */
       startTime = mySecond();
-      sgCopy(numGangs, numWorkers, a, b, c, idx1, idx2, streamArraySize);
+      sgCopy(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
@@ -533,7 +531,7 @@ bool RS_OACC::execute(
 
       /* RS_SG_SCALE */
       startTime = mySecond();
-      sgScale(numGangs, numWorkers, a, b, c, idx1, idx2, streamArraySize, scalar);
+      sgScale(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
@@ -544,7 +542,7 @@ bool RS_OACC::execute(
 
       /* RS_SG_ADD */
       startTime = mySecond();
-      sgAdd(numGangs, numWorkers, a, b, c, idx1, idx2, idx3, streamArraySize);
+      sgAdd(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
@@ -555,7 +553,7 @@ bool RS_OACC::execute(
 
       /* RS_SG_TRIAD */
       startTime = mySecond();
-      sgTriad(numGangs, numWorkers, a, b, c, idx1, idx2, idx3, streamArraySize, scalar);
+      sgTriad(numGangs, numWorkers, d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
@@ -566,7 +564,7 @@ bool RS_OACC::execute(
 
       /* RS_CENTRAL_COPY */
       startTime = mySecond();
-      centralCopy(numGangs, numWorkers, a, b, c, streamArraySize);
+      centralCopy(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
@@ -577,7 +575,7 @@ bool RS_OACC::execute(
 
       /* RS_CENTRAL_SCALE */
       startTime = mySecond();
-      centralScale(numGangs, numWorkers, a, b, c, streamArraySize, scalar);
+      centralScale(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
@@ -588,7 +586,7 @@ bool RS_OACC::execute(
 
       /* RS_CENTRAL_ADD */
       startTime = mySecond();
-      centralAdd(numGangs, numWorkers, a, b, c, streamArraySize);
+      centralAdd(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
@@ -599,7 +597,7 @@ bool RS_OACC::execute(
 
       /* RS_CENTRAL_TRIAD */
       startTime = mySecond();
-      centralTriad(numGangs, numWorkers, a, b, c, streamArraySize, scalar);
+      centralTriad(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize, scalar);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);

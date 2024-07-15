@@ -12,11 +12,11 @@ cd build
 # --- Configure the project with CMake
 #-----------------------------------------
 # --- OpenMP ---
-cmake \
-  -DENABLE_OMP=ON \
-  -DCMAKE_C_FLAGS="-fopenmp" \
-  -DCMAKE_CXX_FLAGS="-fopenmp" \
-  ../
+#cmake \
+#  -DENABLE_OMP=ON \
+#  -DCMAKE_C_FLAGS="-fopenmp" \
+#  -DCMAKE_CXX_FLAGS="-fopenmp" \
+#  ../
 
 # --- OpenACC ---
  cmake \
@@ -51,21 +51,12 @@ cmake \
 #   ../
 
 # --- CUDA ---
-#cmake \
+#cmake  \
 #  -DENABLE_CUDA=ON \
 #  -DCMAKE_C_COMPILER=`which nvcc` \
 #  -DCMAKE_CXX_COMPILER=`which nvcc` \
 #  -DCMAKE_EXE_LINKER_FLAGS="-lcudart -lcudadevrt" \
 #  ../
-
-# --- OpenACC ---
-#  cmake \
-#    -DENABLE_OACC=ON \
-#    -DCMAKE_C_COMPILER=`which nvc` \
-#    -DCMAKE_CXX_COMPILER=`which nvc++` \
-#    -DCMAKE_C_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
-#    -DCMAKE_CXX_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
-#    ../
 
 # --- Build the project
 make
