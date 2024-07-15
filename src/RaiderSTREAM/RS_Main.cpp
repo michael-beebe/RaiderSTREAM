@@ -164,6 +164,7 @@ void runBenchOACC(RSOpts *Opts) {
     delete RS;
     return;
   }
+  
   /* Execute the Benchmark */
   if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
     std::cout <<"ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OACC" << std::endl;

@@ -13,6 +13,9 @@
 #ifdef _RS_OACC_H_
 #define _DEBUG_
 
+
+#include<stdio.h>
+
 RS_OACC::RS_OACC(const RSOpts& opts) :
   RSBaseImpl("RS_OACC", opts.getKernelTypeFromName(opts.getKernelName())),
   kernelName(opts.getKernelName()),
@@ -63,33 +66,33 @@ bool RS_OACC::allocateData() {
 
 
   /* a -> d_a */
-  d_a = (double*) acc_malloc(streamArraySize); //Allocating memory in GPU/device
-  acc_memcpy_to_device(d_a, a, streamArraySize); //Copying data from a (on the host) to d_a (on the device)
+  d_a = (double*) acc_malloc(StreamMemArraySize); //Allocating memory in GPU/device
+  acc_memcpy_to_device(d_a, a, StreamMemArraySize); //Copying data from a (on the host) to d_a (on the device)
   std::cout << "Device Pointer is: " << d_a << std::endl;
   std::cout << "Host Pointer is: " << a << std::endl;
     /* b -> d_b */
-  d_b = (double*) acc_malloc(streamArraySize);
-  acc_memcpy_to_device(d_b, b, streamArraySize);
+  d_b = (double*) acc_malloc(StreamMemArraySize);
+  acc_memcpy_to_device(d_b, b, StreamMemArraySize);
   std::cout << "Device Pointer is: " << d_b << std::endl;
   std::cout << "Host Pointer is: " << b << std::endl;
     /* c -> d_c */
-  d_c = (double*) acc_malloc(streamArraySize);
-  acc_memcpy_to_device(d_c, c, streamArraySize);
+  d_c = (double*) acc_malloc(StreamMemArraySize);
+  acc_memcpy_to_device(d_c, c, StreamMemArraySize);
   std::cout << "Device Pointer is: " << d_c << std::endl;
   std::cout << "Host Pointer is: " << c << std::endl;
     /* idx1 -> d_idx1 */
-  d_idx1 = (ssize_t*) acc_malloc(streamArraySize);
-  acc_memcpy_to_device(d_idx1, idx1, streamArraySize);
+  d_idx1 = (ssize_t*) acc_malloc(IdxMemArraySize);
+  acc_memcpy_to_device(d_idx1, idx1, IdxMemArraySize);
   std::cout << "Device Pointer is: " << d_idx1 << std::endl;
   std::cout << "Host Pointer is: " << idx1 << std::endl;
     /* idx2 -> d_idx2 */
-  d_idx2 = (ssize_t*) acc_malloc(streamArraySize);
-  acc_memcpy_to_device(d_idx2, idx2, streamArraySize);
+  d_idx2 = (ssize_t*) acc_malloc(IdxMemArraySize);
+  acc_memcpy_to_device(d_idx2, idx2, IdxMemArraySize);
   std::cout << "Device Pointer is: " << d_idx2 << std::endl;
   std::cout << "Host Pointer is: " << idx2 << std::endl;
     /* idx3 -> d_idx3 */
-  d_idx3 = (ssize_t*) acc_malloc(streamArraySize);
-  acc_memcpy_to_device(d_idx3, idx3, streamArraySize);
+  d_idx3 = (ssize_t*) acc_malloc(IdxMemArraySize);
+  acc_memcpy_to_device(d_idx3, idx3, IdxMemArraySize);
   std::cout << "Device Pointer is: " << d_idx3 << std::endl;
   std::cout << "Host Pointer is: " << idx3 << std::endl;
 
@@ -104,16 +107,30 @@ bool RS_OACC::allocateData() {
   std::cout << "idx1[streamArraySize-1] = " << idx1[streamArraySize-1] << std::endl;
   std::cout << "idx2[streamArraySize-1] = " << idx2[streamArraySize-1] << std::endl;
   std::cout << "idx3[streamArraySize-1] = " << idx3[streamArraySize-1] << std::endl;
-  std::cout << "d_a[streamArraySize-1]    = " << d_a << std::endl;
-  std::cout << "d_b[streamArraySize-1]    = " << d_b[streamArraySize-1] << std::endl;
-  std::cout << "d_c[streamArraySize-1]    = " << d_c[streamArraySize-1] << std::endl;
-  std::cout << "d_idx1[streamArraySize-1] = " << d_idx1[streamArraySize-1] << std::endl;
-  std::cout << "d_idx2[streamArraySize-1] = " << d_idx2[streamArraySize-1] << std::endl;
-  std::cout << "d_idx3[streamArraySize-1] = " << d_idx3[streamArraySize-1] << std::endl;
+  double *testarray = new double[streamArraySize];
+  acc_memcpy_from_device(testarray, d_a, StreamMemArraySize);
+  std::cout << testarray[streamArraySize-1] <<std::endl;
+  testarray = new double[streamArraySize];
+  acc_memcpy_from_device(testarray, d_b, StreamMemArraySize);
+  std::cout << testarray[streamArraySize-1] <<std::endl;
+  testarray = new double[streamArraySize];
+  acc_memcpy_from_device(testarray, d_c, StreamMemArraySize);
+  std::cout << testarray[streamArraySize-1] <<std::endl;
+  delete[] testarray;
+  ssize_t *test2 = new ssize_t[streamArraySize];
+  acc_memcpy_from_device(test2, d_idx1, IdxMemArraySize);
+  std::cout << test2[streamArraySize-1] <<std::endl;
+  test2 = new ssize_t[streamArraySize];
+  acc_memcpy_from_device(test2, d_idx2, IdxMemArraySize);
+  std::cout << test2[streamArraySize-1] <<std::endl;
+  test2 = new ssize_t[streamArraySize];
+  acc_memcpy_from_device(test2, d_idx3, IdxMemArraySize);
+  std::cout << test2[streamArraySize-1] <<std::endl;
+  delete[] test2;
   std::cout << "===================================================================================" << std::endl;
   #endif
 
-
+  
   return true;
 }
 
@@ -148,7 +165,10 @@ bool RS_OACC::execute(
     /* SEQUENTIAL KERNELS */
     case RSBaseImpl::RS_SEQ_COPY:
       startTime = mySecond();
-      std::cout << "We get to seqCopy function call before seqfault" << std::endl;
+      std::cout << "Device Pointer is: " << d_a << std::endl;
+      std::cout << "Host Pointer is: " << a << std::endl;
+      std::cout << "WE MADE IT TO THE KERNEL"<< std::endl;
+      #pragma acc data deviceptr(d_a, d_b, d_c)
       seqCopy(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);

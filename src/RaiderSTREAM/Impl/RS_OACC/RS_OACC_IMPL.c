@@ -11,8 +11,7 @@
 #include <openacc.h>
 #include <sys/types.h>
 
-
-
+#include<stdio.h>
 /**************************************************
  * @brief Copies data from one stream to another.
  * 
@@ -21,13 +20,17 @@
 void seqCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize)
-#pragma acc data deviceptr(d_a, d_b, d_c)
 #pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
+  printf("Device Pointer d_a is %p\n", d_a); /*REmark: This only runs once but shouldn't it run multiple times because it is called inside the parallel directive??*/
+  printf("Device Pointer d_c is %p\n", d_c);
+  printf("streamArraySize: %zd\n", streamArraySize);
   #pragma acc loop
   for (ssize_t j = 0; j < streamArraySize; j++)
+  {
+    printf("WE MADE IT TO ITERATION: %zd\n", j);
     d_c[j] = d_a[j];
-
+  }
 }
 
 /**************************************************
