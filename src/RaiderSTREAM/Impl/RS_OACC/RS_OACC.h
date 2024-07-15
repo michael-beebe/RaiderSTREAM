@@ -27,8 +27,6 @@ private:
   ssize_t streamArraySize;
   int numPEs;
   int lArgc;
-  int streamArrayMemSize;
-  int idxArrayMemSize;
   int numGangs;
   int numWorkers;
   char **lArgv;

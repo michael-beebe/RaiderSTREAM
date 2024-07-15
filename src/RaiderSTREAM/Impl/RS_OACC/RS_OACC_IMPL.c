@@ -11,6 +11,8 @@
 #include <openacc.h>
 #include <sys/types.h>
 
+
+
 /**************************************************
  * @brief Copies data from one stream to another.
  * 
@@ -25,6 +27,7 @@ void seqCopy(
   #pragma acc loop
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[j] = d_a[j];
+
 }
 
 /**************************************************

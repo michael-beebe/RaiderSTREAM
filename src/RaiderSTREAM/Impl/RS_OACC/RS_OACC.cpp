@@ -11,14 +11,13 @@
 #include "RS_OACC.h"
 
 #ifdef _RS_OACC_H_
+#define _DEBUG_
 
 RS_OACC::RS_OACC(const RSOpts& opts) :
   RSBaseImpl("RS_OACC", opts.getKernelTypeFromName(opts.getKernelName())),
   kernelName(opts.getKernelName()),
   streamArraySize(opts.getStreamArraySize()),
   numPEs(opts.getNumPEs()),
-  streamArrayMemSize(opts.getStreamArraySize() * sizeof(double)),
-  idxArrayMemSize(opts.getStreamArraySize() * sizeof(ssize_t)),
   numGangs(opts.getThreadBlocks()),
   numWorkers(opts.getThreadsPerBlocks()),
   lArgc(0),
@@ -42,22 +41,15 @@ RS_OACC::~RS_OACC() {}
 
 bool RS_OACC::allocateData() {
 
-  streamArrayMemSize  = streamArraySize * sizeof(double);
-  idxArrayMemSize     = streamArraySize * sizeof(ssize_t);
+  int StreamMemArraySize = streamArraySize * sizeof(double); //Multiply size of the array by the size of the variable in the array to get total memory size
+  int IdxMemArraySize = streamArraySize * sizeof(ssize_t); //Multiply size of the array by the size of the variable in the array to get total memory size
 
-  double *a = (double *)malloc(streamArrayMemSize);
-  double *b = (double *)malloc(streamArrayMemSize);
-  double *c = (double *)malloc(streamArrayMemSize);
-  ssize_t *idx1 = (ssize_t *)malloc(idxArrayMemSize);
-  ssize_t *idx2 = (ssize_t *)malloc(idxArrayMemSize);
-  ssize_t *idx3 = (ssize_t *)malloc(idxArrayMemSize);
-
-  a =    new  double[streamArraySize];
-  b =    new  double[streamArraySize];
-  c =    new  double[streamArraySize];
-  idx1 = new ssize_t[streamArraySize];
-  idx2 = new ssize_t[streamArraySize];
-  idx3 = new ssize_t[streamArraySize];
+  a =    new  double[streamArraySize]; //Create a pointer in host memory for a
+  b =    new  double[streamArraySize]; //Create a pointer in host memory for b
+  c =    new  double[streamArraySize]; //Create a pointer in host memory for c
+  idx1 = new ssize_t[streamArraySize]; //Create a pointer in host memory for idx1
+  idx2 = new ssize_t[streamArraySize]; //Create a pointer in host memory for idx2
+  idx3 = new ssize_t[streamArraySize]; //Create a pointer in host memory for idx3
 
   #ifdef _ARRAYGEN_
     initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
@@ -68,30 +60,38 @@ bool RS_OACC::allocateData() {
     initRandomIdxArray(idx2, streamArraySize);
     initRandomIdxArray(idx3, streamArraySize);
   #endif
+
+
   /* a -> d_a */
-  double *d_a = (double *) acc_malloc(streamArrayMemSize);
-  acc_memcpy_to_device(d_a, a, streamArrayMemSize);
-
+  d_a = (double*) acc_malloc(streamArraySize); //Allocating memory in GPU/device
+  acc_memcpy_to_device(d_a, a, streamArraySize); //Copying data from a (on the host) to d_a (on the device)
+  std::cout << "Device Pointer is: " << d_a << std::endl;
+  std::cout << "Host Pointer is: " << a << std::endl;
     /* b -> d_b */
-  double *d_b = (double *) acc_malloc(streamArrayMemSize);
-  acc_memcpy_to_device(d_b, b, streamArrayMemSize);
-
+  d_b = (double*) acc_malloc(streamArraySize);
+  acc_memcpy_to_device(d_b, b, streamArraySize);
+  std::cout << "Device Pointer is: " << d_b << std::endl;
+  std::cout << "Host Pointer is: " << b << std::endl;
     /* c -> d_c */
-  double *d_c = (double *) acc_malloc(streamArrayMemSize);
-  acc_memcpy_to_device(d_c, c, streamArrayMemSize);
-
+  d_c = (double*) acc_malloc(streamArraySize);
+  acc_memcpy_to_device(d_c, c, streamArraySize);
+  std::cout << "Device Pointer is: " << d_c << std::endl;
+  std::cout << "Host Pointer is: " << c << std::endl;
     /* idx1 -> d_idx1 */
-  ssize_t *d_idx1 = (ssize_t *) acc_malloc(idxArrayMemSize);
-  acc_memcpy_to_device(d_idx1, idx1, idxArrayMemSize);
-
+  d_idx1 = (ssize_t*) acc_malloc(streamArraySize);
+  acc_memcpy_to_device(d_idx1, idx1, streamArraySize);
+  std::cout << "Device Pointer is: " << d_idx1 << std::endl;
+  std::cout << "Host Pointer is: " << idx1 << std::endl;
     /* idx2 -> d_idx2 */
-  ssize_t *d_idx2 = (ssize_t *) acc_malloc(idxArrayMemSize);
-  acc_memcpy_to_device(d_idx2, idx2, idxArrayMemSize);
-
+  d_idx2 = (ssize_t*) acc_malloc(streamArraySize);
+  acc_memcpy_to_device(d_idx2, idx2, streamArraySize);
+  std::cout << "Device Pointer is: " << d_idx2 << std::endl;
+  std::cout << "Host Pointer is: " << idx2 << std::endl;
     /* idx3 -> d_idx3 */
-  ssize_t *d_idx3 = (ssize_t *) acc_malloc(idxArrayMemSize);
-  acc_memcpy_to_device(d_idx3, idx3, idxArrayMemSize);
-
+  d_idx3 = (ssize_t*) acc_malloc(streamArraySize);
+  acc_memcpy_to_device(d_idx3, idx3, streamArraySize);
+  std::cout << "Device Pointer is: " << d_idx3 << std::endl;
+  std::cout << "Host Pointer is: " << idx3 << std::endl;
 
   #ifdef _DEBUG_
   std::cout << "===================================================================================" << std::endl;
@@ -104,6 +104,12 @@ bool RS_OACC::allocateData() {
   std::cout << "idx1[streamArraySize-1] = " << idx1[streamArraySize-1] << std::endl;
   std::cout << "idx2[streamArraySize-1] = " << idx2[streamArraySize-1] << std::endl;
   std::cout << "idx3[streamArraySize-1] = " << idx3[streamArraySize-1] << std::endl;
+  std::cout << "d_a[streamArraySize-1]    = " << d_a << std::endl;
+  std::cout << "d_b[streamArraySize-1]    = " << d_b[streamArraySize-1] << std::endl;
+  std::cout << "d_c[streamArraySize-1]    = " << d_c[streamArraySize-1] << std::endl;
+  std::cout << "d_idx1[streamArraySize-1] = " << d_idx1[streamArraySize-1] << std::endl;
+  std::cout << "d_idx2[streamArraySize-1] = " << d_idx2[streamArraySize-1] << std::endl;
+  std::cout << "d_idx3[streamArraySize-1] = " << d_idx3[streamArraySize-1] << std::endl;
   std::cout << "===================================================================================" << std::endl;
   #endif
 
@@ -142,6 +148,7 @@ bool RS_OACC::execute(
     /* SEQUENTIAL KERNELS */
     case RSBaseImpl::RS_SEQ_COPY:
       startTime = mySecond();
+      std::cout << "We get to seqCopy function call before seqfault" << std::endl;
       seqCopy(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
