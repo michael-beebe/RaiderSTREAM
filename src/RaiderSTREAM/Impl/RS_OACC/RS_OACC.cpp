@@ -44,15 +44,15 @@ RS_OACC::~RS_OACC() {}
 
 bool RS_OACC::allocateData() {
 
-  int StreamMemArraySize = streamArraySize * sizeof(double); //Multiply size of the array by the size of the variable in the array to get total memory size
-  int IdxMemArraySize = streamArraySize * sizeof(ssize_t); //Multiply size of the array by the size of the variable in the array to get total memory size
+  ssize_t streamMemArraySize = streamArraySize * sizeof(double);
+  ssize_t idxMemArraySize = streamArraySize * sizeof(ssize_t);
 
-  a =    new  double[streamArraySize]; //Create a pointer in host memory for a
-  b =    new  double[streamArraySize]; //Create a pointer in host memory for b
-  c =    new  double[streamArraySize]; //Create a pointer in host memory for c
-  idx1 = new ssize_t[streamArraySize]; //Create a pointer in host memory for idx1
-  idx2 = new ssize_t[streamArraySize]; //Create a pointer in host memory for idx2
-  idx3 = new ssize_t[streamArraySize]; //Create a pointer in host memory for idx3
+  a =    new  double[streamArraySize];
+  b =    new  double[streamArraySize];
+  c =    new  double[streamArraySize];
+  idx1 = new ssize_t[streamArraySize];
+  idx2 = new ssize_t[streamArraySize];
+  idx3 = new ssize_t[streamArraySize];
 
   #ifdef _ARRAYGEN_
     initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
@@ -66,68 +66,124 @@ bool RS_OACC::allocateData() {
 
 
   /* a -> d_a */
-  d_a = (double*) acc_malloc(StreamMemArraySize); //Allocating memory in GPU/device
-  acc_memcpy_to_device(d_a, a, StreamMemArraySize); //Copying data from a (on the host) to d_a (on the device)
-  std::cout << "Device Pointer is: " << d_a << std::endl;
-  std::cout << "Host Pointer is: " << a << std::endl;
-    /* b -> d_b */
-  d_b = (double*) acc_malloc(StreamMemArraySize);
-  acc_memcpy_to_device(d_b, b, StreamMemArraySize);
-  std::cout << "Device Pointer is: " << d_b << std::endl;
-  std::cout << "Host Pointer is: " << b << std::endl;
-    /* c -> d_c */
-  d_c = (double*) acc_malloc(StreamMemArraySize);
-  acc_memcpy_to_device(d_c, c, StreamMemArraySize);
-  std::cout << "Device Pointer is: " << d_c << std::endl;
-  std::cout << "Host Pointer is: " << c << std::endl;
-    /* idx1 -> d_idx1 */
-  d_idx1 = (ssize_t*) acc_malloc(IdxMemArraySize);
-  acc_memcpy_to_device(d_idx1, idx1, IdxMemArraySize);
-  std::cout << "Device Pointer is: " << d_idx1 << std::endl;
-  std::cout << "Host Pointer is: " << idx1 << std::endl;
-    /* idx2 -> d_idx2 */
-  d_idx2 = (ssize_t*) acc_malloc(IdxMemArraySize);
-  acc_memcpy_to_device(d_idx2, idx2, IdxMemArraySize);
-  std::cout << "Device Pointer is: " << d_idx2 << std::endl;
-  std::cout << "Host Pointer is: " << idx2 << std::endl;
-    /* idx3 -> d_idx3 */
-  d_idx3 = (ssize_t*) acc_malloc(IdxMemArraySize);
-  acc_memcpy_to_device(d_idx3, idx3, IdxMemArraySize);
-  std::cout << "Device Pointer is: " << d_idx3 << std::endl;
-  std::cout << "Host Pointer is: " << idx3 << std::endl;
+  d_a = (double*) acc_malloc(streamMemArraySize);
+  if ( d_a == nullptr ) {
+    std::cerr << "RS_OACC::allocateData: 'd_a' could not be allocated on device" << std::endl;
+    free(a); free(b); free(c);
+    free(idx1); free(idx2); free(idx3);
+    return false;
+  }
+  acc_memcpy_to_device(d_a, a, streamMemArraySize);
+
+  /* b -> d_b */
+  d_b = (double*) acc_malloc(streamMemArraySize);
+  if ( d_b == nullptr ) {
+    std::cerr << "RS_OACC:allocateData: 'd_b' could not be allocated on device"
+    free(a); free(b); free(c);
+    acc_free(d_a);
+    free(idx1); free(idx2); free(idx3);
+    return false;
+  }
+  acc_memcpy_to_device(d_b, b, streamMemArraySize);
+
+  /* c -> d_c */
+  d_c = (double*) acc_malloc(streamMemArraySize);
+  if ( d_c == nullptr ) {
+    std::cerr << "RS_OACC:allocateData: 'd_c' could not be allocated on device"
+    free(a); free(b); free(c);
+    acc_free(d_a); acc_free(d_b);
+    free(idx1); free(idx2); free(idx3);
+    return false;
+  }
+  acc_memcpy_to_device(d_c, c, streamMemArraySize);
+
+  /* idx1 -> d_idx1 */
+  d_idx1 = (ssize_t*) acc_malloc(streamMemArraySize);
+  if ( d_idx1 == nullptr ) {
+    std::cerr << "RS_OACC:allocateData: 'd_idx1' could not be allocated on device"
+    free(a); free(b); free(c);
+    acc_free(d_a); acc_free(d_b); acc_free(d_c);
+    free(idx1); free(idx2); free(idx3);
+    return false;
+  }
+  acc_memcpy_to_device(d_idx1, idx1, idxMemArraySize);
+
+  /* idx2 -> d_idx2 */
+  d_idx2 = (ssize_t*) acc_malloc(streamMemArraySize);
+  if ( d_idx2 == nullptr ) {
+    std::cerr << "RS_OACC:allocateData: 'd_idx2' could not be allocated on device"
+    free(a); free(b); free(c);
+    acc_free(d_a); acc_free(d_b); acc_free(d_c);
+    free(idx1); free(idx2); free(idx3);
+    acc_free(d_idx1);
+    return false;
+  }
+  acc_memcpy_to_device(d_idx2, idx2, idxMemArraySize);
+
+  /* idx3 -> d_idx3 */
+  d_idx3 = (ssize_t*) acc_malloc(streamMemArraySize);
+  if ( d_idx3 == nullptr ) {
+    std::cerr << "RS_OACC:allocateData: 'd_idx3' could not be allocated on device"
+    free(a); free(b); free(c);
+    acc_free(d_a); acc_free(d_b); acc_free(d_c);
+    free(idx1); free(idx2); free(idx3);
+    acc_free(d_idx1); acc_free(d_idx2); 
+    return false;
+  }
+  acc_memcpy_to_device(d_idx3, idx3, idxMemArraySize);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Verify that copying data back and forth works as expected */
+  double *test_a = new double[streamArraySize];
+  double *test_b = new double[streamArraySize];
+  double *test_c = new double[streamArraySize];
+
+  acc_memcpy_from_device(test_a, d_a, streamMemArraySize);
+  acc_memcpy_from_device(test_b, d_b, streamMemArraySize);
+  acc_memcpy_from_device(test_c, d_c, streamMemArraySize);
+
+  bool success = true;
+  for (ssize_t i = 0; i < streamArraySize; ++i) {
+    if (a[i] != test_a[i]) {
+      std::cerr << "RS_OACC::allocateData: Data verification failed at index " << i << " for array 'a'" << std::endl;
+      success = false;
+      break;
+    }
+    if (b[i] != test_b[i]) {
+      std::cerr << "RS_OACC::allocateData: Data verification failed at index " << i << " for array 'b'" << std::endl;
+      success = false;
+      break;
+    }
+    if (c[i] != test_c[i]) {
+      std::cerr << "RS_OACC::allocateData: Data verification failed at index " << i << " for array 'c'" << std::endl;
+      success = false;
+      break;
+    }
+  }
+  delete[] test_a;
+  delete[] test_b;
+  delete[] test_c;
+  if (!success) {
+    free(a); free(b); free(c);
+    acc_free(d_a); acc_free(d_b); acc_free(d_c);
+    free(idx1); free(idx2); free(idx3);
+    acc_free(d_idx1); acc_free(d_idx2); acc_free(d_idx3);
+    return false;
+  }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   #ifdef _DEBUG_
-  std::cout << "===================================================================================" << std::endl;
-  std::cout << " RaiderSTREAM Array Info:" << std::endl;
-  std::cout << "===================================================================================" << std::endl;
-  std::cout << "streamArraySize         = " << streamArraySize << std::endl;
-  std::cout << "a[streamArraySize-1]    = " << a[streamArraySize-1] << std::endl;
-  std::cout << "b[streamArraySize-1]    = " << b[streamArraySize-1] << std::endl;
-  std::cout << "c[streamArraySize-1]    = " << c[streamArraySize-1] << std::endl;
-  std::cout << "idx1[streamArraySize-1] = " << idx1[streamArraySize-1] << std::endl;
-  std::cout << "idx2[streamArraySize-1] = " << idx2[streamArraySize-1] << std::endl;
-  std::cout << "idx3[streamArraySize-1] = " << idx3[streamArraySize-1] << std::endl;
-  double *testarray = new double[streamArraySize];
-  acc_memcpy_from_device(testarray, d_a, StreamMemArraySize);
-  std::cout << testarray[streamArraySize-1] <<std::endl;
-  testarray = new double[streamArraySize];
-  acc_memcpy_from_device(testarray, d_b, StreamMemArraySize);
-  std::cout << testarray[streamArraySize-1] <<std::endl;
-  testarray = new double[streamArraySize];
-  acc_memcpy_from_device(testarray, d_c, StreamMemArraySize);
-  std::cout << testarray[streamArraySize-1] <<std::endl;
-  delete[] testarray;
-  ssize_t *test2 = new ssize_t[streamArraySize];
-  acc_memcpy_from_device(test2, d_idx1, IdxMemArraySize);
-  std::cout << test2[streamArraySize-1] <<std::endl;
-  test2 = new ssize_t[streamArraySize];
-  acc_memcpy_from_device(test2, d_idx2, IdxMemArraySize);
-  std::cout << test2[streamArraySize-1] <<std::endl;
-  test2 = new ssize_t[streamArraySize];
-  acc_memcpy_from_device(test2, d_idx3, IdxMemArraySize);
-  std::cout << test2[streamArraySize-1] <<std::endl;
-  delete[] test2;
-  std::cout << "===================================================================================" << std::endl;
+    std::cout << "===================================================================================" << std::endl;
+    std::cout << " RaiderSTREAM Array Info:" << std::endl;
+    std::cout << "===================================================================================" << std::endl;
+    std::cout << "streamArraySize         = " << streamArraySize << std::endl;
+    std::cout << "a[streamArraySize-1]    = " << a[streamArraySize-1] << std::endl;
+    std::cout << "b[streamArraySize-1]    = " << b[streamArraySize-1] << std::endl;
+    std::cout << "c[streamArraySize-1]    = " << c[streamArraySize-1] << std::endl;
+    std::cout << "idx1[streamArraySize-1] = " << idx1[streamArraySize-1] << std::endl;
+    std::cout << "idx2[streamArraySize-1] = " << idx2[streamArraySize-1] << std::endl;
+    std::cout << "idx3[streamArraySize-1] = " << idx3[streamArraySize-1] << std::endl;
+    std::cout << "===================================================================================" << std::endl;
   #endif
 
   
