@@ -78,7 +78,7 @@ bool RS_OACC::allocateData() {
   /* b -> d_b */
   d_b = (double*) acc_malloc(streamMemArraySize);
   if ( d_b == nullptr ) {
-    std::cerr << "RS_OACC:allocateData: 'd_b' could not be allocated on device"
+    std::cerr << "RS_OACC:allocateData: 'd_b' could not be allocated on device";
     free(a); free(b); free(c);
     acc_free(d_a);
     free(idx1); free(idx2); free(idx3);
@@ -89,7 +89,7 @@ bool RS_OACC::allocateData() {
   /* c -> d_c */
   d_c = (double*) acc_malloc(streamMemArraySize);
   if ( d_c == nullptr ) {
-    std::cerr << "RS_OACC:allocateData: 'd_c' could not be allocated on device"
+    std::cerr << "RS_OACC:allocateData: 'd_c' could not be allocated on device";
     free(a); free(b); free(c);
     acc_free(d_a); acc_free(d_b);
     free(idx1); free(idx2); free(idx3);
@@ -100,7 +100,7 @@ bool RS_OACC::allocateData() {
   /* idx1 -> d_idx1 */
   d_idx1 = (ssize_t*) acc_malloc(streamMemArraySize);
   if ( d_idx1 == nullptr ) {
-    std::cerr << "RS_OACC:allocateData: 'd_idx1' could not be allocated on device"
+    std::cerr << "RS_OACC:allocateData: 'd_idx1' could not be allocated on device";
     free(a); free(b); free(c);
     acc_free(d_a); acc_free(d_b); acc_free(d_c);
     free(idx1); free(idx2); free(idx3);
@@ -111,7 +111,7 @@ bool RS_OACC::allocateData() {
   /* idx2 -> d_idx2 */
   d_idx2 = (ssize_t*) acc_malloc(streamMemArraySize);
   if ( d_idx2 == nullptr ) {
-    std::cerr << "RS_OACC:allocateData: 'd_idx2' could not be allocated on device"
+    std::cerr << "RS_OACC:allocateData: 'd_idx2' could not be allocated on device";
     free(a); free(b); free(c);
     acc_free(d_a); acc_free(d_b); acc_free(d_c);
     free(idx1); free(idx2); free(idx3);
@@ -123,7 +123,7 @@ bool RS_OACC::allocateData() {
   /* idx3 -> d_idx3 */
   d_idx3 = (ssize_t*) acc_malloc(streamMemArraySize);
   if ( d_idx3 == nullptr ) {
-    std::cerr << "RS_OACC:allocateData: 'd_idx3' could not be allocated on device"
+    std::cerr << "RS_OACC:allocateData: 'd_idx3' could not be allocated on device";
     free(a); free(b); free(c);
     acc_free(d_a); acc_free(d_b); acc_free(d_c);
     free(idx1); free(idx2); free(idx3);
