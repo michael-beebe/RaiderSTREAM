@@ -11,7 +11,7 @@
 #include <openacc.h>
 #include <sys/types.h>
 
-#include<stdio.h>
+// #include<stdio.h>
 /**************************************************
  * @brief Copies data from one stream to another.
  * 
@@ -20,15 +20,10 @@
 void seqCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  printf("Device Pointer d_a is %p\n", d_a); /*REmark: This only runs once but shouldn't it run multiple times because it is called inside the parallel directive??*/
-  printf("Device Pointer d_c is %p\n", d_c);
-  printf("streamArraySize: %zd\n", streamArraySize);
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
   {
-    printf("WE MADE IT TO ITERATION: %zd\n", j);
     d_c[j] = d_a[j];
   }
 }
@@ -42,10 +37,8 @@ void seqCopy(
 void seqScale(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize, double scalar)
-#pragma acc data deviceptr(d_a, d_b, d_c)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_b[j] = scalar * d_c[j];
 }
@@ -58,10 +51,8 @@ void seqScale(
 void seqAdd(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize)
-#pragma acc data deviceptr(d_a, d_b, d_c)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[j] = d_a[j] + d_b[j];
 }
@@ -75,10 +66,8 @@ void seqAdd(
 void seqTriad(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize, double scalar)
-#pragma acc data deviceptr(d_a, d_b, d_c)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_a[j] = d_b[j] + scalar * d_c[j];
 }
@@ -92,10 +81,8 @@ void seqTriad(
 void gatherCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t streamArraySize)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[j] = d_a[d_idx1[j]];
 }
@@ -111,10 +98,8 @@ void gatherScale(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1,
   ssize_t streamArraySize, double scalar)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_b[j] = scalar * d_c[d_idx1[j]];
 }
@@ -129,10 +114,8 @@ void gatherAdd(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2,
   ssize_t streamArraySize)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[j] = d_a[d_idx1[j]] + d_b[d_idx2[j]];
 }
@@ -148,10 +131,8 @@ void gatherTriad(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2,
   ssize_t streamArraySize, double scalar)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_a[j] = d_b[d_idx1[j]] + scalar * d_c[d_idx2[j]];
 }
@@ -166,10 +147,8 @@ void scatterCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1,
   ssize_t streamArraySize)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[d_idx1[j]] = d_a[j];
 }
@@ -185,10 +164,8 @@ void scatterScale(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1,
   ssize_t streamArraySize, double scalar)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_b[d_idx1[j]] = scalar * d_c[j];
 }
@@ -203,10 +180,8 @@ void scatterAdd(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1,
   ssize_t streamArraySize)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[d_idx1[j]] = d_a[j] + d_b[j];
 }
@@ -222,10 +197,8 @@ void scatterTriad(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1,
   ssize_t streamArraySize, double scalar)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_a[d_idx1[j]] = d_b[j] + scalar * d_c[j];
 }
@@ -240,10 +213,8 @@ void sgCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2,
   ssize_t streamArraySize)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[d_idx1[j]] = d_a[d_idx2[j]];
 }
@@ -259,10 +230,8 @@ void sgScale(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2,
   ssize_t streamArraySize, double scalar)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_b[d_idx2[j]] = scalar * d_c[d_idx1[j]];
 }
@@ -277,10 +246,8 @@ void sgAdd(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2, ssize_t *d_idx3,
   ssize_t streamArraySize)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[d_idx1[j]] = d_a[d_idx2[j]] + d_b[d_idx3[j]];
 }
@@ -296,10 +263,8 @@ void sgTriad(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2, ssize_t *d_idx3,
   ssize_t streamArraySize, double scalar)
-#pragma acc data deviceptr(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_a[d_idx2[j]] = d_b[d_idx3[j]] + scalar * d_c[d_idx1[j]];
 }
@@ -313,10 +278,8 @@ void sgTriad(
 void centralCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize)
-#pragma acc data deviceptr(d_a, d_b, d_c)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[0] = d_a[0];
 }
@@ -331,10 +294,8 @@ void centralCopy(
 void centralScale(
   int ngangs, int nworkers, double *d_a,double *d_b, double *d_c,
   ssize_t streamArraySize, double scalar)
-#pragma acc data deviceptr(d_a, d_b, d_c)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_b[0] = scalar * d_c[0];
 }
@@ -348,10 +309,8 @@ void centralScale(
 void centralAdd(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize)
-#pragma acc data deviceptr(d_a, d_b, d_c)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[0] = d_a[0] + d_b[0];
 }
@@ -366,10 +325,8 @@ void centralAdd(
 void centralTriad(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize, double scalar)
-#pragma acc data deviceptr(d_a, d_b, d_c)
-#pragma acc parallel num_gangs(ngangs) num_workers(nworkers)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_a[0] = d_b[0] + scalar * d_c[0];
 }

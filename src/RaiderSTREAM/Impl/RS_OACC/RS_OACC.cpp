@@ -221,9 +221,9 @@ bool RS_OACC::execute(
     /* SEQUENTIAL KERNELS */
     case RSBaseImpl::RS_SEQ_COPY:
       startTime = mySecond();
-      std::cout << "Device Pointer is: " << d_a << std::endl;
-      std::cout << "Host Pointer is: " << a << std::endl;
-      std::cout << "WE MADE IT TO THE KERNEL"<< std::endl;
+      // std::cout << "Device Pointer is: " << d_a << std::endl;
+      // std::cout << "Host Pointer is: " << a << std::endl;
+      // std::cout << "WE MADE IT TO THE KERNEL"<< std::endl;
       #pragma acc data deviceptr(d_a, d_b, d_c)
       seqCopy(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
