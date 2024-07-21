@@ -98,7 +98,7 @@ bool RS_OACC::allocateData() {
   acc_memcpy_to_device(d_c, c, streamMemArraySize);
 
   /* idx1 -> d_idx1 */
-  d_idx1 = (ssize_t*) acc_malloc(streamMemArraySize);
+  d_idx1 = (ssize_t*) acc_malloc(idxMemArraySize);
   if ( d_idx1 == nullptr ) {
     std::cerr << "RS_OACC:allocateData: 'd_idx1' could not be allocated on device";
     free(a); free(b); free(c);
@@ -109,7 +109,7 @@ bool RS_OACC::allocateData() {
   acc_memcpy_to_device(d_idx1, idx1, idxMemArraySize);
 
   /* idx2 -> d_idx2 */
-  d_idx2 = (ssize_t*) acc_malloc(streamMemArraySize);
+  d_idx2 = (ssize_t*) acc_malloc(idxMemArraySize);
   if ( d_idx2 == nullptr ) {
     std::cerr << "RS_OACC:allocateData: 'd_idx2' could not be allocated on device";
     free(a); free(b); free(c);
@@ -121,7 +121,7 @@ bool RS_OACC::allocateData() {
   acc_memcpy_to_device(d_idx2, idx2, idxMemArraySize);
 
   /* idx3 -> d_idx3 */
-  d_idx3 = (ssize_t*) acc_malloc(streamMemArraySize);
+  d_idx3 = (ssize_t*) acc_malloc(idxMemArraySize);
   if ( d_idx3 == nullptr ) {
     std::cerr << "RS_OACC:allocateData: 'd_idx3' could not be allocated on device";
     free(a); free(b); free(c);
