@@ -16,6 +16,8 @@ RS_CUDA::RS_CUDA(const RSOpts& opts) :
   RSBaseImpl("RS_OMP", opts.getKernelTypeFromName(opts.getKernelName())),
   kernelName(opts.getKernelName()),
   streamArraySize(opts.getStreamArraySize()),
+  streamArrayMemSize(0),
+  idxArrayMemSize(0),
   numPEs(opts.getNumPEs()),
   lArgc(0),
   lArgv(nullptr),
@@ -209,7 +211,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
     case RSBaseImpl::RS_SEQ_SCALE:
       cudaDeviceSynchronize();
       startTime = mySecond();
-      seqScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar streamArraySize);
+      seqScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
@@ -366,7 +368,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
     case RSBaseImpl::RS_SG_COPY:
       cudaDeviceSynchronize();
       startTime = mySecond();
-      sgCopy<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3 streamArraySize);
+      sgCopy<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
@@ -380,7 +382,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
     case RSBaseImpl::RS_SG_SCALE:
       cudaDeviceSynchronize();
       startTime = mySecond();
-      sgScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, d_idx1, d_idx2, idx3 streamArraySize);
+      sgScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, d_idx1, d_idx2, d_idx3, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
@@ -394,7 +396,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
     case RSBaseImpl::RS_SG_ADD:
       cudaDeviceSynchronize();
       startTime = mySecond();
-      sgAdd<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, d_idx1, d_idx2, idx3 streamArraySize);
+      sgAdd<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
@@ -408,7 +410,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
     case RSBaseImpl::RS_SG_TRIAD:
       cudaDeviceSynchronize();
       startTime = mySecond();
-      sgTriad<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, d_idx1, d_idx2, idx3, streamArraySize);
+      sgTriad<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, d_idx1, d_idx2, d_idx3, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
@@ -437,7 +439,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
     case RSBaseImpl::RS_CENTRAL_SCALE:
       cudaDeviceSynchronize();
       startTime = mySecond();
-      centralScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar streamArraySize);
+      centralScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
@@ -495,7 +497,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
       /* RS_SEQ_SCALE */
       cudaDeviceSynchronize();
       startTime = mySecond();
-      seqScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar streamArraySize);
+      seqScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
@@ -638,7 +640,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
       /* RS_SG_COPY */
       cudaDeviceSynchronize();
       startTime = mySecond();
-      sgCopy<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3 streamArraySize);
+      sgCopy<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
@@ -651,7 +653,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
       /* RS_SG_SCALE */
       cudaDeviceSynchronize();
       startTime = mySecond();
-      sgScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, d_idx1, d_idx2, idx3 streamArraySize);
+      sgScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, d_idx1, d_idx2, d_idx3, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
@@ -664,7 +666,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
       /* RS_SG_ADD */
       cudaDeviceSynchronize();
       startTime = mySecond();
-      sgAdd<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, d_idx1, d_idx2, idx3 streamArraySize);
+      sgAdd<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
@@ -677,7 +679,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
       /* RS_SG_TRIAD */
       cudaDeviceSynchronize();
       startTime = mySecond();
-      sgTriad<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, d_idx1, d_idx2, idx3, streamArraySize);
+      sgTriad<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, d_idx1, d_idx2, d_idx3, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);
@@ -703,7 +705,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
       /* RS_CENTRAL_SCALE */
       cudaDeviceSynchronize();
       startTime = mySecond();
-      centralScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar streamArraySize);
+      centralScale<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, scalar, streamArraySize);
       cudaDeviceSynchronize();
       endTime = mySecond();
       runTime = calculateRunTime(startTime, endTime);

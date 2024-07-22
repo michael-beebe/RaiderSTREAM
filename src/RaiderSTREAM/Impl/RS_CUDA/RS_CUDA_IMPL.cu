@@ -1,3 +1,5 @@
+#define STREAM_TYPE double
+
 /**************************************************
 * @brief Copies data from one device array to another.
 * 
@@ -6,15 +8,15 @@
 * @param d_c Destination device array.
 * @param streamArraySize Size of the stream array.
 **************************************************/
- __global__ void seqCopy(
-    STREAM_TYPE* __restrict__ d_a,
-    STREAM_TYPE* __restrict__ d_b,
-    STREAM_TYPE* __restrict__ d_c,
-    ssize_t streamArraySize
-  ) {
-    ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
-    if (j < streamArraySize) d_c[j] = d_a[j];
-  }
+__global__ void seqCopy(
+  STREAM_TYPE* __restrict__ d_a,
+  STREAM_TYPE* __restrict__ d_b,
+  STREAM_TYPE* __restrict__ d_c,
+  ssize_t streamArraySize
+) {
+  ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+  if (j < streamArraySize) d_c[j] = d_a[j];
+}
   
 /**************************************************
 * @brief Scales data in a device array.
