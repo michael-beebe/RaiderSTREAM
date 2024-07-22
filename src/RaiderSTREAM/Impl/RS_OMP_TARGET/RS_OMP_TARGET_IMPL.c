@@ -11,41 +11,19 @@
 #include <omp.h>
 #include <sys/types.h>
 
-#ifndef ARGS
-// cpp stringification shenanigans
-//#define DO_PRAGMA_(x) _Pragma(#x)
-//#define DO_PRAGMA(x) DO_PRAGMA_(x)
-
-/* Why?
- *
- * We want to pass the array ptrs and the froms
- * as different arguments to the WITH_OFFLOAD macro.
- * But, you can't (easily) escape a comma in cpp directives.
- *
- * So instead, we wrap our ptrs and froms in an enclosing macro,
- * evaluated in place.
- */
-#define ARGS(...) __VA_ARGS__
-#endif
-
 #ifndef DO_PRAGMA
-#define DO_PRAGMA(x) _Pragma(#x)
+// cpp stringification shenanigans
+#define DO_PRAGMA_(x) _Pragma(#x)
+#define DO_PRAGMA(x) DO_PRAGMA_(x)
 #endif
 
-/* Below is the OMP offload pragma used for all
- * of this implementation. Modify this to modify all.
- *
- * As a dev-note; you may notice that all invocations of
- * this macro have parens that could probably be removed.
- * I'd suggest against this. The macro becomes significantly
- * less readable, and seems to summon demons when compiled
- * using clang.
- */
-#define WITH_OFFLOAD(ptrs, froms) \
-  DO_PRAGMA(omp target teams distribute parallel for simd num_teams(nteams) \
-                                                          thread_limit(threads) \
-                                                          is_device_ptr(ptrs) \
-                                                          map(from: froms))
+// Below is the OMP offload pragma used for all
+// of this implementation. Modify this to modify all.
+#define WITH_OFFLOAD(maps) \
+  DO_PRAGMA(omp target data maps)
+
+// Same as WITH_OFFLOAD, but for the inner loop after we're on-device.
+#define FOR_LOOP_PRAGMA DO_PRAGMA(omp target teams distribute parallel for num_teams(nteams) thread_limit(threads) )
 
 
 /**************************************************
@@ -58,9 +36,12 @@ void seqCopy(
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[j] = a[j];
+  WITH_OFFLOAD(map(from: a[0:streamArraySize]) map(to: c[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[j] = a[j];
+  }
 }
 
 /**************************************************
@@ -74,9 +55,12 @@ void seqScale(
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    b[j] = scalar * c[j];
+  WITH_OFFLOAD(map(from: c[0:streamArraySize]) map(to: b[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      b[j] = scalar * c[j];
+  }
 }
 
 /**************************************************
@@ -89,9 +73,13 @@ void seqAdd(
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[j] = a[j] + b[j];
+  WITH_OFFLOAD(map(from: a[0:streamArraySize], b[0:streamArraySize]) \
+               map(to: c[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[j] = a[j] + b[j];
+  }
 }
 
 /**************************************************
@@ -105,9 +93,13 @@ void seqTriad(
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    a[j] = b[j] + scalar * c[j];
+  WITH_OFFLOAD(map(from: b[0:streamArraySize], c[0:streamArraySize]) \
+               map(to: a[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      a[j] = b[j] + scalar * c[j];
+  }
 }
 
 /**************************************************
@@ -120,9 +112,13 @@ void gatherCopy(
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[j] = a[idx1[j]];
+  WITH_OFFLOAD(map(from: a[0:streamArraySize], idx1[0:streamArraySize]) \
+               map(to: c[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[j] = a[idx1[j]];
+  }
 }
 
 /**************************************************
@@ -137,9 +133,12 @@ void gatherScale(
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    b[j] = scalar * c[idx1[j]];
+  WITH_OFFLOAD(map(from: c[0:streamArraySize], idx1[0:streamArraySize]) map(to: b[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      b[j] = scalar * c[idx1[j]];
+  }
 }
 
 /**************************************************
@@ -153,9 +152,14 @@ void gatherAdd(
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[j] = a[idx1[j]] + b[idx2[j]];
+  WITH_OFFLOAD(map(from: a[0:streamArraySize], b[0:streamArraySize], \
+                   idx1[0:streamArraySize], idx2[0:streamArraySize]) \
+               map(to: c[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[j] = a[idx1[j]] + b[idx2[j]];
+  }
 }
 
 /**************************************************
@@ -170,9 +174,14 @@ void gatherTriad(
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    a[j] = b[idx1[j]] + scalar * c[idx2[j]];
+  WITH_OFFLOAD(map(from: b[0:streamArraySize], c[0:streamArraySize], \
+                   idx1[0:streamArraySize], idx2[0:streamArraySize]) \
+               map(to: a[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      a[j] = b[idx1[j]] + scalar * c[idx2[j]];
+  }
 }
 
 /**************************************************
@@ -186,9 +195,13 @@ void scatterCopy(
   ssize_t *idx1,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[idx1[j]] = a[j];
+  WITH_OFFLOAD(map(from: a[0:streamArraySize], idx1[0:streamArraySize]) \
+               map(to: c[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[idx1[j]] = a[j];
+  }
 }
 
 /**************************************************
@@ -203,9 +216,13 @@ void scatterScale(
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    b[idx1[j]] = scalar * c[j];
+  WITH_OFFLOAD(map(from: c[0:streamArraySize], idx1[0:streamArraySize]) \
+               map(to: b[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      b[idx1[j]] = scalar * c[j];
+  }
 }
 
 /**************************************************
@@ -219,9 +236,13 @@ void scatterAdd(
   ssize_t *idx1,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[idx1[j]] = a[j] + b[j];
+  WITH_OFFLOAD(map(from: a[0:streamArraySize], b[0:streamArraySize], idx1[0:streamArraySize]) \
+               map(to: c[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[idx1[j]] = a[j] + b[j];
+  }
 }
 
 /**************************************************
@@ -236,9 +257,14 @@ void scatterTriad(
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    a[idx1[j]] = b[j] + scalar * c[j];
+  WITH_OFFLOAD(map(from: b[0:streamArraySize], c[0:streamArraySize], \
+                   idx1[0:streamArraySize])                          \
+               map(to: a[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      a[idx1[j]] = b[j] + scalar * c[j];
+  }
 }
 
 /**************************************************
@@ -252,9 +278,13 @@ void sgCopy(
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[idx1[j]] = a[idx2[j]];
+  WITH_OFFLOAD(map(from: a[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize]) \
+               map(to: c[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[idx1[j]] = a[idx2[j]];
+  }
 }
 
 /**************************************************
@@ -269,9 +299,13 @@ void sgScale(
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    b[idx2[j]] = scalar * c[idx1[j]];
+  WITH_OFFLOAD(map(from: c[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize]) \
+               map(to: b[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      b[idx2[j]] = scalar * c[idx1[j]];
+  }
 }
 
 /**************************************************
@@ -285,9 +319,14 @@ void sgAdd(
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2, idx3), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
+  WITH_OFFLOAD(map(from: a[0:streamArraySize], b[0:streamArraySize], \
+                   idx1[0:streamArraySize], idx2[0:streamArraySize], idx3[0:streamArraySize]) \
+               map(to: c[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
+  }
 }
 
 /**************************************************
@@ -302,9 +341,15 @@ void sgTriad(
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2, idx3), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
+  WITH_OFFLOAD(map(from: b[0:streamArraySize], c[0:streamArraySize], \
+                   idx1[0:streamArraySize], idx2[0:streamArraySize], \
+                   idx3[0:streamArraySize]) \
+               map(to: a[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
+  }
 }
 
 /**************************************************
@@ -317,9 +362,12 @@ void centralCopy(
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[0] = a[0];
+  WITH_OFFLOAD(map(from: a[0:streamArraySize]) map(to: c[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[0] = a[0];
+  }
 }
 
 /**************************************************
@@ -333,9 +381,12 @@ void centralScale(
   double *a,double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    b[0] = scalar * c[0];
+  WITH_OFFLOAD(map(from: c[0:streamArraySize]) map(to: b[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      b[0] = scalar * c[0];
+  }
 }
 
 /**************************************************
@@ -348,9 +399,12 @@ void centralAdd(
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[0] = a[0] + b[0];
+  WITH_OFFLOAD(map(from: a[0:streamArraySize], b[0:streamArraySize]) map(to: c[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[0] = a[0] + b[0];
+  }
 }
 
 /**************************************************
@@ -364,9 +418,12 @@ void centralTriad(
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    a[0] = b[0] + scalar * c[0];
+  WITH_OFFLOAD(map(from: b[0:streamArraySize], c[0:streamArraySize]) map(to: a[0:streamArraySize]))
+  {
+    FOR_LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      a[0] = b[0] + scalar * c[0];
+  }
 }
 
 /* EOF */
