@@ -19,6 +19,8 @@
 
 // Below is the OMP offload pragma used for all
 // of this implementation. Modify this to modify all.
+//
+// TODO: Multiple GPU support. Investigate `teams` pragma clause.
 #define WITH_OFFLOAD(maps) \
   DO_PRAGMA(omp target data maps)
 

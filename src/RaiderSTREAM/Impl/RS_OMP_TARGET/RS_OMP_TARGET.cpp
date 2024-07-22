@@ -56,13 +56,12 @@ bool RS_OMP_TARGET::allocateData() {
     initRandomIdxArray(idx3, streamArraySize);
   #endif
 
-  int device = omp_get_default_device();
-  aOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), device);
-  bOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), device);
-  cOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), device);
-  idx1OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), device);
-  idx2OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), device);
-  idx3OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), device);
+  aOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), -1);
+  bOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), -1);
+  cOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), -1);
+  idx1OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), -1);
+  idx2OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), -1);
+  idx3OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), -1);
 
   #ifdef _DEBUG_
   std::cout << "===================================================================================" << std::endl;
@@ -88,26 +87,17 @@ bool RS_OMP_TARGET::freeData() {
   if ( idx1 ) { delete[] idx1; }
   if ( idx2 ) { delete[] idx2; }
   if ( idx3 ) { delete[] idx3; }
-  int device = omp_get_default_device();
-  if ( aOnDevice ) { omp_target_free( aOnDevice, device ); }
-  if ( bOnDevice ) { omp_target_free( bOnDevice, device ); }
-  if ( cOnDevice ) { omp_target_free( cOnDevice, device ); }
-  if ( idx1OnDevice ) { omp_target_free( idx1OnDevice, device ); }
-  if ( idx2OnDevice ) { omp_target_free( idx2OnDevice, device ); }
-  if ( idx3OnDevice ) { omp_target_free( idx3OnDevice, device ); }
+  if ( aOnDevice ) { omp_target_free( aOnDevice, -1 ); }
+  if ( bOnDevice ) { omp_target_free( bOnDevice, -1 ); }
+  if ( cOnDevice ) { omp_target_free( cOnDevice, -1 ); }
+  if ( idx1OnDevice ) { omp_target_free( idx1OnDevice, -1 ); }
+  if ( idx2OnDevice ) { omp_target_free( idx2OnDevice, -1 ); }
+  if ( idx3OnDevice ) { omp_target_free( idx3OnDevice, -1 ); }
   return true;
 }
 
 void RS_OMP_TARGET::prepare() {
-  #pragma omp target data map(from: a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize])
-
-  // do we even need to bother recopying data?
-  #pragma omp target teams distribute parallel for is_device_ptr(aOnDevice, bOnDevice, cOnDevice)
-  for(int i = 0; i < streamArraySize; i++) {
-    aOnDevice[i] = a[i];
-    bOnDevice[i] = b[i];
-    cOnDevice[i] = c[i];
-  }
+  #pragma omp target update to(a, b, c, idx1, idx2, idx3)
 }
 
 bool RS_OMP_TARGET::execute(
@@ -121,10 +111,10 @@ bool RS_OMP_TARGET::execute(
 
   RSBaseImpl::RSKernelType kType = getKernelType();
 
-  prepare();
   switch ( kType ) {
     /* SEQUENTIAL KERNELS */
     case RSBaseImpl::RS_SEQ_COPY:
+      prepare();
       startTime = mySecond();
       seqCopy(numTeams, threadsPerTeam, a, b, c, streamArraySize);
       endTime = mySecond();
