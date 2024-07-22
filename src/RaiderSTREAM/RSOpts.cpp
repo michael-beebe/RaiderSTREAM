@@ -169,6 +169,10 @@ void RSOpts::printOpts() {
   char* ompNumThreads = getenv("OMP_NUM_THREADS");
   if (ompNumThreads != nullptr) { std::cout << "OMP_NUM_THREADS: " << ompNumThreads << std::endl; }
   else { std::cout << "OMP_NUM_THREADS: (not set)" << std::endl; }
+#if _ENABLE_OMP_TARGET_ || _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+  std::cout << "Blocks: " << threadBlocks << std::endl;
+  std::cout << "Threads/Block: " << threadsPerBlock << std::endl;
+#endif
 }
 
 void RSOpts::printBench() {
