@@ -38,19 +38,11 @@ private:
   ssize_t *idx2;
   ssize_t *idx3;
   ssize_t scalar;
-  double *aOnDevice;
-  double *bOnDevice;
-  double *cOnDevice;
-  ssize_t *idx1OnDevice;
-  ssize_t *idx2OnDevice;
-  ssize_t *idx3OnDevice;
 
 public:
   RS_OMP_TARGET(const RSOpts& opts);
 
   ~RS_OMP_TARGET();
-
-  void prepare();
 
   virtual bool allocateData() override;
 

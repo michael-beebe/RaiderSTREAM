@@ -27,12 +27,6 @@ RS_OMP_TARGET::RS_OMP_TARGET(const RSOpts& opts) :
   idx1(nullptr),
   idx2(nullptr),
   idx3(nullptr),
-  aOnDevice(nullptr),
-  bOnDevice(nullptr),
-  cOnDevice(nullptr),
-  idx1OnDevice(nullptr),
-  idx2OnDevice(nullptr),
-  idx3OnDevice(nullptr),
   scalar(3.0)
 {}
 
@@ -56,13 +50,6 @@ bool RS_OMP_TARGET::allocateData() {
     initRandomIdxArray(idx3, streamArraySize);
   #endif
 
-  aOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), -1);
-  bOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), -1);
-  cOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), -1);
-  idx1OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), -1);
-  idx2OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), -1);
-  idx3OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), -1);
-
   #ifdef _DEBUG_
   std::cout << "===================================================================================" << std::endl;
   std::cout << " RaiderSTREAM Array Info:" << std::endl;
@@ -77,6 +64,7 @@ bool RS_OMP_TARGET::allocateData() {
   std::cout << "===================================================================================" << std::endl;
   #endif
 
+
   return true;
 }
 
@@ -87,12 +75,6 @@ bool RS_OMP_TARGET::freeData() {
   if ( idx1 ) { delete[] idx1; }
   if ( idx2 ) { delete[] idx2; }
   if ( idx3 ) { delete[] idx3; }
-  if ( aOnDevice ) { omp_target_free( a, -1 ); }
-  if ( bOnDevice ) { omp_target_free( b, -1 ); }
-  if ( cOnDevice ) { omp_target_free( c, -1 ); }
-  if ( idx1OnDevice ) { omp_target_free( idx1, -1 ); }
-  if ( idx2OnDevice ) { omp_target_free( idx2, -1 ); }
-  if ( idx3OnDevice ) { omp_target_free( idx3, -1 ); }
   return true;
 }
 
@@ -114,7 +96,6 @@ bool RS_OMP_TARGET::execute(
   switch ( kType ) {
     /* SEQUENTIAL KERNELS */
     case RSBaseImpl::RS_SEQ_COPY:
-      prepare();
       startTime = mySecond();
       seqCopy(numTeams, threadsPerTeam, a, b, c, streamArraySize);
       endTime = mySecond();
