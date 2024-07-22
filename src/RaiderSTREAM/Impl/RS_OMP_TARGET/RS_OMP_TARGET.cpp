@@ -58,13 +58,12 @@ bool RS_OMP_TARGET::allocateData() {
   idx2OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), device);
   idx3OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), device);
 
-  #pragma omp target data map(from: a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize])
-  #pragma omp target teams distribute parallel for is_device_ptr(aOnDevice, bOnDevice, cOnDevice)
-  for(int i = 0; i < streamArraySize; i++) {
-    aOnDevice[i] = a[i];
-    bOnDevice[i] = b[i];
-    cOnDevice[i] = c[i];
-  }
+  omp_target_memcpy(aOnDevice, a, streamArraySize, 0, 0, 0, device);
+  omp_target_memcpy(bOnDevice, b, streamArraySize, 0, 0, 0, device);
+  omp_target_memcpy(cOnDevice, c, streamArraySize, 0, 0, 0, device);
+  omp_target_memcpy(idx1OnDevice, idx1, streamArraySize, 0, 0, 0, device);
+  omp_target_memcpy(idx2OnDevice, idx2, streamArraySize, 0, 0, 0, device);
+  omp_target_memcpy(idx3OnDevice, idx3, streamArraySize, 0, 0, 0, device);
 
   #ifdef _DEBUG_
   std::cout << "===================================================================================" << std::endl;
