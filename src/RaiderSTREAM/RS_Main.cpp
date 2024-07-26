@@ -150,17 +150,27 @@ void runBenchOMP(RSOpts *Opts) {
 /***********************************************************************************/
 #ifdef _ENABLE_OACC_
 void runBenchOACC(RSOpts *Opts) {
+
+
   /* Initialize the RS_OACC object */
   RS_OACC *RS = new RS_OACC(*Opts);
   if (!RS) {
     std::cout << "ERROR" << std::endl;
     return;
   }
-  
-
+  /* Set Device */
+  if (!RS->setDevice()) {
+    std::cout << "ERROR: COULD NOT SET DEVICE FOR RS_OACC" << std::endl;
+    RS->freeData();
+    acc_shutdown(acc_device_nvidia);
+    delete RS;
+    return;
+  }
   /* Allocate Data */
   if (!RS->allocateData()) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OACC" << std::endl;
+    RS->freeData();
+    acc_shutdown(acc_device_nvidia);
     delete RS;
     return;
   }
@@ -169,6 +179,7 @@ void runBenchOACC(RSOpts *Opts) {
   if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
     std::cout <<"ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OACC" << std::endl;
     RS->freeData();
+    acc_shutdown(acc_device_nvidia);
     delete RS;
     return;
   }
@@ -176,6 +187,7 @@ void runBenchOACC(RSOpts *Opts) {
   /* Free the data */
   if (!RS->freeData()) {
     std::cout <<" ERROR: COULD NOT FREE THE MEMORY FOR RS_OACC" << std::endl;
+    acc_shutdown(acc_device_nvidia);
     delete RS;
     return;
   }
@@ -183,7 +195,7 @@ void runBenchOACC(RSOpts *Opts) {
   /* Print the timing */
   Opts->printLogo();
   Opts->printOpts();
-  // #pragma acc parallel  CURRENTLY COMMENTED OUT
+  // #pragma acc parallel
   // {
   //   int gang_num = acc_get_gang_num();  
   //   int gang_size = acc_get_gang_size();  

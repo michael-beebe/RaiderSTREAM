@@ -11,7 +11,7 @@
 #include <openacc.h>
 #include <sys/types.h>
 
-//#include<stdio.h>
+#include<stdio.h>
 /**************************************************
  * @brief Copies data from one stream to another.
  * 
@@ -20,13 +20,10 @@
 void seqCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize)
-  #pragma acc parallel num_gangs(ngangs) num_workers(nworkers) copyout(d_c[0:streamArraySize]) deviceptr(d_a, d_b, d_c)
 {
-  #pragma acc loop
+  #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
-  {
     d_c[j] = d_a[j];
-  }
 }
 
 /**************************************************
@@ -85,7 +82,9 @@ void gatherCopy(
 {
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
+  {
     d_c[j] = d_a[d_idx1[j]];
+  }
 }
 
 /**************************************************

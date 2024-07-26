@@ -42,6 +42,21 @@ RS_OACC::RS_OACC(const RSOpts& opts) :
 
 RS_OACC::~RS_OACC() {}
 
+bool RS_OACC::setDevice()
+{
+  acc_device_t device = acc_get_device_type();
+  std::cout <<"The device type is: " <<device<<std::endl;
+  acc_set_device_type(device); //Device type is nvidia by default, must be changed if not running on a nvidia device
+  acc_init(device);
+  std::cout << "The name of the device we are using is: "<< acc_get_property_string(0, device, acc_property_name) << std::endl;
+  int gangs = 0;
+  int workers = 0;
+  #pragma acc parallel num_gangs(numGangs) reduction(+: gangs)
+  {gangs++;}
+  std::cout<<"Number of Gangs: " << gangs<< std::endl;
+  return true;
+}
+
 bool RS_OACC::allocateData() {
 
   ssize_t streamMemArraySize = streamArraySize * sizeof(double);
@@ -53,13 +68,6 @@ bool RS_OACC::allocateData() {
   idx1 = new ssize_t[streamArraySize];
   idx2 = new ssize_t[streamArraySize];
   idx3 = new ssize_t[streamArraySize];
-
-  for(int i = 0; i<streamArraySize; i++)
-  {
-    a[i] = 0.0;
-    b[i] = 0.0;
-    c[i] = 0.0;
-  }
 
   #ifdef _ARRAYGEN_
     initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
@@ -144,10 +152,16 @@ bool RS_OACC::allocateData() {
   double *test_a = new double[streamArraySize];
   double *test_b = new double[streamArraySize];
   double *test_c = new double[streamArraySize];
+  ssize_t *test_idx1 = new ssize_t[streamArraySize];
+  ssize_t *test_idx2 = new ssize_t[streamArraySize];
+  ssize_t *test_idx3 = new ssize_t[streamArraySize];
 
   acc_memcpy_from_device(test_a, d_a, streamMemArraySize);
   acc_memcpy_from_device(test_b, d_b, streamMemArraySize);
   acc_memcpy_from_device(test_c, d_c, streamMemArraySize);
+  acc_memcpy_from_device(test_idx1, d_idx1, idxMemArraySize);
+  acc_memcpy_from_device(test_idx2, d_idx2, idxMemArraySize);
+  acc_memcpy_from_device(test_idx3, d_idx3, idxMemArraySize);
 
   bool success = true;
   for (ssize_t i = 0; i < streamArraySize; ++i) {
@@ -163,6 +177,21 @@ bool RS_OACC::allocateData() {
     }
     if (c[i] != test_c[i]) {
       std::cerr << "RS_OACC::allocateData: Data verification failed at index " << i << " for array 'c'" << std::endl;
+      success = false;
+      break;
+    }
+    if (idx1[i] != test_idx1[i]) {
+      std::cerr << "RS_OACC::allocateData: Data verification failed at index " << i << " for array 'idx1'" << std::endl;
+      success = false;
+      break;
+    }
+    if (idx2[i] != test_idx2[i]) {
+      std::cerr << "RS_OACC::allocateData: Data verification failed at index " << i << " for array 'idx2'" << std::endl;
+      success = false;
+      break;
+    }
+    if (idx2[i] != test_idx2[i]) {
+      std::cerr << "RS_OACC::allocateData: Data verification failed at index " << i << " for array 'idx3'" << std::endl;
       success = false;
       break;
     }
@@ -192,7 +221,6 @@ bool RS_OACC::allocateData() {
     std::cout << "idx3[streamArraySize-1] = " << idx3[streamArraySize-1] << std::endl;
     std::cout << "===================================================================================" << std::endl;
   #endif
-
   
   return true;
 }

@@ -92,6 +92,8 @@ public:
 
   std::string getImplName() { return Impl; }
 
+  virtual bool setDevice() = 0;
+
   virtual bool allocateData() = 0;
 
   virtual bool freeData() = 0;

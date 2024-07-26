@@ -49,6 +49,8 @@ public:
 
   ~RS_OACC();
 
+  virtual bool setDevice() override;
+
   virtual bool allocateData() override;
 
   virtual bool execute(
