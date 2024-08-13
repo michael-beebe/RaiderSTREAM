@@ -44,8 +44,6 @@ public:
 
   ~RS_OMP_TARGET();
 
-  void prepare();
-
   virtual bool allocateData() override;
 
   virtual bool execute(

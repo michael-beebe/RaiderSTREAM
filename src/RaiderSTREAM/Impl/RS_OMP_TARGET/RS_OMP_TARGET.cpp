@@ -33,12 +33,6 @@ RS_OMP_TARGET::RS_OMP_TARGET(const RSOpts& opts) :
 RS_OMP_TARGET::~RS_OMP_TARGET() {}
 
 bool RS_OMP_TARGET::allocateData() {
-  // double *a =    new  double[streamArraySize];
-  // double *b =    new  double[streamArraySize];
-  // double *c =    new  double[streamArraySize];
-  // ssize_t *idx1 = new ssize_t[streamArraySize];
-  // ssize_t *idx2 = new ssize_t[streamArraySize];
-  // ssize_t *idx3 = new ssize_t[streamArraySize];
   a =    new  double[streamArraySize];
   b =    new  double[streamArraySize];
   c =    new  double[streamArraySize];
@@ -56,21 +50,6 @@ bool RS_OMP_TARGET::allocateData() {
     initRandomIdxArray(idx3, streamArraySize);
   #endif
 
-  int device = omp_get_default_device();
-  // aOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), device);
-  // bOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), device);
-  // cOnDevice = (double *) omp_target_alloc(streamArraySize * sizeof(double), device);
-  // idx1OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), device);
-  // idx2OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), device);
-  // idx3OnDevice = (ssize_t *) omp_target_alloc(streamArraySize * sizeof(ssize_t), device);
-
-  // omp_target_memcpy(aOnDevice, a, streamArraySize, 0, 0, 0, device);
-  // omp_target_memcpy(bOnDevice, b, streamArraySize, 0, 0, 0, device);
-  // omp_target_memcpy(cOnDevice, c, streamArraySize, 0, 0, 0, device);
-  // omp_target_memcpy(idx1OnDevice, idx1, streamArraySize, 0, 0, 0, device);
-  // omp_target_memcpy(idx2OnDevice, idx2, streamArraySize, 0, 0, 0, device);
-  // omp_target_memcpy(idx3OnDevice, idx3, streamArraySize, 0, 0, 0, device);
-
   #ifdef _DEBUG_
   std::cout << "===================================================================================" << std::endl;
   std::cout << " RaiderSTREAM Array Info:" << std::endl;
@@ -84,13 +63,6 @@ bool RS_OMP_TARGET::allocateData() {
   std::cout << "idx3[streamArraySize-1] = " << idx3[streamArraySize-1] << std::endl;
   std::cout << "===================================================================================" << std::endl;
   #endif
-
-  // delete[] a;
-  // delete[] b;
-  // delete[] c;
-  // delete[] idx1;
-  // delete[] idx2;
-  // delete[] idx3;
 
   return true;
 }
@@ -106,9 +78,6 @@ bool RS_OMP_TARGET::freeData() {
   return true;
 }
 
-void RS_OMP_TARGET::prepare() {
-}
-
 bool RS_OMP_TARGET::execute(
   double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS
 ) {
@@ -117,9 +86,6 @@ bool RS_OMP_TARGET::execute(
   double flops      = 0.0;
 
   RSBaseImpl::RSKernelType kType = getKernelType();
-
-  ssize_t s = streamArraySize;
-  bool ret = true;
 
   switch ( kType ) {
     /* SEQUENTIAL KERNELS */
@@ -473,10 +439,9 @@ bool RS_OMP_TARGET::execute(
     /* NO KERNELS, SOMETHING IS WRONG */
     default:
       std::cout << "RS_OMP_TARGET::execute() - ERROR: KERNEL NOT SET" << std::endl;
-      // avoid return from data region
-      ret = false;
+      return false;
   }
-  return ret;
+  return true;
 }
 
 #endif /* _RS_OMP_TARGET_H_ */
