@@ -11,56 +11,42 @@
 #include <omp.h>
 #include <sys/types.h>
 
-#ifndef ARGS
-// cpp stringification shenanigans
-//#define DO_PRAGMA_(x) _Pragma(#x)
-//#define DO_PRAGMA(x) DO_PRAGMA_(x)
-
-/* Why?
- *
- * We want to pass the array ptrs and the froms
- * as different arguments to the WITH_OFFLOAD macro.
- * But, you can't (easily) escape a comma in cpp directives.
- *
- * So instead, we wrap our ptrs and froms in an enclosing macro,
- * evaluated in place.
- */
-#define ARGS(...) __VA_ARGS__
-#endif
-
 #ifndef DO_PRAGMA
 #define DO_PRAGMA(x) _Pragma(#x)
 #endif
 
-/* Below is the OMP offload pragma used for all
- * of this implementation. Modify this to modify all.
- *
- * As a dev-note; you may notice that all invocations of
- * this macro have parens that could probably be removed.
- * I'd suggest against this. The macro becomes significantly
- * less readable, and seems to summon demons when compiled
- * using clang.
- */
-#define WITH_OFFLOAD(ptrs, froms) \
-  DO_PRAGMA(omp target teams distribute parallel for simd num_teams(nteams) \
-                                                          thread_limit(threads) \
-                                                          is_device_ptr(ptrs) \
-                                                          map(from: froms))
+#define WITH_TARGET(...) \
+  DO_PRAGMA(omp target map(tofrom: __VA_ARGS__) map(tofrom: time))
+
+#define LOOP_PRAGMA \
+  DO_PRAGMA(omp teams distribute parallel for simd num_teams(nteams) \
+                                                   thread_limit(threads))
+
+#define BENCH_PREAMBLE double start = omp_get_wtime()
+#define BENCH_POSTAMBLE time = omp_get_wtime() - start
 
 
 /**************************************************
  * @brief Copies data from one stream to another.
  * 
  * @param streamArraySize Size of the stream array.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void seqCopy(
+double seqCopy(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[j] = a[j];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], streamArraySize)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[j] = a[j];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
@@ -68,30 +54,46 @@ void seqCopy(
  * 
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void seqScale(
+double seqScale(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    b[j] = scalar * c[j];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], streamArraySize, scalar)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      b[j] = scalar * c[j];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
  * @brief Adds data from two streams.
  * 
  * @param streamArraySize Size of the stream array.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void seqAdd(
+double seqAdd(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[j] = a[j] + b[j];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], streamArraySize)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[j] = a[j] + b[j];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
@@ -99,30 +101,46 @@ void seqAdd(
  * 
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void seqTriad(
+double seqTriad(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    a[j] = b[j] + scalar * c[j];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], streamArraySize, scalar)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      a[j] = b[j] + scalar * c[j];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
  * @brief Copies data using gather operation.
  * 
  * @param streamArraySize Size of the stream array.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void gatherCopy(
+double gatherCopy(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[j] = a[idx1[j]];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], streamArraySize)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[j] = a[idx1[j]];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
@@ -130,32 +148,48 @@ void gatherCopy(
  * 
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void gatherScale(
+double gatherScale(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    b[j] = scalar * c[idx1[j]];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], streamArraySize, scalar)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      b[j] = scalar * c[idx1[j]];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
  * @brief Adds data using gather operation.
  * 
  * @param streamArraySize Size of the stream array.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void gatherAdd(
+double gatherAdd(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[j] = a[idx1[j]] + b[idx2[j]];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize], streamArraySize)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[j] = a[idx1[j]] + b[idx2[j]];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
@@ -163,32 +197,48 @@ void gatherAdd(
  * 
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void gatherTriad(
+double gatherTriad(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    a[j] = b[idx1[j]] + scalar * c[idx2[j]];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize], streamArraySize, scalar)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      a[j] = b[idx1[j]] + scalar * c[idx2[j]];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
  * @brief Copies data using scatter operation.
  * 
  * @param streamArraySize Size of the stream array.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void scatterCopy(
+double scatterCopy(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[idx1[j]] = a[j];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], streamArraySize)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[idx1[j]] = a[j];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
@@ -196,32 +246,48 @@ void scatterCopy(
  * 
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void scatterScale(
+double scatterScale(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    b[idx1[j]] = scalar * c[j];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], streamArraySize, scalar)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      b[idx1[j]] = scalar * c[j];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
  * @brief Adds data using scatter operation.
  * 
  * @param streamArraySize Size of the stream array.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void scatterAdd(
+double scatterAdd(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[idx1[j]] = a[j] + b[j];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], streamArraySize)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[idx1[j]] = a[j] + b[j];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
@@ -229,32 +295,48 @@ void scatterAdd(
  * 
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void scatterTriad(
+double scatterTriad(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    a[idx1[j]] = b[j] + scalar * c[j];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], streamArraySize, scalar)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      a[idx1[j]] = b[j] + scalar * c[j];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
  * @brief Copies data using scatter-gather operation.
  * 
  * @param streamArraySize Size of the stream array.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void sgCopy(
+double sgCopy(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[idx1[j]] = a[idx2[j]];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize], streamArraySize)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[idx1[j]] = a[idx2[j]];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
@@ -262,32 +344,48 @@ void sgCopy(
  * 
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void sgScale(
+double sgScale(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    b[idx2[j]] = scalar * c[idx1[j]];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize], streamArraySize, scalar)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      b[idx2[j]] = scalar * c[idx1[j]];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
  * @brief Adds data using scatter-gather operation.
  * 
  * @param streamArraySize Size of the stream array.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void sgAdd(
+double sgAdd(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2, idx3), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize], idx3[0:streamArraySize], streamArraySize)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
@@ -295,31 +393,47 @@ void sgAdd(
  * 
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void sgTriad(
+double sgTriad(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c, idx1, idx2, idx3), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], idx1[0:streamArraySize], idx2[0:streamArraySize], idx3[0:streamArraySize], streamArraySize, scalar)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
  * @brief Copies data using a central location.
  * 
  * @param streamArraySize Size of the stream array.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void centralCopy(
+double centralCopy(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[0] = a[0];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], streamArraySize)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[0] = a[0];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
@@ -327,30 +441,46 @@ void centralCopy(
  * 
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void centralScale(
+double centralScale(
   int nteams, int threads,
   double *a,double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    b[0] = scalar * c[0];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], streamArraySize, scalar)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      b[0] = scalar * c[0];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
  * @brief Adds data using a central location.
  * 
  * @param streamArraySize Size of the stream array.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void centralAdd(
+double centralAdd(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    c[0] = a[0] + b[0];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], streamArraySize)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      c[0] = a[0] + b[0];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /**************************************************
@@ -358,15 +488,23 @@ void centralAdd(
  * 
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
+ * @return Internally measured benchmark runtime.
  **************************************************/
-void centralTriad(
+double centralTriad(
   int nteams, int threads,
   double *a, double *b, double *c,
   ssize_t streamArraySize, double scalar)
 {
-  WITH_OFFLOAD(ARGS(a, b, c), ARGS(streamArraySize, scalar))
-  for (ssize_t j = 0; j < streamArraySize; j++)
-    a[0] = b[0] + scalar * c[0];
+  double time = 0;
+  WITH_TARGET(a[0:streamArraySize], b[0:streamArraySize], c[0:streamArraySize], streamArraySize, scalar)
+  {
+    BENCH_PREAMBLE;
+    LOOP_PRAGMA
+    for (ssize_t j = 0; j < streamArraySize; j++)
+      a[0] = b[0] + scalar * c[0];
+    BENCH_POSTAMBLE;
+  }
+  return time;
 }
 
 /* EOF */
