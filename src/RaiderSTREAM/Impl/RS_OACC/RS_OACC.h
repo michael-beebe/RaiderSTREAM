@@ -61,7 +61,7 @@ public:
 };
 
 extern "C" {
-  void seqCopy(
+  double seqCopy(
     int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
     ssize_t streamArraySize
   );

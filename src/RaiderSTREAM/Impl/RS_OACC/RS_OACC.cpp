@@ -256,9 +256,9 @@ bool RS_OACC::execute(
     /* SEQUENTIAL KERNELS */
     case RSBaseImpl::RS_SEQ_COPY:
       startTime = mySecond();
-      seqCopy(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
+      runTime = seqCopy(numGangs, numWorkers, d_a, d_b, d_c, streamArraySize);
       endTime = mySecond();
-      runTime = calculateRunTime(startTime, endTime);
+      //runTime = calculateRunTime(startTime, endTime);
       mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
       flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
       TIMES[RSBaseImpl::RS_SEQ_COPY] = runTime;

@@ -10,20 +10,25 @@
 
 #include <openacc.h>
 #include <sys/types.h>
+#include <time.h>
 
-#include<stdio.h>
+#include<stdio.h> /* FOR DEBUGGING WE SHOULD NOT BE PRINTING ANYTHING IN KERNELS*/
 /**************************************************
  * @brief Copies data from one stream to another.
  * 
  * @param streamArraySize Size of the stream array.
  **************************************************/
-void seqCopy(
+double seqCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[j] = d_a[j];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
