@@ -37,13 +37,17 @@ double seqCopy(
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void seqScale(
+double seqScale(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize, double scalar)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_b[j] = scalar * d_c[j];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -51,13 +55,17 @@ void seqScale(
  * 
  * @param streamArraySize Size of the stream array.
  **************************************************/
-void seqAdd(
+double seqAdd(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[j] = d_a[j] + d_b[j];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -66,13 +74,17 @@ void seqAdd(
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-void seqTriad(
+double seqTriad(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize, double scalar)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_a[j] = d_b[j] + scalar * d_c[j];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -81,15 +93,19 @@ void seqTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-void gatherCopy(
+double gatherCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t streamArraySize)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
   {
     d_c[j] = d_a[d_idx1[j]];
   }
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -99,14 +115,18 @@ void gatherCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 
-void gatherScale(
+double gatherScale(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1,
   ssize_t streamArraySize, double scalar)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_b[j] = scalar * d_c[d_idx1[j]];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -115,14 +135,18 @@ void gatherScale(
  * @param streamArraySize Size of the stream array.
  ************************i**************************/
 
-void gatherAdd(
+double gatherAdd(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2,
   ssize_t streamArraySize)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[j] = d_a[d_idx1[j]] + d_b[d_idx2[j]];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -132,14 +156,18 @@ void gatherAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 
-void gatherTriad(
+double gatherTriad(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2,
   ssize_t streamArraySize, double scalar)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_a[j] = d_b[d_idx1[j]] + scalar * d_c[d_idx2[j]];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -148,14 +176,18 @@ void gatherTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-void scatterCopy(
+double scatterCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1,
   ssize_t streamArraySize)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[d_idx1[j]] = d_a[j];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -165,14 +197,18 @@ void scatterCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 
-void scatterScale(
+double scatterScale(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1,
   ssize_t streamArraySize, double scalar)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_b[d_idx1[j]] = scalar * d_c[j];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -181,14 +217,18 @@ void scatterScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-void scatterAdd(
+double scatterAdd(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1,
   ssize_t streamArraySize)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[d_idx1[j]] = d_a[j] + d_b[j];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -198,14 +238,18 @@ void scatterAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 
-void scatterTriad(
+double scatterTriad(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1,
   ssize_t streamArraySize, double scalar)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_a[d_idx1[j]] = d_b[j] + scalar * d_c[j];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -214,14 +258,18 @@ void scatterTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-void sgCopy(
+double sgCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2,
   ssize_t streamArraySize)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[d_idx1[j]] = d_a[d_idx2[j]];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -231,14 +279,18 @@ void sgCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 
-void sgScale(
+double sgScale(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2,
   ssize_t streamArraySize, double scalar)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_b[d_idx2[j]] = scalar * d_c[d_idx1[j]];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -247,14 +299,18 @@ void sgScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-void sgAdd(
+double sgAdd(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2, ssize_t *d_idx3,
   ssize_t streamArraySize)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[d_idx1[j]] = d_a[d_idx2[j]] + d_b[d_idx3[j]];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -264,14 +320,18 @@ void sgAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 
-void sgTriad(
+double sgTriad(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t *d_idx1, ssize_t *d_idx2, ssize_t *d_idx3,
   ssize_t streamArraySize, double scalar)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_a[d_idx2[j]] = d_b[d_idx3[j]] + scalar * d_c[d_idx1[j]];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -280,13 +340,17 @@ void sgTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-void centralCopy(
+double centralCopy(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[0] = d_a[0];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -296,13 +360,17 @@ void centralCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 
-void centralScale(
+double centralScale(
   int ngangs, int nworkers, double *d_a,double *d_b, double *d_c,
   ssize_t streamArraySize, double scalar)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_b[0] = scalar * d_c[0];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -311,13 +379,17 @@ void centralScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-void centralAdd(
+double centralAdd(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_c[0] = d_a[0] + d_b[0];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /**************************************************
@@ -327,13 +399,17 @@ void centralAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 
-void centralTriad(
+double centralTriad(
   int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
   ssize_t streamArraySize, double scalar)
 {
+  double start = clock();
   #pragma acc parallel loop num_gangs(ngangs) num_workers(nworkers) deviceptr(d_a, d_b, d_c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     d_a[0] = d_b[0] + scalar * d_c[0];
+  double end = clock();
+  double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+  return time;
 }
 
 /* EOF */
