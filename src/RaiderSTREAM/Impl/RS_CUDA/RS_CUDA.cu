@@ -13,7 +13,7 @@
 #include "RS_CUDA.cuh"
 
 RS_CUDA::RS_CUDA(const RSOpts& opts) :
-  RSBaseImpl("RS_OMP", opts.getKernelTypeFromName(opts.getKernelName())),
+  RSBaseImpl("RS_CUDA", opts.getKernelTypeFromName(opts.getKernelName())),
   kernelName(opts.getKernelName()),
   streamArraySize(opts.getStreamArraySize()),
   streamArrayMemSize(0),
@@ -39,6 +39,11 @@ RS_CUDA::RS_CUDA(const RSOpts& opts) :
 {}
 
 RS_CUDA::~RS_CUDA() {}
+
+bool RS_CUDA::printCudaDeviceProps() {
+  // TODO:
+  return true;
+}
 
 bool RS_CUDA::allocateData() {
   if ( threadBlocks <= 0 ) {
@@ -188,6 +193,10 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
   double runTime    = 0.0;
   double mbps       = 0.0;
   double flops      = 0.0;
+
+      cudaDeviceSynchronize();
+      sgCopy<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, streamArraySize);
+      cudaDeviceSynchronize();
 
   RSBaseImpl::RSKernelType kType = getKernelType();
 
