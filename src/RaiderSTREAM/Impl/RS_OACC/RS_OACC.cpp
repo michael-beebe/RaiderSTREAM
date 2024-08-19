@@ -44,6 +44,7 @@ RS_OACC::~RS_OACC() {}
 
 bool RS_OACC::setDevice()
 {
+  //std::cout <<"OpenACC version: "<< _OPENACC <<std::endl;
   acc_device_t device = acc_get_device_type();
   std::cout <<"The device type is: " <<device<<std::endl;
   acc_set_device_type(device); //Device type is nvidia by default, must be changed if not running on a nvidia device
