@@ -63,68 +63,183 @@ private:
 		int threadsPerBlock;
 	#endif
 
+  /**
+   * @brief Output the help dialog.
+   */
   void printHelp();
 
+  /**
+   * @brief Output the version of RaiderSTREAM.
+   */
   void printVersion();
 
+  /**
+   * @brief Output the kernel to-be-run.
+   */
   void printBench();
 
+  /**
+   * @brief Set a kernel to be run.
+   * @param BenchName The name of the kernel to be enabled.
+   * @returns True if enabling the kernel was successful, false otherwise.
+   */
   bool enableBench(std::string BenchName);
 
 public:
   RSOpts();
   ~RSOpts();
 
+  /**
+   * @brief Parse options from the command line.
+   * @param argc The argc from the runtime.
+   * @param argv The argv from the runtime.
+   * @returns True if successful, false otherwise.
+   */
   bool parseOpts(int argc, char **argv);
 
+  /**
+   * @brief Set a benchmark to be run this execution.
+   * @param benchName The name of the kernel to be enabled.
+   * @returns True if enabling the kernel was successful, false otherwise.
+   */
   bool enableBenchmark(std::string benchName);
 
+  /**
+   * @brief Print out the help dialog.
+   */
 	void printOpts();
 
+  /**
+   * @brief Print out the ASCII art logo.
+   */
 	void printLogo();
 
 /****************************************************
  * 									 Getters 
 ****************************************************/
+  /**
+   * @brief Get the stored arg count.
+   * @returns The arg count.
+   */
   int getArgc() { return lArgc; }
+  /**
+   * @brief Get the stored arg list.
+   * @returns The arg list.
+   */
   char **getArgv() { return lArgv; }
+  /**
+   * @brief Query if the invocation asks for the help dialog.
+   * @returns True if the invocation asks for the help dialog, false otherwise.
+   */
   bool getIsHelp() { return isHelp; }
+  /**
+   * @brief Query if the invocation asks for the kernel list.
+   * @returns True if the invocation asks for the kernel list, false otherwise.
+   */
   bool getIsList() { return isList; }
 
+  /**
+   * @brief Which kernel is being run this invocation.
+   * @returns The kernel type the cli args have selected.
+   */
   RSBaseImpl::RSKernelType getKernelType() const { return getKernelTypeFromName(kernelName); }
 
+  /**
+   * @brief The name of the kernel being run this invocation.
+   * @returns The name of the kernel being run this invocation.
+   */
   std::string getKernelName() const { return kernelName; }
 
+  /**
+   * @brief Parse a kernel name to a kernel type.
+   * @param kernelName The name of the kernel.
+   * @returns The kernel type if recognized, or RS_NB otherwise.
+   */
 	RSBaseImpl::RSKernelType getKernelTypeFromName(const std::string& kernelName) const;
 
+  /**
+   * @brief The size of the data arrays for this invocation.
+   * @returns The size of the data arrays for this invocation.
+   */
   ssize_t getStreamArraySize() const { return streamArraySize; }
 
+  /**
+   * @brief Gets the number of PEs specified in the command line.
+   * @returns The number of PEs specified in the command line.
+   */
   int getNumPEs() const { return numPEs; }
 
 	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
+    /**
+     * @brief Gets the number of work groups.
+     *
+     * Blocks in CUDA, Groups in OpenMP, Gangs in OpenACC.
+     *
+     * @returns The number of working groups.
+     */
 		int getThreadBlocks() const { return threadBlocks; }
+    /**
+     * @brief Gets the number of workers per work group.
+     *
+     * Warps in CUDA, Workers in OpenMP and OpenACC.
+     *
+     * @returns The number of workers per working group.
+     */
 		int getThreadsPerBlocks() const { return threadsPerBlock; }
 	#endif
 
 /****************************************************
  * 									 Setters
 ****************************************************/
+  /**
+   * @brief Sets the size of the data array.
+   * @param size The new size of the array in elements.
+   */
   void setStreamArraySize(ssize_t size) { streamArraySize = size; }
 
+  /**
+   * @brief Sets the amount of PEs.
+   * @param nprocs The new amount of PEs.
+   */
   void setNumPEs(int nprocs) { numPEs = nprocs; }
 
+  /**
+   * @brief Sets the kernel to be run.
+   * @param type The new type to be run.
+   */
   void setKernelType(RSBaseImpl::RSKernelType type) { kernelType = type; }
 
+  /**
+   * @brief Sets the name of the kernel to be run.
+   * @param name The new name of the kernel.
+   */
 	void setKernelName(std::string name) { kernelName = name; }
 
 	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
+    /**
+     * @brief Sets the number of work groups.
+     *
+     * Blocks in CUDA, Groups in OpenMP, Gangs in OpenACC.
+     *
+     * @param The new amount of work groups.
+     */
 		void setThreadBlocks(int blocks ) { threadBlocks = blocks; }
+    /**
+     * @brief Sets the number of workers per work group.
+     *
+     * Warps in CUDA, Workers in OpenMP and OpenACC.
+     *
+     * @param The new amount of workers per work group.
+     */
 		void setThreadsPerBlocks(int threads) { threadsPerBlock = threads; }
 	#endif
 
 /****************************************************
  * 						Arrays used in kernels
 ****************************************************/
+  /**
+   * @brief Maps the RS_KERNEL_TYPE enum to the amount of bytes being moved.
+   */
   double BYTES[NUM_KERNELS] = {
 		// Original Kernels
 		static_cast<double>(2 * sizeof(double) * streamArraySize), // Copy
@@ -153,6 +268,9 @@ public:
 		static_cast<double>(3 * sizeof(double) * streamArraySize), // Central Triad
   };
 
+  /**
+   * @brief Maps the RS_KERNEL_TYPE enum to the float ops incurred.
+   */
   double FLOATOPS[NUM_KERNELS] = {
 		// Original Kernels
 		(double)0.0,                       // Copy
@@ -181,8 +299,17 @@ public:
 		2.0 * streamArraySize,             // CENTRAL Triad
   };
 
+  /**
+   * @brief Storage for the MBPS of benchmarks this invocation.
+   */
 	double MBPS[NUM_KERNELS]  = {0};
+  /**
+   * @brief Storage for the FLOPS of benchmarks this invocation.
+   */
 	double FLOPS[NUM_KERNELS] = {0};
+  /**
+   * @brief Storage for the runtimes of benchmarks this invocation.
+   */
 	double TIMES[NUM_KERNELS] = {0};
 };
 

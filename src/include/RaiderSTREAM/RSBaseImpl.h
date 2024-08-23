@@ -54,6 +54,13 @@
  */
 class RSBaseImpl {
 public:
+  /**
+   * @brief RSKernelType; enumeration of all kernels
+   *
+   * Note RS_ALL, which runs every kernel if passed to RSBaseImpl::execute.
+   *
+   * RS_ALL and RS_NB are invalid as an index into benchmark arrays.
+   */
   typedef enum {
     RS_SEQ_COPY = 0,
     RS_SEQ_SCALE = 1,
@@ -132,7 +139,7 @@ public:
    **/
   virtual bool freeData() = 0;
 
-  /**************************************************
+  /**
    * @brief Executes the specified kernel.
    *
    * @param TIMES Array to store the execution times
@@ -148,7 +155,7 @@ public:
    *
    * @return True if the execution was successful,
    *         false otherwise.
-   **************************************************/
+   **/
   virtual bool execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS) = 0;
 
   /**
@@ -220,6 +227,16 @@ public:
   }
 
 
+  /**
+   * @brief Produces a number repesenting the current time.
+   *
+   * While fairly stable and reliable, the reference point (0 seconds)
+   * is only stable within the same program execution.
+   *
+   * @returns A number representing the time since some reference point.
+   */
+  // Should this be remade to use the monotonic clock instead? (clock_get[res/time])
+  // It would avoid the shenanigans occuring in checkTick below.
   double mySecond() {
     struct timeval tp;
     struct timezone tzp;
@@ -227,6 +244,14 @@ public:
     return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
   }
 
+  /**
+   * @brief Calculate the minimum difference in time.
+   *
+   * In other words: calculate the minimum x such that
+   * y = mySecond(), for(i = 0; i < x; i++) ;, mySecond() - y > 0
+   *
+   * @returns The minimum
+   */
   int checkTick() {
     int i, minDelta, delta;
     double t1, t2, timesFound[M];
@@ -244,18 +269,44 @@ public:
     return (minDelta);
   }
 
+  /**
+   * @brief Calculate the difference between two times.
+   *
+   * @param startTime The result of the first call to mySecond.
+   * @param endTime The result of the second call to mySecond.
+   * @return The difference between the two.
+   */
   double calculateRunTime(double startTime, double endTime) {
     return (endTime - startTime);
   }
 
+  /**
+   * @brief Calculate the effective MB/s given a bytes and a runtime.
+   *
+   * @param bytes The amount of bytes moved during the operation.
+   * @param runTime Duration of the operation.
+   * @return The effective MBPS of the operation.
+   */
   double calculateMBPS(double bytes, double runTime) {
     return (bytes / (runTime * 1024.0 * 1024.0));
   }
 
+  /**
+   * @brief Calculate the effective FLOPS given a bytes and a runtime.
+   *
+   * @param floatOps The amount of floating point operations performed.
+   * @param runTime Duration of the operation.
+   * @return The effective FLOPS of the operation.
+   */
   double calculateFLOPS(double floatOps, double runTime) {
     return (floatOps / runTime);
   }
 
+  /**
+   * @brief Return the kernel chosen to run.
+   *
+   * @return The kernel that will be run.
+   */
   RSBaseImpl::RSKernelType getKernelType() { return KType; }
 
 private:
