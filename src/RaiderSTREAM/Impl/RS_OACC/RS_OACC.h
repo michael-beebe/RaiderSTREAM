@@ -19,7 +19,8 @@
 /**
  * @brief RaiderSTREAM OpenACC implementation class
  *
- * This class provides the implementation of the RaiderSTREAM benchmark using OpenMP.
+ * This class provides the implementation of the RaiderSTREAM benchmark using
+ * OpenMP.
  */
 class RS_OACC : public RSBaseImpl {
 private:
@@ -45,7 +46,7 @@ private:
   ssize_t scalar;
 
 public:
-  RS_OACC(const RSOpts& opts);
+  RS_OACC(const RSOpts &opts);
 
   ~RS_OACC();
 
@@ -53,126 +54,80 @@ public:
 
   virtual bool allocateData() override;
 
-  virtual bool execute(
-    double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS
-  ) override;
+  virtual bool execute(double *TIMES, double *MBPS, double *FLOPS,
+                       double *BYTES, double *FLOATOPS) override;
 
   virtual bool freeData() override;
 };
 
 extern "C" {
-  double seqCopy(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t streamArraySize
-  );
+double seqCopy(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+               ssize_t streamArraySize);
 
-  double seqScale(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t streamArraySize, double scalar
-  );
+double seqScale(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+                ssize_t streamArraySize, double scalar);
 
-  double seqAdd(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t streamArraySize
-  );
+double seqAdd(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+              ssize_t streamArraySize);
 
-  double seqTriad(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t streamArraySize, double scalar
-  );
+double seqTriad(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+                ssize_t streamArraySize, double scalar);
 
-  double gatherCopy(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1,
-    ssize_t streamArraySize
-  );
+double gatherCopy(int ngangs, int nworkers, double *d_a, double *d_b,
+                  double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize);
 
-  double gatherScale(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1,
-    ssize_t streamArraySize, double scalar
-  );
+double gatherScale(int ngangs, int nworkers, double *d_a, double *d_b,
+                   double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize,
+                   double scalar);
 
-  double gatherAdd(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1, ssize_t *d_IDX2,
-    ssize_t streamArraySize
-  );
+double gatherAdd(int ngangs, int nworkers, double *d_a, double *d_b,
+                 double *d_c, ssize_t *d_IDX1, ssize_t *d_IDX2,
+                 ssize_t streamArraySize);
 
-  double gatherTriad(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1, ssize_t *d_IDX2,
-    ssize_t streamArraySize, double scalar
-  );
+double gatherTriad(int ngangs, int nworkers, double *d_a, double *d_b,
+                   double *d_c, ssize_t *d_IDX1, ssize_t *d_IDX2,
+                   ssize_t streamArraySize, double scalar);
 
-  double scatterCopy(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1,
-    ssize_t streamArraySize
-  );
+double scatterCopy(int ngangs, int nworkers, double *d_a, double *d_b,
+                   double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize);
 
-  double scatterScale(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1,
-    ssize_t streamArraySize, double scalar
-  );
+double scatterScale(int ngangs, int nworkers, double *d_a, double *d_b,
+                    double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize,
+                    double scalar);
 
-  double scatterAdd(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1,
-    ssize_t streamArraySize
-  );
+double scatterAdd(int ngangs, int nworkers, double *d_a, double *d_b,
+                  double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize);
 
-  double scatterTriad(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1,
-    ssize_t streamArraySize, double scalar
-  );
+double scatterTriad(int ngangs, int nworkers, double *d_a, double *d_b,
+                    double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize,
+                    double scalar);
 
-  double sgCopy(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1, ssize_t *d_IDX2,
-    ssize_t streamArraySize
-  );
+double sgCopy(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+              ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t streamArraySize);
 
-  double sgScale(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1, ssize_t *d_IDX2,
-    ssize_t streamArraySize, double scalar
-  );
+double sgScale(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+               ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t streamArraySize,
+               double scalar);
 
-  double sgAdd(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t *d_IDX3,
-    ssize_t streamArraySize
-  );
+double sgAdd(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+             ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t *d_IDX3,
+             ssize_t streamArraySize);
 
-  double sgTriad(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t *d_IDX3,
-    ssize_t streamArraySize, double scalar
-  );
+double sgTriad(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+               ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t *d_IDX3,
+               ssize_t streamArraySize, double scalar);
 
-  double centralCopy(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t streamArraySize
-  );
+double centralCopy(int ngangs, int nworkers, double *d_a, double *d_b,
+                   double *d_c, ssize_t streamArraySize);
 
-  double centralScale(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t streamArraySize,
-    double scalar
-  );
+double centralScale(int ngangs, int nworkers, double *d_a, double *d_b,
+                    double *d_c, ssize_t streamArraySize, double scalar);
 
-  double centralAdd(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t streamArraySize
-  );
+double centralAdd(int ngangs, int nworkers, double *d_a, double *d_b,
+                  double *d_c, ssize_t streamArraySize);
 
-  double centralTriad(
-    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
-    ssize_t streamArraySize, double scalar
-  );
+double centralTriad(int ngangs, int nworkers, double *d_a, double *d_b,
+                    double *d_c, ssize_t streamArraySize, double scalar);
 }
 
 #endif /* _RS_OACC_H_ */

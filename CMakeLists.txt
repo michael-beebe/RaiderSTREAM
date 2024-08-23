@@ -28,7 +28,6 @@ execute_process(COMMAND lsb_release -cs
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-
 #------------------------------------------------------------------------
 #-- COMPILER OPTIONS
 #------------------------------------------------------------------------
@@ -142,34 +141,17 @@ else()
   message(STATUS "DISABLING CUDA Implementation")
 endif()
 
-if (ENABLE_MPI_CUDA)
-  enable_language(CUDA)
-  find_package(MPI REQUIRED)
-  find_package(CUDA REQUIRED)
-  if (MPI_FOUND AND CUDA_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MPI_C_FLAGS} -D_ENABLE_MPI_CUDA_")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -D_ENABLE_MPI_CUDA_")
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -D_ENABLE_MPI_CUDA_")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_EXE_LINKER_FLAGS} -lcudart -lcudadevrt")
-    message(STATUS "ENABLING MPI CUDA Implementation")
-  endif()
-else()
-  message(STATUS "DISABLING MPI CUDA Implementation")
-endif()
-
-
 #------------------------------------------------------------------------
 #-- Add package paths
 #------------------------------------------------------------------------
-if(NOT RS_INCLUDE_PATH)
-  set(RS_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
-  message(STATUS "RS_INCLUDE_PATH set to ${RS_INCLUDE_PATH}")
-endif()
 if(NOT RS_SRC_PATH)
   set(RS_SRC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src")
   message(STATUS "RS_SRC_PATH set to ${RS_SRC_PATH}")
 endif()
-
+if(NOT RS_INCLUDE_PATH)
+  set(RS_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/include")
+  message(STATUS "RS_INCLUDE_PATH set to ${RS_INCLUDE_PATH}")
+endif()
 
 #------------------------------------------------------------------------
 #-- TESTING
@@ -252,7 +234,6 @@ endif()
 #------------------------------------------------------------------------
 # Add subdirectories
 add_subdirectory(src)
-add_subdirectory(include)
 add_subdirectory(test)
 
 # EOF

@@ -8,17 +8,17 @@
 // See LICENSE in the top level directory for licensing details
 //
 
+#include <float.h>
+#include <iomanip>
 #include <iostream>
+#include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <math.h>
-#include <float.h>
-#include <limits.h>
+#include <string>
 #include <sys/time.h>
 #include <time.h>
-#include <iomanip>
-#include <string>
+#include <unistd.h>
 
 #include "RaiderSTREAM/RaiderSTREAM.h"
 
@@ -51,12 +51,10 @@
 #endif
 
 /************************************************************************************/
-void printTiming(
-  const std::string& kernelName,
-  double totalRuntime, const double* MBPS, const double* FLOPS,
-  RSBaseImpl::RSKernelType kernelType, RSBaseImpl::RSKernelType runKernelType,
-  bool& headerPrinted
-) {
+void printTiming(const std::string &kernelName, double totalRuntime,
+                 const double *MBPS, const double *FLOPS,
+                 RSBaseImpl::RSKernelType kernelType,
+                 RSBaseImpl::RSKernelType runKernelType, bool &headerPrinted) {
   if (runKernelType == RSBaseImpl::RS_ALL || kernelType == runKernelType) {
     if (!headerPrinted) {
       std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
@@ -73,16 +71,21 @@ void printTiming(
 
     if (kernelName.find("Copy") != std::string::npos) {
       std::cout << std::left << std::setw(30) << kernelName;
-      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(6) << totalRuntime;
-      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(0) << MBPS[kernelType];
-      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(0) << "-";
+      std::cout << std::right << std::setw(20) << std::fixed
+                << std::setprecision(6) << totalRuntime;
+      std::cout << std::right << std::setw(20) << std::fixed
+                << std::setprecision(0) << MBPS[kernelType];
+      std::cout << std::right << std::setw(20) << std::fixed
+                << std::setprecision(0) << "-";
       std::cout << std::endl;
-    }
-    else if (kernelName != "All") {
+    } else if (kernelName != "All") {
       std::cout << std::left << std::setw(30) << kernelName;
-      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(6) << totalRuntime;
-      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(0) << MBPS[kernelType];
-      std::cout << std::right << std::setw(20) << std::fixed << std::setprecision(0) << FLOPS[kernelType];
+      std::cout << std::right << std::setw(20) << std::fixed
+                << std::setprecision(6) << totalRuntime;
+      std::cout << std::right << std::setw(20) << std::fixed
+                << std::setprecision(0) << MBPS[kernelType];
+      std::cout << std::right << std::setw(20) << std::fixed
+                << std::setprecision(0) << FLOPS[kernelType];
       std::cout << std::endl;
     }
   }
@@ -99,7 +102,7 @@ void runBenchOMP(RSOpts *Opts) {
   if (!RS) {
     std::cout << "ERROR: COULD NOT ALLOCATE RS_OMP OBJECT" << std::endl;
     return;
-  }  
+  }
 
   /* Allocate Data */
   if (!RS->allocateData()) {
@@ -108,8 +111,9 @@ void runBenchOMP(RSOpts *Opts) {
     return;
   }
 
-  /* Execute the benchmark */ 
-  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+  /* Execute the benchmark */
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES,
+                   Opts->FLOATOPS)) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP" << std::endl;
     RS->freeData();
     delete RS;
@@ -127,19 +131,22 @@ void runBenchOMP(RSOpts *Opts) {
   Opts->printLogo();
 
   Opts->printOpts();
-  #pragma omp parallel
+#pragma omp parallel
   {
-    #pragma omp single
+#pragma omp single
     {
-      std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads() << std::endl;
+      std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads()
+                << std::endl;
     }
   }
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   bool headerPrinted = false;
   for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
-    RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+    RSBaseImpl::RSKernelType kernelType =
+        static_cast<RSBaseImpl::RSKernelType>(i);
     std::string kernelName = BenchTypeTable[i].Notes;
-    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType,
+                runKernelType, headerPrinted);
   }
 
   /* Free the RS_OMP object */
@@ -150,7 +157,6 @@ void runBenchOMP(RSOpts *Opts) {
 /***********************************************************************************/
 #ifdef _ENABLE_OACC_
 void runBenchOACC(RSOpts *Opts) {
-
 
   /* Initialize the RS_OACC object */
   RS_OACC *RS = new RS_OACC(*Opts);
@@ -174,10 +180,11 @@ void runBenchOACC(RSOpts *Opts) {
     delete RS;
     return;
   }
-  
+
   /* Execute the Benchmark */
-  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
-    std::cout <<"ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OACC" << std::endl;
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES,
+                   Opts->FLOATOPS)) {
+    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OACC" << std::endl;
     RS->freeData();
     acc_shutdown(acc_device_nvidia);
     delete RS;
@@ -186,7 +193,7 @@ void runBenchOACC(RSOpts *Opts) {
 
   /* Free the data */
   if (!RS->freeData()) {
-    std::cout <<" ERROR: COULD NOT FREE THE MEMORY FOR RS_OACC" << std::endl;
+    std::cout << " ERROR: COULD NOT FREE THE MEMORY FOR RS_OACC" << std::endl;
     acc_shutdown(acc_device_nvidia);
     delete RS;
     return;
@@ -197,10 +204,10 @@ void runBenchOACC(RSOpts *Opts) {
   Opts->printOpts();
   // #pragma acc parallel
   // {
-  //   int gang_num = acc_get_gang_num();  
-  //   int gang_size = acc_get_gang_size();  
-  //   int worker_num = acc_get_worker_num();  
-  //   int vector_length = acc_get_vector_length(); 
+  //   int gang_num = acc_get_gang_num();
+  //   int gang_size = acc_get_gang_size();
+  //   int worker_num = acc_get_worker_num();
+  //   int vector_length = acc_get_vector_length();
 
   //   #pragma acc serial
   //   {
@@ -213,9 +220,11 @@ void runBenchOACC(RSOpts *Opts) {
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   bool headerPrinted = false;
   for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
-    RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+    RSBaseImpl::RSKernelType kernelType =
+        static_cast<RSBaseImpl::RSKernelType>(i);
     std::string kernelName = BenchTypeTable[i].Notes;
-    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType,
+                runKernelType, headerPrinted);
   }
 
   /* Free the RS_OACC object */
@@ -237,14 +246,17 @@ void runBenchOMPTarget(RSOpts *Opts) {
 
   /* Allocate Data */
   if (!RS->allocateData()) {
-    std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OMP_TARGET" << std::endl;
+    std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OMP_TARGET"
+              << std::endl;
     delete RS;
     return;
   }
 
   /* Execute the benchmark */
-  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
-    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP_TARGET" << std::endl;
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES,
+                   Opts->FLOATOPS)) {
+    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP_TARGET"
+              << std::endl;
     RS->freeData();
     delete RS;
     return;
@@ -252,7 +264,8 @@ void runBenchOMPTarget(RSOpts *Opts) {
 
   /* Free the data */
   if (!RS->freeData()) {
-    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_OMP_TARGET" << std::endl;
+    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_OMP_TARGET"
+              << std::endl;
     delete RS;
     return;
   }
@@ -261,19 +274,22 @@ void runBenchOMPTarget(RSOpts *Opts) {
   Opts->printLogo();
 
   Opts->printOpts();
-  #pragma omp parallel
+#pragma omp parallel
   {
-    #pragma omp single
+#pragma omp single
     {
-      std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads() << std::endl;
+      std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads()
+                << std::endl;
     }
   }
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   bool headerPrinted = false;
   for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
-    RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+    RSBaseImpl::RSKernelType kernelType =
+        static_cast<RSBaseImpl::RSKernelType>(i);
     std::string kernelName = BenchTypeTable[i].Notes;
-    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType,
+                runKernelType, headerPrinted);
   }
 
   /* Free the RS_OMP object */
@@ -282,11 +298,11 @@ void runBenchOMPTarget(RSOpts *Opts) {
 #endif
 /************************************************************************************/
 #ifdef _ENABLE_MPI_OMP_
-void runBenchMPIOMP( RSOpts *Opts ) {
+void runBenchMPIOMP(RSOpts *Opts) {
   /* Initialize MPI */
-  MPI_Init( NULL, NULL );
+  MPI_Init(NULL, NULL);
   int myRank = -1;
-  MPI_Comm_rank( MPI_COMM_WORLD, &myRank );
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
   /* Initialize OpenMP */
   omp_get_num_threads();
@@ -305,9 +321,11 @@ void runBenchMPIOMP( RSOpts *Opts ) {
     return;
   }
 
-  /* Execute the benchmark */ 
-  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
-    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_MPI_OMP" << std::endl;
+  /* Execute the benchmark */
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES,
+                   Opts->FLOATOPS)) {
+    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_MPI_OMP"
+              << std::endl;
     RS->freeData();
     MPI_Finalize();
     delete RS;
@@ -323,22 +341,25 @@ void runBenchMPIOMP( RSOpts *Opts ) {
   }
 
   /* Benchmark output */
-  if ( myRank == 0  ) {
+  if (myRank == 0) {
     Opts->printLogo();
     Opts->printOpts();
-    #pragma omp parallel
+#pragma omp parallel
     {
-      #pragma omp single
+#pragma omp single
       {
-        std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads() << std::endl;
+        std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads()
+                  << std::endl;
       }
     }
     RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
     bool headerPrinted = false;
     for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
-      RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+      RSBaseImpl::RSKernelType kernelType =
+          static_cast<RSBaseImpl::RSKernelType>(i);
       std::string kernelName = BenchTypeTable[i].Notes;
-      printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+      printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS,
+                  kernelType, runKernelType, headerPrinted);
     }
   }
 
@@ -350,7 +371,7 @@ void runBenchMPIOMP( RSOpts *Opts ) {
 
 /************************************************************************************/
 #ifdef _ENABLE_SHMEM_OMP_
-void runBenchSHMEMOMP( RSOpts *Opts ) {
+void runBenchSHMEMOMP(RSOpts *Opts) {
   /* Initialize OpenSHMEM */
   shmem_init();
   int myRank = shmem_my_pe();
@@ -365,27 +386,35 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
   }
 
   /* Allocate Data */
-  double *SHMEM_TIMES = static_cast<double*>(shmem_malloc(NUM_KERNELS * sizeof(double)));
-  double *SHMEM_MBPS = static_cast<double*>(shmem_malloc(NUM_KERNELS * sizeof(double)));
-  double *SHMEM_FLOPS = static_cast<double*>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_TIMES =
+      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_MBPS =
+      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_FLOPS =
+      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
 
-  double *SHMEM_BYTES = static_cast<double*>(shmem_malloc(NUM_KERNELS * sizeof(double)));
-  double *SHMEM_FLOATOPS = static_cast<double*>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_BYTES =
+      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_FLOATOPS =
+      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
   for (int i = 0; i < NUM_KERNELS; i++) {
     SHMEM_BYTES[i] = Opts->BYTES[i];
     SHMEM_FLOATOPS[i] = Opts->FLOATOPS[i];
   }
 
   if (!RS->allocateData()) {
-    std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_SHMEM_OMP" << std::endl;
+    std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_SHMEM_OMP"
+              << std::endl;
     shmem_finalize();
     delete RS;
     return;
   }
 
   /* Execute the benchmark */
-  if (!RS->execute(SHMEM_TIMES, SHMEM_MBPS, SHMEM_FLOPS, SHMEM_BYTES, SHMEM_FLOATOPS)) {
-    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_SHMEM_OMP" << std::endl;
+  if (!RS->execute(SHMEM_TIMES, SHMEM_MBPS, SHMEM_FLOPS, SHMEM_BYTES,
+                   SHMEM_FLOATOPS)) {
+    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_SHMEM_OMP"
+              << std::endl;
     RS->freeData();
     shmem_finalize();
     delete RS;
@@ -394,7 +423,8 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
 
   /* Free the data */
   if (!RS->freeData()) {
-    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_SHMEM_OMP" << std::endl;
+    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_SHMEM_OMP"
+              << std::endl;
     shmem_finalize();
     delete RS;
     return;
@@ -404,20 +434,24 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
   if (myRank == 0) {
     Opts->printLogo();
     Opts->printOpts();
-    // std::cout << "Symmetric heap size: " << shmem_info_get_heap_size() << std::endl;
-    #pragma omp parallel
+// std::cout << "Symmetric heap size: " << shmem_info_get_heap_size() <<
+// std::endl;
+#pragma omp parallel
     {
-      #pragma omp single
+#pragma omp single
       {
-        std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads() << std::endl;
+        std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads()
+                  << std::endl;
       }
     }
     RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
     bool headerPrinted = false;
     for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
-      RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+      RSBaseImpl::RSKernelType kernelType =
+          static_cast<RSBaseImpl::RSKernelType>(i);
       std::string kernelName = BenchTypeTable[i].Notes;
-      printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+      printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS,
+                  kernelType, runKernelType, headerPrinted);
     }
   }
 
@@ -435,13 +469,13 @@ void runBenchSHMEMOMP( RSOpts *Opts ) {
 
 /************************************************************************************/
 #ifdef _ENABLE_CUDA_
-void runBenchCUDA( RSOpts *Opts ) {
+void runBenchCUDA(RSOpts *Opts) {
   /* Initialize the RS_CUDA object */
   RS_CUDA *RS = new RS_CUDA(*Opts);
   if (!RS) {
     std::cout << "ERROR: COULD NOT ALLOCATE RS_OMP OBJECT" << std::endl;
     return;
-  }  
+  }
 
   /* Allocate Data */
   if (!RS->allocateData()) {
@@ -450,8 +484,9 @@ void runBenchCUDA( RSOpts *Opts ) {
     return;
   }
 
-  /* Execute the benchmark */ 
-  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+  /* Execute the benchmark */
+  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES,
+                   Opts->FLOATOPS)) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP" << std::endl;
     RS->freeData();
     delete RS;
@@ -471,9 +506,11 @@ void runBenchCUDA( RSOpts *Opts ) {
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   bool headerPrinted = false;
   for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
-    RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+    RSBaseImpl::RSKernelType kernelType =
+        static_cast<RSBaseImpl::RSKernelType>(i);
     std::string kernelName = BenchTypeTable[i].Notes;
-    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType,
+                runKernelType, headerPrinted);
   }
 
   /* Free the RS_OMP object */
@@ -483,52 +520,51 @@ void runBenchCUDA( RSOpts *Opts ) {
 
 /************************************************************************************/
 #ifdef _ENABLE_MPI_CUDA_
-void runBenchMPICUDA( RSOpts *Opts ) {
+void runBenchMPICUDA(RSOpts *Opts) {
   // TODO: runBenchMPICUDA()
 }
 #endif
 
 /************************************************************************************/
-int main( int argc, char **argv ) {
+int main(int argc, char **argv) {
   RSOpts *Opts = new RSOpts();
-  
-  if ( !Opts->parseOpts(argc, argv) ) {
+
+  if (!Opts->parseOpts(argc, argv)) {
     std::cout << "Failed to parse command line options" << std::endl;
     delete Opts;
     return -1;
   }
-  
-  #ifdef _ENABLE_OMP_
-    runBenchOMP( Opts );
-  #endif
 
-  #ifdef _ENABLE_OMP_TARGET_
-    runBenchOMPTarget( Opts );
-  #endif
+#ifdef _ENABLE_OMP_
+  runBenchOMP(Opts);
+#endif
 
-  #ifdef _ENABLE_OACC_
-    runBenchOACC( Opts );
-  #endif
+#ifdef _ENABLE_OMP_TARGET_
+  runBenchOMPTarget(Opts);
+#endif
 
-  #ifdef _ENABLE_MPI_OMP_
-    runBenchMPIOMP( Opts );
-  #endif
-  
-  #ifdef _ENABLE_SHMEM_OMP_
-    runBenchSHMEMOMP( Opts );
-  #endif
-  
-  #ifdef _ENABLE_CUDA_
-    runBenchCUDA( Opts );
-  #endif
-  
-  #ifdef _ENABLE_MPI_CUDA_
-    runBenchMPICUDA( Opts );
-  #endif
+#ifdef _ENABLE_OACC_
+  runBenchOACC(Opts);
+#endif
+
+#ifdef _ENABLE_MPI_OMP_
+  runBenchMPIOMP(Opts);
+#endif
+
+#ifdef _ENABLE_SHMEM_OMP_
+  runBenchSHMEMOMP(Opts);
+#endif
+
+#ifdef _ENABLE_CUDA_
+  runBenchCUDA(Opts);
+#endif
+
+#ifdef _ENABLE_MPI_CUDA_
+  runBenchMPICUDA(Opts);
+#endif
 
   return 0;
 }
 /************************************************************************************/
 
 /* EOF */
-
