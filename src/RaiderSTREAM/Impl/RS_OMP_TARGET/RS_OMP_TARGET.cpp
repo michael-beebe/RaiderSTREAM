@@ -12,6 +12,13 @@
 
 #ifdef _RS_OMP_TARGET_H_
 
+/**************************************************
+ * @brief Constructor for the RS_OMP_TARGET class.
+ *
+ * Initializes the RS_OMP_TARGET object with the specified options.
+ *
+ * @param opts Options for the RS_OMP_TARGET object.
+ **************************************************/
 RS_OMP_TARGET::RS_OMP_TARGET(const RSOpts &opts)
     : RSBaseImpl("RS_OMP_TARGET",
                  opts.getKernelTypeFromName(opts.getKernelName())),
@@ -24,6 +31,13 @@ RS_OMP_TARGET::RS_OMP_TARGET(const RSOpts &opts)
 
 RS_OMP_TARGET::~RS_OMP_TARGET() {}
 
+/**********************************************
+ * @brief Allocates and initializes memory for
+ *        data arrays and copies data to the device.
+ *
+ * @return True if allocation and copy are
+ *         successful, false otherwise.
+ **********************************************/
 bool RS_OMP_TARGET::allocateData() {
   a = new double[streamArraySize];
   b = new double[streamArraySize];
@@ -71,6 +85,15 @@ bool RS_OMP_TARGET::allocateData() {
   return true;
 }
 
+/**************************************************
+ * @brief Frees all allocated memory for the
+ *        RS_OMP_TARGET object.
+ *
+ * This function deallocates memory for both host
+ * and device pointers.
+ *
+ * @return true if all memory was successfully freed.
+ **************************************************/
 bool RS_OMP_TARGET::freeData() {
   int device = omp_get_default_device();
   if (a) {
@@ -94,6 +117,24 @@ bool RS_OMP_TARGET::freeData() {
   return true;
 }
 
+/**************************************************
+ * @brief Executes the specified kernel using OpenMP
+ *        offloading.
+ *
+ * @param TIMES Array to store the execution times
+ *              for each kernel.
+ * @param MBPS Array to store the memory bandwidths
+ *             for each kernel.
+ * @param FLOPS Array to store the floating-point
+ *              operation counts for each kernel.
+ * @param BYTES Array to store the byte sizes for
+ *              each kernel.
+ * @param FLOATOPS Array to store the floating-point
+ *                 operation sizes for each kernel.
+ *
+ * @return True if the execution was successful,
+ *         false otherwise.
+ **************************************************/
 bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
                             double *BYTES, double *FLOATOPS) {
   double runTime = 0.0;

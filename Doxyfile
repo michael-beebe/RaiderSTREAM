@@ -10,16 +10,20 @@ GENERATE_HTML          = YES                # Generate HTML documentation
 GENERATE_XML           = YES                # Generate XML documentation
 GENERATE_LATEX         = YES                # Generate LaTeX/PDF documentation (optional)
 
+WARNINGS               = YES                # Enable warnings
+WARN_IF_UNDOCUMENTED   = YES                # Warn on undocumented methods/functions
+WARN_NO_PARAMDOC       = YES                # Warn on undocumented parameters
+
 # Source Code
 #---------------------------------------------------------------------------
-INPUT                  = src/ include/      # Paths to your source code directories
+INPUT                  = src/               # Paths to your source code directories
 RECURSIVE              = YES                # Scan subdirectories for source files
 FILE_PATTERNS          = *.c *.cpp *.h *.cu *.cuh # File patterns to include in documentation
-EXCLUDE                =                     # Paths to exclude from documentation (optional)
+EXCLUDE                =                    # Paths to exclude from documentation (optional)
 
 # Additional Configuration
 #---------------------------------------------------------------------------
-EXTRACT_ALL            = YES                # Extract all functions/methods (optional)
+EXTRACT_ALL            = NO                 # Extract all functions/methods (optional)
 HIDE_UNDOC_MEMBERS     = NO                 # Hide undocumented class members (optional)
 HIDE_UNDOC_CLASSES     = NO                 # Hide undocumented classes (optional)
 SORT_BRIEF_DOCS        = NO                 # Sort brief documentation by member order (optional)
