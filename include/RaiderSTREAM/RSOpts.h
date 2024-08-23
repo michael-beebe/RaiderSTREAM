@@ -58,7 +58,7 @@ private:
   int numPEs = 1;
 	int lArgc;
   char **lArgv;
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
 		int threadBlocks;
 		int threadsPerBlock;
 	#endif
@@ -101,7 +101,7 @@ public:
 
   int getNumPEs() const { return numPEs; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
 		int getThreadBlocks() const { return threadBlocks; }
 		int getThreadsPerBlocks() const { return threadsPerBlock; }
 	#endif
@@ -117,7 +117,7 @@ public:
 
 	void setKernelName(std::string name) { kernelName = name; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
 		void setThreadBlocks(int blocks ) { threadBlocks = blocks; }
 		void setThreadsPerBlocks(int threads) { threadsPerBlock = threads; }
 	#endif

@@ -4,10 +4,10 @@ cd ./build/bin
 
 # --- OpenMP Test
 #export OMP_NUM_THREADS=20
-./raiderstream -k all -s 1000000 -np 1
+#./raiderstream -k all -s 1000000 -np 1
 
 # --- OpenACC Test  
-# ./raiderstream -k seq_copy -s 200000000 -np 1
+ ./raiderstream -k all -s 50000000 -b 1360 -t 32
 
 # --- MPI/OpenMP Test
 # mpirun -np 4 --mca btl ^openib raiderstream -k all -s 10000000 -np 4

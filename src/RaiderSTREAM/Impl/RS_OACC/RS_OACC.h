@@ -27,8 +27,8 @@ private:
   ssize_t streamArraySize;
   int numPEs;
   int lArgc;
-  int streamArrayMemSize;
-  int idxArrayMemSize;
+  int numGangs;
+  int numWorkers;
   char **lArgv;
   double *a;
   double *b;
@@ -49,6 +49,8 @@ public:
 
   ~RS_OACC();
 
+  virtual bool setDevice() override;
+
   virtual bool allocateData() override;
 
   virtual bool execute(
@@ -59,116 +61,116 @@ public:
 };
 
 extern "C" {
-  void seqCopy(
-    double *a, double *b, double *c,
+  double seqCopy(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
     ssize_t streamArraySize
   );
 
-  void seqScale(
-    double *a, double *b, double *c,
+  double seqScale(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
     ssize_t streamArraySize, double scalar
   );
 
-  void seqAdd(
-    double *a, double *b, double *c,
+  double seqAdd(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
     ssize_t streamArraySize
   );
 
-  void seqTriad(
-    double *a, double *b, double *c,
+  double seqTriad(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
     ssize_t streamArraySize, double scalar
   );
 
-  void gatherCopy(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
+  double gatherCopy(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1,
     ssize_t streamArraySize
   );
 
-  void gatherScale(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
+  double gatherScale(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1,
     ssize_t streamArraySize, double scalar
   );
 
-  void gatherAdd(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2,
+  double gatherAdd(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1, ssize_t *d_IDX2,
     ssize_t streamArraySize
   );
 
-  void gatherTriad(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2,
+  double gatherTriad(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1, ssize_t *d_IDX2,
     ssize_t streamArraySize, double scalar
   );
 
-  void scatterCopy(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
+  double scatterCopy(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1,
     ssize_t streamArraySize
   );
 
-  void scatterScale(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
+  double scatterScale(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1,
     ssize_t streamArraySize, double scalar
   );
 
-  void scatterAdd(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
+  double scatterAdd(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1,
     ssize_t streamArraySize
   );
 
-  void scatterTriad(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
+  double scatterTriad(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1,
     ssize_t streamArraySize, double scalar
   );
 
-  void sgCopy(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2,
+  double sgCopy(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1, ssize_t *d_IDX2,
     ssize_t streamArraySize
   );
 
-  void sgScale(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2,
+  double sgScale(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1, ssize_t *d_IDX2,
     ssize_t streamArraySize, double scalar
   );
 
-  void sgAdd(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
+  double sgAdd(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t *d_IDX3,
     ssize_t streamArraySize
   );
 
-  void sgTriad(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
+  double sgTriad(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+    ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t *d_IDX3,
     ssize_t streamArraySize, double scalar
   );
 
-  void centralCopy(
-    double *a, double *b, double *c,
+  double centralCopy(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
     ssize_t streamArraySize
   );
 
-  void centralScale(
-    double *a, double *b, double *c,
+  double centralScale(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
     ssize_t streamArraySize,
     double scalar
   );
 
-  void centralAdd(
-    double *a, double *b, double *c,
+  double centralAdd(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
     ssize_t streamArraySize
   );
 
-  void centralTriad(
-    double *a, double *b, double *c,
+  double centralTriad(
+    int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
     ssize_t streamArraySize, double scalar
   );
 }
