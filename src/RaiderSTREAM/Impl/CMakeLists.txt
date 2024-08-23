@@ -18,10 +18,6 @@ if (ENABLE_CUDA)
   add_subdirectory(RS_CUDA)
 endif()
 
-if (ENABLE_MPI_CUDA)
-  add_subdirectory(RS_MPI_CUDA)
-endif()
-
 if (ENABLE_OACC)
   add_subdirectory(RS_OACC)
 endif()

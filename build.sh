@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- Load required modules
-module load cmake
+#module load cmake
 
 # --- Remove and recreate the build directory
 rm -rf build
@@ -17,6 +17,15 @@ cmake \
   -DCMAKE_C_FLAGS="-fopenmp" \
   -DCMAKE_CXX_FLAGS="-fopenmp" \
   ../
+
+# --- OpenACC ---
+# cmake \
+#   -DENABLE_OACC=ON \
+#   -DCMAKE_C_COMPILER=`which nvc` \
+#   -DCMAKE_CXX_COMPILER=`which nvc++` \
+#   -DCMAKE_C_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
+#   -DCMAKE_CXX_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
+#   ../
 
 # --- OpenMP + Offload ---
 # cmake \
@@ -42,21 +51,12 @@ cmake \
 #   ../
 
 # --- CUDA ---
-#cmake \
+#cmake  \
 #  -DENABLE_CUDA=ON \
 #  -DCMAKE_C_COMPILER=`which nvcc` \
 #  -DCMAKE_CXX_COMPILER=`which nvcc` \
 #  -DCMAKE_EXE_LINKER_FLAGS="-lcudart -lcudadevrt" \
 #  ../
-
-# --- OpenACC ---
-#  cmake \
-#    -DENABLE_OACC=ON \
-#    -DCMAKE_C_COMPILER=`which nvc` \
-#    -DCMAKE_CXX_COMPILER=`which nvc++` \
-#    -DCMAKE_C_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
-#    -DCMAKE_CXX_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
-#    ../
 
 # --- Build the project
 make
