@@ -24,6 +24,11 @@ RS_CUDA::RS_CUDA(const RSOpts &opts)
 
 RS_CUDA::~RS_CUDA() {}
 
+bool RS_CUDA::printCudaDeviceProps() {
+  // TODO:
+  return true;
+}
+
 bool RS_CUDA::allocateData() {
   if (threadBlocks <= 0) {
     std::cout << "RS_CUDA::AllocateData: threadBlocks must be greater than 0"
@@ -262,6 +267,10 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
   double runTime = 0.0;
   double mbps = 0.0;
   double flops = 0.0;
+
+      cudaDeviceSynchronize();
+      sgCopy<<< threadBlocks, threadsPerBlock >>>(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, streamArraySize);
+      cudaDeviceSynchronize();
 
   RSBaseImpl::RSKernelType kType = getKernelType();
 

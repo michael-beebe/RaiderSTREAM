@@ -25,6 +25,7 @@ class RS_CUDA : public RSBaseImpl {
 private:
   std::string kernelName;
   ssize_t streamArraySize;
+  ssize_t streamArrayMemSize;
   int numPEs;
   int lArgc;
   char **lArgv;
@@ -41,6 +42,7 @@ private:
   ssize_t *d_idx2;
   ssize_t *d_idx3;
   double scalar;
+  ssize_t idxArrayMemSize;
   int threadBlocks;
   int threadsPerBlock;
 
@@ -49,7 +51,7 @@ public:
 
   ~RS_CUDA();
 
-  vool printCudaDeviceProps();
+  virtual bool printCudaDeviceProps();
 
   virtual bool allocateData() override;
 
