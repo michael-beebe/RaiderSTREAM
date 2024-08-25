@@ -13,6 +13,13 @@
 
 #ifdef _RS_MPI_OMP_H_
 
+/**************************************************
+ * @brief Constructor for the RS_MPI_OMP class.
+ *
+ * Initializes the RS_MPI_OMP object with the specified options.
+ *
+ * @param opts Options for the RS_MPI_OMP object.
+ **************************************************/
 RS_MPI_OMP::RS_MPI_OMP(const RSOpts &opts)
     : RSBaseImpl("RS_MPI_OMP",
                  opts.getKernelTypeFromName(opts.getKernelName())),
@@ -23,6 +30,13 @@ RS_MPI_OMP::RS_MPI_OMP(const RSOpts &opts)
 
 RS_MPI_OMP::~RS_MPI_OMP() {}
 
+/**********************************************
+ * @brief Allocates and initializes memory
+ *        for data arrays.
+ *
+ * @return True if allocation is
+ *         successful, false otherwise.
+ **********************************************/
 bool RS_MPI_OMP::allocateData() {
   int myRank = -1; /* MPI rank */
   int size = -1;   /* MPI size (number of PEs) */
@@ -98,6 +112,14 @@ bool RS_MPI_OMP::allocateData() {
   return true;
 }
 
+/**************************************************
+ * @brief Frees all allocated memory for the
+ *        RS_MPI_OMP object.
+ *
+ * This function frees memory across all nodes.
+ *
+ * @return true if all memory was successfully freed.
+ **************************************************/
 bool RS_MPI_OMP::freeData() {
   if (a) {
     MPI_Free_mem(a);
@@ -120,6 +142,24 @@ bool RS_MPI_OMP::freeData() {
   return true;
 }
 
+/**************************************************
+ * @brief Executes the specified kernel using MPI
+ *        and OpenMP.
+ *
+ * @param TIMES Array to store the execution times
+ *              for each kernel.
+ * @param MBPS Array to store the memory bandwidths
+ *             for each kernel.
+ * @param FLOPS Array to store the floating-point
+ *              operation counts for each kernel.
+ * @param BYTES Array to store the byte sizes for
+ *              each kernel.
+ * @param FLOATOPS Array to store the floating-point
+ *                 operation sizes for each kernel.
+ *
+ * @return True if the execution was successful,
+ *         false otherwise.
+ **************************************************/
 bool RS_MPI_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
                          double *BYTES, double *FLOATOPS) {
   double startTime = 0.0;

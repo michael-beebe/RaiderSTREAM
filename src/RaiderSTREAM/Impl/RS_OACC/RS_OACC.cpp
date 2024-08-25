@@ -15,6 +15,13 @@
 
 #include <stdio.h>
 
+/**************************************************
+ * @brief Constructor for the RS_OACC class.
+ *
+ * Initializes the RS_OACC object with the specified options.
+ *
+ * @param opts Options for the RS_OACC object.
+ **************************************************/
 RS_OACC::RS_OACC(const RSOpts &opts)
     : RSBaseImpl("RS_OACC", opts.getKernelTypeFromName(opts.getKernelName())),
       kernelName(opts.getKernelName()),
@@ -27,6 +34,9 @@ RS_OACC::RS_OACC(const RSOpts &opts)
 
 RS_OACC::~RS_OACC() {}
 
+/**************************************************
+ * @brief Set and echo info about the current device.
+ **************************************************/
 bool RS_OACC::setDevice() {
   // std::cout <<"OpenACC version: "<< _OPENACC <<std::endl;
   acc_device_t device = acc_get_device_type();
@@ -45,6 +55,14 @@ bool RS_OACC::setDevice() {
   return true;
 }
 
+
+/**********************************************
+ * @brief Allocates memory for data arrays and
+ *        copies data to the device.
+ *
+ * @return True if allocation and copy are
+ *         successful, false otherwise.
+ **********************************************/
 bool RS_OACC::allocateData() {
 
   ssize_t streamMemArraySize = streamArraySize * sizeof(double);
@@ -274,6 +292,15 @@ bool RS_OACC::allocateData() {
   return true;
 }
 
+/**************************************************
+ * @brief Frees all allocated memory for the
+ *        RS_OACC object.
+ *
+ * This function deallocates memory for both host
+ * and device pointers.
+ *
+ * @return true if all memory was successfully freed.
+ **************************************************/
 bool RS_OACC::freeData() {
   if (a) {
     delete[] a;
@@ -314,6 +341,23 @@ bool RS_OACC::freeData() {
   return true;
 }
 
+/**************************************************
+ * @brief Executes the specified kernel using OpenACC.
+ *
+ * @param TIMES Array to store the execution times
+ *              for each kernel.
+ * @param MBPS Array to store the memory bandwidths
+ *             for each kernel.
+ * @param FLOPS Array to store the floating-point
+ *              operation counts for each kernel.
+ * @param BYTES Array to store the byte sizes for
+ *              each kernel.
+ * @param FLOATOPS Array to store the floating-point
+ *                 operation sizes for each kernel.
+ *
+ * @return True if the execution was successful,
+ *         false otherwise.
+ **************************************************/
 bool RS_OACC::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                       double *FLOATOPS) {
   double startTime = 0.0;

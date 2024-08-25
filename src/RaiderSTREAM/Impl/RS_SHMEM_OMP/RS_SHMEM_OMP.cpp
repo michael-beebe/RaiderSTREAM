@@ -12,6 +12,13 @@
 
 #ifdef _RS_SHMEM_OMP_H_
 
+/**************************************************
+ * @brief Constructor for the RS_SHMEM class.
+ *
+ * Initializes the RS_SHMEM object with the specified options.
+ *
+ * @param opts Options for the RS_SHMEM object.
+ **************************************************/
 RS_SHMEM_OMP::RS_SHMEM_OMP(const RSOpts &opts)
     : RSBaseImpl("RS_SHMEM_OMP",
                  opts.getKernelTypeFromName(opts.getKernelName())),
@@ -22,6 +29,13 @@ RS_SHMEM_OMP::RS_SHMEM_OMP(const RSOpts &opts)
 
 RS_SHMEM_OMP::~RS_SHMEM_OMP() {}
 
+/**********************************************
+ * @brief Allocates and initializes memory
+ *        for data arrays.
+ *
+ * @return True if allocation is
+ *         successful, false otherwise.
+ **********************************************/
 bool RS_SHMEM_OMP::allocateData() {
   int myRank = shmem_my_pe(); /* Current rank */
   int size = shmem_n_pes();   /* Number of shmem ranks */
@@ -99,6 +113,12 @@ bool RS_SHMEM_OMP::allocateData() {
   return true;
 }
 
+/**************************************************
+ * @brief Frees all allocated memory for the
+ *        RS_SHMEM object.
+ *
+ * @return true if all memory was successfully freed.
+ **************************************************/
 bool RS_SHMEM_OMP::freeData() {
   if (a) {
     shmem_free(a);
@@ -121,6 +141,23 @@ bool RS_SHMEM_OMP::freeData() {
   return true;
 }
 
+/**************************************************
+ * @brief Executes the specified kernel using OpenSHMEM.
+ *
+ * @param TIMES Array to store the execution times
+ *              for each kernel.
+ * @param MBPS Array to store the memory bandwidths
+ *             for each kernel.
+ * @param FLOPS Array to store the floating-point
+ *              operation counts for each kernel.
+ * @param BYTES Array to store the byte sizes for
+ *              each kernel.
+ * @param FLOATOPS Array to store the floating-point
+ *                 operation sizes for each kernel.
+ *
+ * @return True if the execution was successful,
+ *         false otherwise.
+ **************************************************/
 bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
                            double *BYTES, double *FLOATOPS) {
   double startTime = 0.0;
