@@ -25,7 +25,7 @@
 class RS_OMP_TARGET : public RSBaseImpl {
 private:
   std::string kernelName;
-  ssize_t streamArraySize;
+  long streamArraySize;
   int numPEs;
   int numTeams;
   int threadsPerTeam;

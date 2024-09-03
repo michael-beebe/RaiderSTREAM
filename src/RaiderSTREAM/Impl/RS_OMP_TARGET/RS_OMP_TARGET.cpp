@@ -59,7 +59,9 @@ bool RS_OMP_TARGET::allocateData() {
 
   size_t data_size = sizeof(double) * streamArraySize;
   size_t idx_size = sizeof(ssize_t) * streamArraySize;
+  int host = omp_get_initial_device();
 
+  //omp_set_default_allocator(omp_low_lat_mem_alloc);
   d_a = (double *)omp_target_alloc(data_size, device);
   d_b = (double *)omp_target_alloc(data_size, device);
   d_c = (double *)omp_target_alloc(data_size, device);
@@ -67,15 +69,14 @@ bool RS_OMP_TARGET::allocateData() {
   d_idx2 = (ssize_t *)omp_target_alloc(idx_size, device);
   d_idx3 = (ssize_t *)omp_target_alloc(idx_size, device);
 
-  omp_target_memcpy(d_a, a, data_size, 0, 0, device, omp_get_initial_device());
-  omp_target_memcpy(d_b, b, data_size, 0, 0, device, omp_get_initial_device());
-  omp_target_memcpy(d_c, c, data_size, 0, 0, device, omp_get_initial_device());
-  omp_target_memcpy(d_idx1, idx1, idx_size, 0, 0, device,
-                    omp_get_initial_device());
-  omp_target_memcpy(d_idx2, idx2, idx_size, 0, 0, device,
-                    omp_get_initial_device());
-  omp_target_memcpy(d_idx3, idx3, idx_size, 0, 0, device,
-                    omp_get_initial_device());
+  omp_target_memcpy(d_a, a, data_size, 0, 0, device, host);
+  omp_target_memcpy(d_b, b, data_size, 0, 0, device, host);
+  omp_target_memcpy(d_c, c, data_size, 0, 0, device, host);
+  omp_target_memcpy(d_idx1, idx1, idx_size, 0, 0, device, host);
+  omp_target_memcpy(d_idx2, idx2, idx_size, 0, 0, device, host);
+  omp_target_memcpy(d_idx3, idx3, idx_size, 0, 0, device, host);
+
+
 
 #ifdef _DEBUG_
   std::cout << "==============================================================="
@@ -169,6 +170,8 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
   double mbps = 0.0;
   double flops = 0.0;
 
+  RSBaseImpl::RSKernelType kType = getKernelType();
+
   double *a = d_a;
   double *b = d_b;
   double *c = d_c;
@@ -176,8 +179,9 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
   ssize_t *idx2 = d_idx2;
   ssize_t *idx3 = d_idx3;
 
-  RSBaseImpl::RSKernelType kType = getKernelType();
-
+  // libgomp likes to be lazy when it comes to initializing
+  // the device. run a kernel before benchmarks so we don't
+  // initialize the device while keeping track of runtime.
   seqCopy(numTeams, threadsPerTeam, a, b, c, streamArraySize);
   switch (kType) {
   /* SEQUENTIAL KERNELS */
@@ -232,7 +236,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
   /* GATHER KERNELS */
   case RSBaseImpl::RS_GATHER_COPY:
     start = mySecond();
-    gatherCopy(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize);
+    gatherCopy(numTeams, threadsPerTeam, a, b, c, d_idx1, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);

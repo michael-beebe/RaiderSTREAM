@@ -15,7 +15,7 @@
 #define DO_PRAGMA(x) _Pragma(#x)
 #endif
 
-#define LOOP_PRAGMA(...) DO_PRAGMA(omp target teams distribute parallel for simd is_device_ptr(__VA_ARGS__) num_teams(16) num_threads(16))
+#define LOOP_PRAGMA(...) DO_PRAGMA(omp target teams distribute parallel for simd is_device_ptr(__VA_ARGS__))
 
 /**************************************************
  * @brief Copies data from one stream to another.
@@ -40,7 +40,7 @@ void seqCopy(int nteams, int threads, double *a, double *b, double *c,
 void seqScale(int nteams, int threads, double *a, double *b, double *c,
               ssize_t streamArraySize, double scalar) {
   LOOP_PRAGMA(a, b, c)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     b[j] = scalar * c[j];
 }
 
@@ -53,7 +53,7 @@ void seqScale(int nteams, int threads, double *a, double *b, double *c,
 void seqAdd(int nteams, int threads, double *a, double *b, double *c,
             ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     c[j] = a[j] + b[j];
 }
 
@@ -67,7 +67,7 @@ void seqAdd(int nteams, int threads, double *a, double *b, double *c,
 void seqTriad(int nteams, int threads, double *a, double *b, double *c,
               ssize_t streamArraySize, double scalar) {
   LOOP_PRAGMA(a, b, c)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     a[j] = b[j] + scalar * c[j];
 }
 
@@ -80,7 +80,7 @@ void seqTriad(int nteams, int threads, double *a, double *b, double *c,
 void gatherCopy(int nteams, int threads, double *a, double *b, double *c,
                 ssize_t *idx1, ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     c[j] = a[idx1[j]];
 }
 
@@ -94,7 +94,7 @@ void gatherCopy(int nteams, int threads, double *a, double *b, double *c,
 void gatherScale(int nteams, int threads, double *a, double *b, double *c,
                  ssize_t *idx1, ssize_t streamArraySize, double scalar) {
   LOOP_PRAGMA(a, b, c, idx1)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     b[j] = scalar * c[idx1[j]];
 }
 
@@ -107,7 +107,7 @@ void gatherScale(int nteams, int threads, double *a, double *b, double *c,
 void gatherAdd(int nteams, int threads, double *a, double *b, double *c,
                ssize_t *idx1, ssize_t *idx2, ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     c[j] = a[idx1[j]] + b[idx2[j]];
 }
 
@@ -122,7 +122,7 @@ void gatherTriad(int nteams, int threads, double *a, double *b, double *c,
                  ssize_t *idx1, ssize_t *idx2, ssize_t streamArraySize,
                  double scalar) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     a[j] = b[idx1[j]] + scalar * c[idx2[j]];
 }
 
@@ -135,7 +135,7 @@ void gatherTriad(int nteams, int threads, double *a, double *b, double *c,
 void scatterCopy(int nteams, int threads, double *a, double *b, double *c,
                  ssize_t *idx1, ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[j];
 }
 
@@ -149,7 +149,7 @@ void scatterCopy(int nteams, int threads, double *a, double *b, double *c,
 void scatterScale(int nteams, int threads, double *a, double *b, double *c,
                   ssize_t *idx1, ssize_t streamArraySize, double scalar) {
   LOOP_PRAGMA(a, b, c, idx1)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     b[idx1[j]] = scalar * c[j];
 }
 
@@ -162,7 +162,7 @@ void scatterScale(int nteams, int threads, double *a, double *b, double *c,
 void scatterAdd(int nteams, int threads, double *a, double *b, double *c,
                 ssize_t *idx1, ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[j] + b[j];
 }
 
@@ -176,7 +176,7 @@ void scatterAdd(int nteams, int threads, double *a, double *b, double *c,
 void scatterTriad(int nteams, int threads, double *a, double *b, double *c,
                   ssize_t *idx1, ssize_t streamArraySize, double scalar) {
   LOOP_PRAGMA(a, b, c, idx1)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     a[idx1[j]] = b[j] + scalar * c[j];
 }
 
@@ -189,7 +189,7 @@ void scatterTriad(int nteams, int threads, double *a, double *b, double *c,
 void sgCopy(int nteams, int threads, double *a, double *b, double *c,
             ssize_t *idx1, ssize_t *idx2, ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[idx2[j]];
 }
 
@@ -204,7 +204,7 @@ void sgScale(int nteams, int threads, double *a, double *b, double *c,
              ssize_t *idx1, ssize_t *idx2, ssize_t streamArraySize,
              double scalar) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     b[idx2[j]] = scalar * c[idx1[j]];
 }
 
@@ -218,7 +218,7 @@ void sgAdd(int nteams, int threads, double *a, double *b, double *c,
            ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
            ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1, idx2, idx3)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
 }
 
@@ -233,7 +233,7 @@ void sgTriad(int nteams, int threads, double *a, double *b, double *c,
              ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
              ssize_t streamArraySize, double scalar) {
   LOOP_PRAGMA(a, b, c, idx1, idx2, idx3)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
 }
 
@@ -246,7 +246,7 @@ void sgTriad(int nteams, int threads, double *a, double *b, double *c,
 void centralCopy(int nteams, int threads, double *a, double *b, double *c,
                  ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     c[0] = a[0];
 }
 
@@ -260,7 +260,7 @@ void centralCopy(int nteams, int threads, double *a, double *b, double *c,
 void centralScale(int nteams, int threads, double *a, double *b, double *c,
                   ssize_t streamArraySize, double scalar) {
   LOOP_PRAGMA(a, b, c)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     b[0] = scalar * c[0];
 }
 
@@ -273,7 +273,7 @@ void centralScale(int nteams, int threads, double *a, double *b, double *c,
 void centralAdd(int nteams, int threads, double *a, double *b, double *c,
                 ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     c[0] = a[0] + b[0];
 }
 
@@ -287,7 +287,7 @@ void centralAdd(int nteams, int threads, double *a, double *b, double *c,
 void centralTriad(int nteams, int threads, double *a, double *b, double *c,
                   ssize_t streamArraySize, double scalar) {
   LOOP_PRAGMA(a, b, c)
-  for (ssize_t j = 0; j < streamArraySize; j++)
+  for (long j = 0; j < streamArraySize; j++)
     a[0] = b[0] + scalar * c[0];
 }
 
