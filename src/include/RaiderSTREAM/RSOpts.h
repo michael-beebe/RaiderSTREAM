@@ -242,14 +242,66 @@ public:
    *
    * Initialized only after RSOpts::parseOpts.
    */
-  double BYTES[NUM_KERNELS];
+  double BYTES[NUM_KERNELS] = {
+		// Original Kernels
+		static_cast<double>(2 * sizeof(double)), // Copy
+		static_cast<double>(2 * sizeof(double)), // Scale
+		static_cast<double>(3 * sizeof(double)), // Add
+		static_cast<double>(3 * sizeof(double)), // Triad
+		// Gather Kernels
+		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t)))), // GATHER Copy
+		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t)))), // GATHER Scale
+		static_cast<double>(((3 * sizeof(double)) + (2 * sizeof(ssize_t)))), // GATHER Add
+		static_cast<double>(((3 * sizeof(double)) + (2 * sizeof(ssize_t)))), // GATHER Triad
+		// Scatter Kernels
+		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t)))), // SCATTER Copy
+		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t)))), // SCATTER Scale
+		static_cast<double>(((3 * sizeof(double)) + (1 * sizeof(ssize_t)))), // SCATTER Add
+		static_cast<double>(((3 * sizeof(double)) + (1 * sizeof(ssize_t)))), // SCATTER Triad
+		// Scatter-Gather Kernels
+		static_cast<double>(((2 * sizeof(double)) + (2 * sizeof(ssize_t)))), // SG Copy
+		static_cast<double>(((2 * sizeof(double)) + (2 * sizeof(ssize_t)))), // SG Scale
+		static_cast<double>(((3 * sizeof(double)) + (3 * sizeof(ssize_t)))), // SG Add
+		static_cast<double>(((3 * sizeof(double)) + (3 * sizeof(ssize_t)))), // SG Triad
+		// Central Kernels
+		static_cast<double>(2 * sizeof(double)), // Central Copy
+		static_cast<double>(2 * sizeof(double)), // Central Scale
+		static_cast<double>(3 * sizeof(double)), // Central Add
+		static_cast<double>(3 * sizeof(double)), // Central Triad
+  };
 
   /**
    * @brief Maps the RS_KERNEL_TYPE enum to the float ops incurred.
    *
    * Initialized only after RSOpts::parseOpts.
    */
-  double FLOATOPS[NUM_KERNELS];
+  double FLOATOPS[NUM_KERNELS] = {
+		// Original Kernels
+		(double)0.0,                       // Copy
+		1.0,             // Scale
+		1.0,             // Add
+		2.0,             // Triad
+		// Gather Kernels
+		(double)0.0,                       // GATHER Copy
+		1.0,             // GATHER Scale
+		1.0,             // GATHER Add
+		2.0,             // GATHER Triad
+		// Scatter Kernels
+		(double)0.0,                       // SCATTER Copy
+		1.0,             // SCATTER Scale
+		1.0,             // SCATTER Add
+		2.0,             // SCATTER Triad
+		// Scatter-Gather Kernels
+		(double)0.0,                       // SG Copy
+		1.0,             // SG Scale
+		1.0,             // SG Add
+		2.0,             // SG Triad
+		// Central Kernels
+		(double)0.0,                       // CENTRAL Copy
+		1.0,             // CENTRAL Scale
+		1.0,             // CENTRAL Add
+		2.0,             // CENTRAL Triad
+  };
 
   /**
    * @brief Storage for the MBPS of benchmarks this invocation.
