@@ -239,65 +239,17 @@ public:
 ****************************************************/
   /**
    * @brief Maps the RS_KERNEL_TYPE enum to the amount of bytes being moved.
+   *
+   * Initialized only after RSOpts::parseOpts.
    */
-  double BYTES[NUM_KERNELS] = {
-		// Original Kernels
-		static_cast<double>(2 * sizeof(double) * streamArraySize), // Copy
-		static_cast<double>(2 * sizeof(double) * streamArraySize), // Scale
-		static_cast<double>(3 * sizeof(double) * streamArraySize), // Add
-		static_cast<double>(3 * sizeof(double) * streamArraySize), // Triad
-		// Gather Kernels
-		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t))) * streamArraySize), // GATHER Copy
-		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t))) * streamArraySize), // GATHER Scale
-		static_cast<double>(((3 * sizeof(double)) + (2 * sizeof(ssize_t))) * streamArraySize), // GATHER Add
-		static_cast<double>(((3 * sizeof(double)) + (2 * sizeof(ssize_t))) * streamArraySize), // GATHER Triad
-		// Scatter Kernels
-		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t))) * streamArraySize), // SCATTER Copy
-		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t))) * streamArraySize), // SCATTER Scale
-		static_cast<double>(((3 * sizeof(double)) + (1 * sizeof(ssize_t))) * streamArraySize), // SCATTER Add
-		static_cast<double>(((3 * sizeof(double)) + (1 * sizeof(ssize_t))) * streamArraySize), // SCATTER Triad
-		// Scatter-Gather Kernels
-		static_cast<double>(((2 * sizeof(double)) + (2 * sizeof(ssize_t))) * streamArraySize), // SG Copy
-		static_cast<double>(((2 * sizeof(double)) + (2 * sizeof(ssize_t))) * streamArraySize), // SG Scale
-		static_cast<double>(((3 * sizeof(double)) + (3 * sizeof(ssize_t))) * streamArraySize), // SG Add
-		static_cast<double>(((3 * sizeof(double)) + (3 * sizeof(ssize_t))) * streamArraySize), // SG Triad
-		// Central Kernels
-		static_cast<double>(2 * sizeof(double) * streamArraySize), // Central Copy
-		static_cast<double>(2 * sizeof(double) * streamArraySize), // Central Scale
-		static_cast<double>(3 * sizeof(double) * streamArraySize), // Central Add
-		static_cast<double>(3 * sizeof(double) * streamArraySize), // Central Triad
-  };
+  double BYTES[NUM_KERNELS];
 
   /**
    * @brief Maps the RS_KERNEL_TYPE enum to the float ops incurred.
+   *
+   * Initialized only after RSOpts::parseOpts.
    */
-  double FLOATOPS[NUM_KERNELS] = {
-		// Original Kernels
-		(double)0.0,                       // Copy
-		1.0 * streamArraySize,             // Scale
-		1.0 * streamArraySize,             // Add
-		2.0 * streamArraySize,             // Triad
-		// Gather Kernels
-		(double)0.0,                       // GATHER Copy
-		1.0 * streamArraySize,             // GATHER Scale
-		1.0 * streamArraySize,             // GATHER Add
-		2.0 * streamArraySize,             // GATHER Triad
-		// Scatter Kernels
-		(double)0.0,                       // SCATTER Copy
-		1.0 * streamArraySize,             // SCATTER Scale
-		1.0 * streamArraySize,             // SCATTER Add
-		2.0 * streamArraySize,             // SCATTER Triad
-		// Scatter-Gather Kernels
-		(double)0.0,                       // SG Copy
-		1.0 * streamArraySize,             // SG Scale
-		1.0 * streamArraySize,             // SG Add
-		2.0 * streamArraySize,             // SG Triad
-		// Central Kernels
-		(double)0.0,                       // CENTRAL Copy
-		1.0 * streamArraySize,             // CENTRAL Scale
-		1.0 * streamArraySize,             // CENTRAL Add
-		2.0 * streamArraySize,             // CENTRAL Triad
-  };
+  double FLOATOPS[NUM_KERNELS];
 
   /**
    * @brief Storage for the MBPS of benchmarks this invocation.
