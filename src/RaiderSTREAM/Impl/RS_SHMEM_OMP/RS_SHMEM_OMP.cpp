@@ -23,12 +23,16 @@
     runTime = calculateRunTime(startTime, endTime);                            \
     mbps = calculateMBPS(BYTES[RSBaseImpl::##k##], runTime);                   \
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::##k##], runTime);              \
-    shmem_double_max_reduce(SHMEM_TEAM_WORLD, &TIMES[RSBaseImpl::##k##],       \
+    shmem_double_sum_reduce(SHMEM_TEAM_WORLD, &TIMES[RSBaseImpl::##k##],       \
                             &runTime, 1);                                      \
-    shmem_double_max_reduce(SHMEM_TEAM_WORLD, &BYTES[RSBaseImpl::##k##],       \
+    shmem_double_sum_reduce(SHMEM_TEAM_WORLD, &BYTES[RSBaseImpl::##k##],       \
                             &mbps, 1);                                         \
-    shmem_double_max_reduce(SHMEM_TEAM_WORLD, &FLOPS[RSBaseImpl::##k##],       \
+    shmem_double_sum_reduce(SHMEM_TEAM_WORLD, &FLOPS[RSBaseImpl::##k##],       \
                             &flops, 1);                                        \
+                                                                               \
+    TIMES[RSBaseImpl::##k##] /= size;                                          \
+    BYTES[RSBaseImpl::##k##] /= size;                                          \
+    FLOPS[RSBaseImpl::##k##] /= size;                                          \
   } while (false)
 #endif
 #ifdef _SHMEM_1_4_
@@ -42,14 +46,16 @@
     runTime = calculateRunTime(startTime, endTime);                            \
     mbps = calculateMBPS(BYTES[RSBaseImpl::##k##], runTime);                   \
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::##k##], runTime);              \
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::##k##], &runTime, 1, 0, 0,      \
+    shmem_double_sum_to_all(&TIMES[RSBaseImpl::##k##], &runTime, 1, 0, 0,      \
                             size, pWrk, pSync);                                \
-    shmem_double_max_to_all(&BYTES[RSBaseImpl::##k##], &mbps, 1, 0, 0, size,   \
+    shmem_double_sum_to_all(&BYTES[RSBaseImpl::##k##], &mbps, 1, 0, 0, size,   \
                             pWrk, pSync);                                      \
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::##k##], &flops, 1, 0, 0, size,  \
+    shmem_double_sum_to_all(&FLOPS[RSBaseImpl::##k##], &flops, 1, 0, 0, size,  \
                             pWrk, pSync);                                      \
-  }
-while (false)
+    TIMES[RSBaseImpl::##k##] /= size;                                          \
+    BYTES[RSBaseImpl::##k##] /= size;                                          \
+    FLOPS[RSBaseImpl::##k##] /= size;                                          \
+  } while (false)
 #endif
 
   /**************************************************
@@ -207,10 +213,6 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   double runTime = 0.0;
   double mbps = 0.0;
   double flops = 0.0;
-
-  double localRunTime = 0.0;
-  double localMbps = 0.0;
-  double localFlops = 0.0;
 
   int myRank = shmem_my_pe(); /* Current rank */
   int size = shmem_n_pes();   /* Number of shmem ranks */
