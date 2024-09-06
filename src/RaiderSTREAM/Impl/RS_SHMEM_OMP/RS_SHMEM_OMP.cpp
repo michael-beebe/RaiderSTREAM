@@ -233,6 +233,7 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   /* Calculate the chunk size for each rank */
   ssize_t chunkSize = streamArraySize / size;
   ssize_t remainder = streamArraySize % size;
+  ssize_t start = myRank * chunkSize;
 
   /* Adjust the chunk size for the last process */
   if (myRank == size - 1) {
@@ -244,151 +245,151 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   switch (kType) {
   /* SEQUENTIAL KERNELS */
   case RSBaseImpl::RS_SEQ_COPY:
-    SHMEM_BENCHMARK(RS_SEQ_COPY, seqCopy(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RS_SEQ_COPY, seqCopy(a, b, c, chunkSize, start));
     break;
 
   case RSBaseImpl::RS_SEQ_SCALE:
-    SHMEM_BENCHMARK(RS_SEQ_SCALE, seqScale(a, b, c, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SEQ_SCALE, seqScale(a, b, c, chunkSize, start, scalar));
     break;
 
   case RSBaseImpl::RS_SEQ_ADD:
-    SHMEM_BENCHMARK(RS_SEQ_ADD, seqAdd(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RS_SEQ_ADD, seqAdd(a, b, c, chunkSize, start));
     break;
 
   case RSBaseImpl::RS_SEQ_TRIAD:
-    SHMEM_BENCHMARK(RS_SEQ_TRIAD, seqTriad(a, b, c, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SEQ_TRIAD, seqTriad(a, b, c, chunkSize, start, scalar));
     break;
 
   /* GATHER KERNELS */
   case RSBaseImpl::RS_GATHER_COPY:
-    SHMEM_BENCHMARK(RS_GATHER_COPY, gatherCopy(a, b, c, idx1, chunkSize));
+    SHMEM_BENCHMARK(RS_GATHER_COPY, gatherCopy(a, b, c, idx1, chunkSize, start));
     break;
 
   case RSBaseImpl::RS_GATHER_SCALE:
-    SHMEM_BENCHMARK(RS_GATHER_SCALE, gatherScale(a, b, c, idx1, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_GATHER_SCALE, gatherScale(a, b, c, idx1, chunkSize, start, scalar));
     break;
 
   case RSBaseImpl::RS_GATHER_ADD:
-    SHMEM_BENCHMARK(RS_GATHER_ADD, gatherAdd(a, b, c, idx1, idx2, chunkSize));
+    SHMEM_BENCHMARK(RS_GATHER_ADD, gatherAdd(a, b, c, idx1, idx2, chunkSize, start));
     break;
 
   case RSBaseImpl::RS_GATHER_TRIAD:
-    SHMEM_BENCHMARK(RS_GATHER_TRIAD, gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_GATHER_TRIAD, gatherTriad(a, b, c, idx1, idx2, chunkSize, start, scalar));
     break;
 
   /* SCATTER KERNELS */
   case RSBaseImpl::RS_SCATTER_COPY:
-    SHMEM_BENCHMARK(RS_SCATTER_COPY, scatterCopy(a, b, c, idx1, chunkSize));
+    SHMEM_BENCHMARK(RS_SCATTER_COPY, scatterCopy(a, b, c, idx1, chunkSize, start));
     break;
 
   case RSBaseImpl::RS_SCATTER_SCALE:
-    SHMEM_BENCHMARK(RS_SCATTER_SCALE, scatterScale(a, b, c, idx1, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SCATTER_SCALE, scatterScale(a, b, c, idx1, chunkSize, start, scalar));
     break;
 
   case RSBaseImpl::RS_SCATTER_ADD:
-    SHMEM_BENCHMARK(RS_SCATTER_ADD, scatterAdd(a, b, c, idx1, chunkSize));
+    SHMEM_BENCHMARK(RS_SCATTER_ADD, scatterAdd(a, b, c, idx1, chunkSize, start));
     break;
 
   case RSBaseImpl::RS_SCATTER_TRIAD:
-    SHMEM_BENCHMARK(RS_SCATTER_TRIAD, scatterTriad(a, b, c, idx1, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SCATTER_TRIAD, scatterTriad(a, b, c, idx1, chunkSize, start, scalar));
     break;
 
   /* SCATTER-GATHER KERNELS */
   case RSBaseImpl::RS_SG_COPY:
-    SHMEM_BENCHMARK(RS_SG_COPY, sgCopy(a, b, c, idx1, idx2, chunkSize));
+    SHMEM_BENCHMARK(RS_SG_COPY, sgCopy(a, b, c, idx1, idx2, chunkSize, start));
     break;
 
   case RSBaseImpl::RS_SG_SCALE:
-    SHMEM_BENCHMARK(RS_SG_SCALE, sgScale(a, b, c, idx1, idx2, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SG_SCALE, sgScale(a, b, c, idx1, idx2, chunkSize, start, scalar));
     break;
 
   case RSBaseImpl::RS_SG_ADD:
-    SHMEM_BENCHMARK(RS_SG_ADD, sgAdd(a, b, c, idx1, idx2, idx3, chunkSize));
+    SHMEM_BENCHMARK(RS_SG_ADD, sgAdd(a, b, c, idx1, idx2, idx3, chunkSize, start));
     break;
 
   case RSBaseImpl::RS_SG_TRIAD:
-    SHMEM_BENCHMARK(RS_SG_TRIAD, sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SG_TRIAD, sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, start, scalar));
     break;
 
   /* CENTRAL KERNELS */
   case RSBaseImpl::RS_CENTRAL_COPY:
-    SHMEM_BENCHMARK(RS_CENTRAL_COPY, centralCopy(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RS_CENTRAL_COPY, centralCopy(a, b, c, chunkSize, start));
     break;
 
   case RSBaseImpl::RS_CENTRAL_SCALE:
-    SHMEM_BENCHMARK(RS_CENTRAL_SCALE, centralScale(a, b, c, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_CENTRAL_SCALE, centralScale(a, b, c, chunkSize, start, scalar));
     break;
 
   case RSBaseImpl::RS_CENTRAL_ADD:
-    SHMEM_BENCHMARK(RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize, start));
     break;
 
   case RSBaseImpl::RS_CENTRAL_TRIAD:
-    SHMEM_BENCHMARK(RS_CENTRAL_TRIAD, centralTriad(a, b, c, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_CENTRAL_TRIAD, centralTriad(a, b, c, chunkSize, start, scalar));
     break;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /* ALL KERNELS */
   case RSBaseImpl::RS_ALL:
     /* RS_SEQ_COPY */
-    SHMEM_BENCHMARK(RS_SEQ_COPY, seqCopy(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RS_SEQ_COPY, seqCopy(a, b, c, chunkSize, start));
 
     /* RS_SEQ_SCALE */
-    SHMEM_BENCHMARK(RS_SEQ_SCALE, seqScale(a, b, c, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SEQ_SCALE, seqScale(a, b, c, chunkSize, start, scalar));
 
     /* RS_SEQ_ADD */
-    SHMEM_BENCHMARK(RS_SEQ_ADD, seqAdd(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RS_SEQ_ADD, seqAdd(a, b, c, chunkSize, start));
 
     /* RS_SEQ_TRIAD */
-    SHMEM_BENCHMARK(RS_SEQ_TRIAD, seqTriad(a, b, c, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SEQ_TRIAD, seqTriad(a, b, c, chunkSize, start, scalar));
 
     /* RS_GATHER_COPY */
-    SHMEM_BENCHMARK(RS_GATHER_COPY, gatherCopy(a, b, c, idx1, chunkSize));
+    SHMEM_BENCHMARK(RS_GATHER_COPY, gatherCopy(a, b, c, idx1, chunkSize, start));
 
     /* RS_GATHER_SCALE */
-    SHMEM_BENCHMARK(RS_GATHER_SCALE, gatherScale(a, b, c, idx1, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_GATHER_SCALE, gatherScale(a, b, c, idx1, chunkSize, start, scalar));
 
     /* RS_GATHER_ADD */
-    SHMEM_BENCHMARK(RS_GATHER_ADD, gatherAdd(a, b, c, idx1, idx2, chunkSize));
+    SHMEM_BENCHMARK(RS_GATHER_ADD, gatherAdd(a, b, c, idx1, idx2, chunkSize, start));
 
     /* RS_GATHER_TRIAD */
-    SHMEM_BENCHMARK(RS_GATHER_TRIAD, gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_GATHER_TRIAD, gatherTriad(a, b, c, idx1, idx2, chunkSize, start, scalar));
 
     /* RS_SCATTER_COPY */
-    SHMEM_BENCHMARK(RS_SCATTER_COPY, scatterCopy(a, b, c, idx1, chunkSize));
+    SHMEM_BENCHMARK(RS_SCATTER_COPY, scatterCopy(a, b, c, idx1, chunkSize, start));
 
     /* RS_SCATTER_SCALE */
-    SHMEM_BENCHMARK(RS_SCATTER_SCALE, scatterScale(a, b, c, idx1, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SCATTER_SCALE, scatterScale(a, b, c, idx1, chunkSize, start, scalar));
 
     /* RS_SCATTER_ADD */
-    SHMEM_BENCHMARK(RS_SCATTER_ADD, scatterAdd(a, b, c, idx1, chunkSize));
+    SHMEM_BENCHMARK(RS_SCATTER_ADD, scatterAdd(a, b, c, idx1, chunkSize, start));
 
     /* RS_SCATTER_TRIAD */
-    SHMEM_BENCHMARK(RS_SCATTER_TRIAD, scatterTriad(a, b, c, idx1, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SCATTER_TRIAD, scatterTriad(a, b, c, idx1, chunkSize, start, scalar));
 
     /* RS_SG_COPY */
-    SHMEM_BENCHMARK(RS_SG_COPY, sgCopy(a, b, c, idx1, idx2, chunkSize));
+    SHMEM_BENCHMARK(RS_SG_COPY, sgCopy(a, b, c, idx1, idx2, chunkSize, start));
 
     /* RS_SG_SCALE */
-    SHMEM_BENCHMARK(RS_SG_SCALE, sgScale(a, b, c, idx1, idx2, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SG_SCALE, sgScale(a, b, c, idx1, idx2, chunkSize, start, scalar));
 
     /* RS_SG_ADD */
-    SHMEM_BENCHMARK(RS_SG_ADD, sgAdd(a, b, c, idx1, idx2, idx3, chunkSize));
+    SHMEM_BENCHMARK(RS_SG_ADD, sgAdd(a, b, c, idx1, idx2, idx3, chunkSize, start));
 
     /* RS_SG_TRIAD */
-    SHMEM_BENCHMARK(RS_SG_TRIAD, sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_SG_TRIAD, sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, start, scalar));
 
     /* RS_CENTRAL_COPY */
-    SHMEM_BENCHMARK(RS_CENTRAL_COPY, centralCopy(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RS_CENTRAL_COPY, centralCopy(a, b, c, chunkSize, start));
 
     /* RS_CENTRAL_SCALE */
-    SHMEM_BENCHMARK(RS_CENTRAL_SCALE, centralScale(a, b, c, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_CENTRAL_SCALE, centralScale(a, b, c, chunkSize, start, scalar));
 
     /* RS_CENTRAL_ADD */
-    SHMEM_BENCHMARK(RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize, start));
 
     /* RS_CENTRAL_TRIAD */
-    SHMEM_BENCHMARK(RS_CENTRAL_TRIAD, centralTriad(a, b, c, chunkSize, scalar));
+    SHMEM_BENCHMARK(RS_CENTRAL_TRIAD, centralTriad(a, b, c, chunkSize, start, scalar));
 
     break;
 

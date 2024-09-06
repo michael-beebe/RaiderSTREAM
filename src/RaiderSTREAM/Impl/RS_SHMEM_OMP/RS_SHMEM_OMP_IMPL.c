@@ -18,10 +18,10 @@
  **************************************************/
 void seqCopy(
   double *a, double *b, double *c,
-  ssize_t chunkSize)
+  ssize_t chunkSize, ssize_t start)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     c[j] = a[j];
 }
 
@@ -33,10 +33,10 @@ void seqCopy(
  **************************************************/
 void seqScale(
   double *a, double *b, double *c,
-  ssize_t chunkSize, double scalar)
+  ssize_t chunkSize, ssize_t start, double scalar)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     b[j] = scalar * c[j];
 }
 
@@ -47,10 +47,10 @@ void seqScale(
  **************************************************/
 void seqAdd(
   double *a, double *b, double *c,
-  ssize_t chunkSize)
+  ssize_t chunkSize, ssize_t start)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     c[j] = a[j] + b[j];
 }
 
@@ -62,10 +62,10 @@ void seqAdd(
  **************************************************/
 void seqTriad(
   double *a, double *b, double *c,
-  ssize_t chunkSize, double scalar)
+  ssize_t chunkSize, ssize_t start, double scalar)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     a[j] = b[j] + scalar * c[j];
 }
 
@@ -76,10 +76,10 @@ void seqTriad(
  **************************************************/
 void gatherCopy(
   double *a, double *b, double *c,
-  ssize_t *idx1, ssize_t chunkSize)
+  ssize_t *idx1, ssize_t chunkSize, ssize_t start)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     c[j] = a[idx1[j]];
 }
 
@@ -92,10 +92,10 @@ void gatherCopy(
 void gatherScale(
   double *a, double *b, double *c,
   ssize_t *idx1,
-  ssize_t chunkSize, double scalar)
+  ssize_t chunkSize, double scalar, ssize_t start)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     b[j] = scalar * c[idx1[j]];
 }
 
@@ -107,10 +107,10 @@ void gatherScale(
 void gatherAdd(
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
-  ssize_t chunkSize)
+  ssize_t chunkSize, ssize_t start)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     c[j] = a[idx1[j]] + b[idx2[j]];
 }
 
@@ -123,10 +123,10 @@ void gatherAdd(
 void gatherTriad(
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
-  ssize_t chunkSize, double scalar)
+  ssize_t chunkSize, ssize_t start, double scalar)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     a[j] = b[idx1[j]] + scalar * c[idx2[j]];
 }
 
@@ -138,10 +138,10 @@ void gatherTriad(
 void scatterCopy(
   double *a, double *b, double *c,
   ssize_t *idx1,
-  ssize_t chunkSize)
+  ssize_t chunkSize, ssize_t start)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     c[idx1[j]] = a[j];
 }
 
@@ -154,10 +154,10 @@ void scatterCopy(
 void scatterScale(
   double *a, double *b, double *c,
   ssize_t *idx1,
-  ssize_t chunkSize, double scalar)
+  ssize_t chunkSize, ssize_t start, double scalar)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     b[idx1[j]] = scalar * c[j];
 }
 
@@ -169,10 +169,10 @@ void scatterScale(
 void scatterAdd(
   double *a, double *b, double *c,
   ssize_t *idx1,
-  ssize_t chunkSize)
+  ssize_t chunkSize, ssize_t start)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     c[idx1[j]] = a[j] + b[j];
 }
 
@@ -185,10 +185,10 @@ void scatterAdd(
 void scatterTriad(
   double *a, double *b, double *c,
   ssize_t *idx1,
-  ssize_t chunkSize, double scalar)
+  ssize_t chunkSize, ssize_t start, double scalar)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     a[idx1[j]] = b[j] + scalar * c[j];
 }
 
@@ -200,10 +200,10 @@ void scatterTriad(
 void sgCopy(
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
-  ssize_t chunkSize)
+  ssize_t chunkSize, ssize_t start)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     c[idx1[j]] = a[idx2[j]];
 }
 
@@ -216,10 +216,10 @@ void sgCopy(
 void sgScale(
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2,
-  ssize_t chunkSize, double scalar)
+  ssize_t chunkSize, ssize_t start, double scalar)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     b[idx2[j]] = scalar * c[idx1[j]];
 }
 
@@ -231,10 +231,10 @@ void sgScale(
 void sgAdd(
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
-  ssize_t chunkSize)
+  ssize_t chunkSize, ssize_t start)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
 }
 
@@ -247,10 +247,10 @@ void sgAdd(
 void sgTriad(
   double *a, double *b, double *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
-  ssize_t chunkSize, double scalar)
+  ssize_t chunkSize, ssize_t start, double scalar)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
 }
 
@@ -261,10 +261,10 @@ void sgTriad(
  **************************************************/
 void centralCopy(
   double *a, double *b, double *c,
-  ssize_t chunkSize)
+  ssize_t chunkSize, ssize_t start)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     c[0] = a[0];
 }
 
@@ -276,10 +276,10 @@ void centralCopy(
  **************************************************/
 void centralScale(
   double *a,double *b, double *c,
-  ssize_t chunkSize, double scalar)
+  ssize_t chunkSize, ssize_t start, double scalar)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     b[0] = scalar * c[0];
 }
 
@@ -290,10 +290,10 @@ void centralScale(
  **************************************************/
 void centralAdd(
   double *a, double *b, double *c,
-  ssize_t chunkSize)
+  ssize_t chunkSize, ssize_t start)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     c[0] = a[0] + b[0];
 }
 
@@ -305,10 +305,10 @@ void centralAdd(
  **************************************************/
 void centralTriad(
   double *a, double *b, double *c,
-  ssize_t chunkSize, double scalar)
+  ssize_t chunkSize, ssize_t start, double scalar)
 {
   #pragma omp parallel for
-  for (ssize_t j = 0; j < chunkSize; j++)
+  for (ssize_t j = start; j < start + chunkSize; j++)
     a[0] = b[0] + scalar * c[0];
 }
 
