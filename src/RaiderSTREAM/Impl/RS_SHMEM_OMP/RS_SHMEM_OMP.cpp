@@ -12,20 +12,60 @@
 
 #ifdef _RS_SHMEM_OMP_H_
 
-/**************************************************
- * @brief Constructor for the RS_SHMEM class.
- *
- * Initializes the RS_SHMEM object with the specified options.
- *
- * @param opts Options for the RS_SHMEM object.
- **************************************************/
-RS_SHMEM_OMP::RS_SHMEM_OMP(const RSOpts &opts)
-    : RSBaseImpl("RS_SHMEM_OMP",
-                 opts.getKernelTypeFromName(opts.getKernelName())),
-      kernelName(opts.getKernelName()),
-      streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
-      numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
-      idx2(nullptr), idx3(nullptr), scalar(3.0) {}
+#ifdef _SHMEM_1_5_
+#define SHMEM_BENCHMARK(k, f)                                                  \
+  do {                                                                         \
+    shmem_barrier_all();                                                       \
+    startTime = mySecond();                                                    \
+    f;                                                                         \
+    shmem_barrier_all();                                                       \
+    endTime = mySecond();                                                      \
+    runTime = calculateRunTime(startTime, endTime);                            \
+    mbps = calculateMBPS(BYTES[RSBaseImpl::##k##], runTime);                   \
+    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::##k##], runTime);              \
+    shmem_double_max_reduce(SHMEM_TEAM_WORLD, &TIMES[RSBaseImpl::##k##],       \
+                            &runTime, 1);                                      \
+    shmem_double_max_reduce(SHMEM_TEAM_WORLD, &BYTES[RSBaseImpl::##k##],       \
+                            &mbps, 1);                                         \
+    shmem_double_max_reduce(SHMEM_TEAM_WORLD, &FLOPS[RSBaseImpl::##k##],       \
+                            &flops, 1);                                        \
+  } while (false)
+#endif
+#ifdef _SHMEM_1_4_
+#define SHMEM_BENCHMARK(k, f)                                                  \
+  do {                                                                         \
+    shmem_barrier_all();                                                       \
+    startTime = mySecond();                                                    \
+    f;                                                                         \
+    shmem_barrier_all();                                                       \
+    endTime = mySecond();                                                      \
+    runTime = calculateRunTime(startTime, endTime);                            \
+    mbps = calculateMBPS(BYTES[RSBaseImpl::##k##], runTime);                   \
+    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::##k##], runTime);              \
+    shmem_double_max_to_all(&TIMES[RSBaseImpl::##k##], &runTime, 1, 0, 0,      \
+                            size, pWrk, pSync);                                \
+    shmem_double_max_to_all(&BYTES[RSBaseImpl::##k##], &mbps, 1, 0, 0, size,   \
+                            pWrk, pSync);                                      \
+    shmem_double_max_to_all(&FLOPS[RSBaseImpl::##k##], &flops, 1, 0, 0, size,  \
+                            pWrk, pSync);                                      \
+  }
+while (false)
+#endif
+
+  /**************************************************
+   * @brief Constructor for the RS_SHMEM class.
+   *
+   * Initializes the RS_SHMEM object with the specified options.
+   *
+   * @param opts Options for the RS_SHMEM object.
+   **************************************************/
+  RS_SHMEM_OMP::RS_SHMEM_OMP(const RSOpts &opts)
+      : RSBaseImpl("RS_SHMEM_OMP",
+                   opts.getKernelTypeFromName(opts.getKernelName())),
+        kernelName(opts.getKernelName()),
+        streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
+        numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
+        idx2(nullptr), idx3(nullptr), scalar(3.0) {}
 
 RS_SHMEM_OMP::~RS_SHMEM_OMP() {}
 
@@ -48,6 +88,8 @@ bool RS_SHMEM_OMP::allocateData() {
 
   shmem_barrier_all();
 
+  /* If updated, also update corresponding
+   * region in RS_SHMEM_OMP::execute. */
   /* Calculate the chunk size for each rank */
   ssize_t chunkSize = streamArraySize / size;
   ssize_t remainder = streamArraySize % size;
@@ -174,14 +216,18 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   int size = shmem_n_pes();   /* Number of shmem ranks */
   size_t syncSize = SHMEM_SYNC_SIZE;
 
+#ifdef _SHMEM_1_4_
   double *pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
   long *pSync = static_cast<long *>(shmem_malloc(syncSize * sizeof(long)));
   for (size_t i = 0; i < syncSize; ++i) {
     pSync[i] = SHMEM_SYNC_VALUE;
   }
+#endif
 
   shmem_barrier_all();
 
+  /* If updated, also update corresponding
+   * region in RS_SHMEM_OMP::allocateData. */
   /* Calculate the chunk size for each rank */
   ssize_t chunkSize = streamArraySize / size;
   ssize_t remainder = streamArraySize % size;
@@ -196,1088 +242,151 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   switch (kType) {
   /* SEQUENTIAL KERNELS */
   case RSBaseImpl::RS_SEQ_COPY:
-    shmem_barrier_all();
-    startTime = mySecond();
-    seqCopy(a, b, c, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_COPY], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_COPY], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_COPY], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SEQ_COPY, seqCopy(a, b, c, chunkSize));
     break;
 
   case RSBaseImpl::RS_SEQ_SCALE:
-    shmem_barrier_all();
-    startTime = mySecond();
-    seqScale(a, b, c, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_SCALE], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_SCALE], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_SCALE], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SEQ_SCALE, seqScale(a, b, c, chunkSize, scalar));
     break;
 
   case RSBaseImpl::RS_SEQ_ADD:
-    shmem_barrier_all();
-    startTime = mySecond();
-    seqAdd(a, b, c, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_ADD], &localRunTime, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_ADD], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_ADD], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SEQ_ADD, seqAdd(a, b, c, chunkSize));
     break;
 
   case RSBaseImpl::RS_SEQ_TRIAD:
-    shmem_barrier_all();
-    startTime = mySecond();
-    seqTriad(a, b, c, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_TRIAD], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_TRIAD], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_TRIAD], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SEQ_TRIAD, seqTriad(a, b, c, chunkSize, scalar));
     break;
 
   /* GATHER KERNELS */
   case RSBaseImpl::RS_GATHER_COPY:
-    shmem_barrier_all();
-    startTime = mySecond();
-    gatherCopy(a, b, c, idx1, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_COPY], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_COPY], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_COPY], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_GATHER_COPY, gatherCopy(a, b, c, idx1, chunkSize));
     break;
 
   case RSBaseImpl::RS_GATHER_SCALE:
-    shmem_barrier_all();
-    startTime = mySecond();
-    gatherScale(a, b, c, idx1, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_SCALE], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_SCALE], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_SCALE], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_GATHER_SCALE, gatherScale(a, b, c, idx1, chunkSize, scalar));
     break;
 
   case RSBaseImpl::RS_GATHER_ADD:
-    shmem_barrier_all();
-    startTime = mySecond();
-    gatherAdd(a, b, c, idx1, idx2, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_ADD], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_ADD], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_ADD], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_GATHER_ADD, gatherAdd(a, b, c, idx1, idx2, chunkSize));
     break;
 
   case RSBaseImpl::RS_GATHER_TRIAD:
-    shmem_barrier_all();
-    startTime = mySecond();
-    gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_TRIAD], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_TRIAD], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_TRIAD], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_GATHER_TRIAD, gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar));
     break;
 
   /* SCATTER KERNELS */
   case RSBaseImpl::RS_SCATTER_COPY:
-    shmem_barrier_all();
-    startTime = mySecond();
-    scatterCopy(a, b, c, idx1, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_COPY], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_COPY], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_COPY], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SCATTER_COPY, scatterCopy(a, b, c, idx1, chunkSize));
     break;
 
   case RSBaseImpl::RS_SCATTER_SCALE:
-    shmem_barrier_all();
-    startTime = mySecond();
-    scatterScale(a, b, c, idx1, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_SCALE], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_SCALE], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_SCALE], &localFlops,
-                            1, 0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SCATTER_SCALE, scatterScale(a, b, c, idx1, chunkSize, scalar));
     break;
 
   case RSBaseImpl::RS_SCATTER_ADD:
-    shmem_barrier_all();
-    startTime = mySecond();
-    scatterAdd(a, b, c, idx1, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_ADD], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_ADD], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_ADD], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SCATTER_ADD, scatterAdd(a, b, c, idx1, chunkSize));
     break;
 
   case RSBaseImpl::RS_SCATTER_TRIAD:
-    shmem_barrier_all();
-    startTime = mySecond();
-    scatterTriad(a, b, c, idx1, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_TRIAD], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_TRIAD], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_TRIAD], &localFlops,
-                            1, 0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SCATTER_TRIAD, scatterTriad(a, b, c, idx1, chunkSize, scalar));
     break;
 
   /* SCATTER-GATHER KERNELS */
   case RSBaseImpl::RS_SG_COPY:
-    shmem_barrier_all();
-    startTime = mySecond();
-    sgCopy(a, b, c, idx1, idx2, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_COPY], &localRunTime, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_COPY], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_COPY], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SG_COPY, sgCopy(a, b, c, idx1, idx2, chunkSize));
     break;
 
   case RSBaseImpl::RS_SG_SCALE:
-    shmem_barrier_all();
-    startTime = mySecond();
-    sgScale(a, b, c, idx1, idx2, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_SCALE], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_SCALE], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_SCALE], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SG_SCALE, sgScale(a, b, c, idx1, idx2, chunkSize, scalar));
     break;
 
   case RSBaseImpl::RS_SG_ADD:
-    shmem_barrier_all();
-    startTime = mySecond();
-    sgAdd(a, b, c, idx1, idx2, idx3, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_ADD], &localRunTime, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_ADD], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_ADD], &localFlops, 1, 0, 0,
-                            size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SG_ADD, sgAdd(a, b, c, idx1, idx2, idx3, chunkSize));
     break;
 
   case RSBaseImpl::RS_SG_TRIAD:
-    shmem_barrier_all();
-    startTime = mySecond();
-    sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_TRIAD], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_TRIAD], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_TRIAD], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SG_TRIAD, sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar));
     break;
 
   /* CENTRAL KERNELS */
   case RSBaseImpl::RS_CENTRAL_COPY:
-    shmem_barrier_all();
-    startTime = mySecond();
-    centralCopy(a, b, c, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_COPY], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_COPY], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_COPY], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_CENTRAL_COPY, centralCopy(a, b, c, chunkSize));
     break;
 
   case RSBaseImpl::RS_CENTRAL_SCALE:
-    shmem_barrier_all();
-    startTime = mySecond();
-    centralScale(a, b, c, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_SCALE], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_SCALE], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_SCALE], &localFlops,
-                            1, 0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_CENTRAL_SCALE, centralScale(a, b, c, chunkSize, scalar));
     break;
 
   case RSBaseImpl::RS_CENTRAL_ADD:
-    shmem_barrier_all();
-    startTime = mySecond();
-    centralAdd(a, b, c, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_ADD], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_ADD], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_ADD], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize));
     break;
 
   case RSBaseImpl::RS_CENTRAL_TRIAD:
-    shmem_barrier_all();
-    startTime = mySecond();
-    centralTriad(a, b, c, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_TRIAD], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_TRIAD], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_TRIAD], &localFlops,
-                            1, 0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_CENTRAL_TRIAD, centralTriad(a, b, c, chunkSize, scalar));
     break;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /* ALL KERNELS */
   case RSBaseImpl::RS_ALL:
     /* RS_SEQ_COPY */
-    shmem_barrier_all();
-    startTime = mySecond();
-    seqCopy(a, b, c, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_COPY], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_COPY], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_COPY], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SEQ_COPY, seqCopy(a, b, c, chunkSize));
 
     /* RS_SEQ_SCALE */
-    shmem_barrier_all();
-    startTime = mySecond();
-    seqScale(a, b, c, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_SCALE], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_SCALE], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_SCALE], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SEQ_SCALE, seqScale(a, b, c, chunkSize, scalar));
 
     /* RS_SEQ_ADD */
-    shmem_barrier_all();
-    startTime = mySecond();
-    seqAdd(a, b, c, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_ADD], &localRunTime, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_ADD], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_ADD], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SEQ_ADD, seqAdd(a, b, c, chunkSize));
 
     /* RS_SEQ_TRIAD */
-    shmem_barrier_all();
-    startTime = mySecond();
-    seqTriad(a, b, c, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SEQ_TRIAD], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SEQ_TRIAD], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SEQ_TRIAD], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SEQ_TRIAD, seqTriad(a, b, c, chunkSize, scalar));
 
     /* RS_GATHER_COPY */
-    shmem_barrier_all();
-    startTime = mySecond();
-    gatherCopy(a, b, c, idx1, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_COPY], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_COPY], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_COPY], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_GATHER_COPY, gatherCopy(a, b, c, idx1, chunkSize));
 
     /* RS_GATHER_SCALE */
-    shmem_barrier_all();
-    startTime = mySecond();
-    gatherScale(a, b, c, idx1, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_SCALE], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_SCALE], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_SCALE], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_GATHER_SCALE, gatherScale(a, b, c, idx1, chunkSize, scalar));
 
     /* RS_GATHER_ADD */
-    shmem_barrier_all();
-    startTime = mySecond();
-    gatherAdd(a, b, c, idx1, idx2, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_ADD], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_ADD], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_ADD], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_GATHER_ADD, gatherAdd(a, b, c, idx1, idx2, chunkSize));
 
     /* RS_GATHER_TRIAD */
-    shmem_barrier_all();
-    startTime = mySecond();
-    gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_GATHER_TRIAD], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_GATHER_TRIAD], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_GATHER_TRIAD], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_GATHER_TRIAD, gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar));
 
     /* RS_SCATTER_COPY */
-    shmem_barrier_all();
-    startTime = mySecond();
-    scatterCopy(a, b, c, idx1, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_COPY], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_COPY], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_COPY], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SCATTER_COPY, scatterCopy(a, b, c, idx1, chunkSize));
 
     /* RS_SCATTER_SCALE */
-    shmem_barrier_all();
-    startTime = mySecond();
-    scatterScale(a, b, c, idx1, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_SCALE], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_SCALE], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_SCALE], &localFlops,
-                            1, 0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SCATTER_SCALE, scatterScale(a, b, c, idx1, chunkSize, scalar));
 
     /* RS_SCATTER_ADD */
-    shmem_barrier_all();
-    startTime = mySecond();
-    scatterAdd(a, b, c, idx1, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_ADD], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_ADD], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_ADD], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SCATTER_ADD, scatterAdd(a, b, c, idx1, chunkSize));
 
     /* RS_SCATTER_TRIAD */
-    shmem_barrier_all();
-    startTime = mySecond();
-    scatterTriad(a, b, c, idx1, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SCATTER_TRIAD], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SCATTER_TRIAD], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SCATTER_TRIAD], &localFlops,
-                            1, 0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SCATTER_TRIAD, scatterTriad(a, b, c, idx1, chunkSize, scalar));
 
     /* RS_SG_COPY */
-    shmem_barrier_all();
-    startTime = mySecond();
-    sgCopy(a, b, c, idx1, idx2, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_COPY], &localRunTime, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_COPY], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_COPY], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SG_COPY, sgCopy(a, b, c, idx1, idx2, chunkSize));
 
     /* RS_SG_SCALE */
-    shmem_barrier_all();
-    startTime = mySecond();
-    sgScale(a, b, c, idx1, idx2, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_SCALE], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_SCALE], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_SCALE], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SG_SCALE, sgScale(a, b, c, idx1, idx2, chunkSize, scalar));
 
     /* RS_SG_ADD */
-    shmem_barrier_all();
-    startTime = mySecond();
-    sgAdd(a, b, c, idx1, idx2, idx3, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_ADD], &localRunTime, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_ADD], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_ADD], &localFlops, 1, 0, 0,
-                            size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SG_ADD, sgAdd(a, b, c, idx1, idx2, idx3, chunkSize));
 
     /* RS_SG_TRIAD */
-    shmem_barrier_all();
-    startTime = mySecond();
-    sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_SG_TRIAD], &localRunTime, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_SG_TRIAD], &localMbps, 1, 0, 0,
-                            size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_SG_TRIAD], &localFlops, 1, 0,
-                            0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_SG_TRIAD, sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar));
 
     /* RS_CENTRAL_COPY */
-    shmem_barrier_all();
-    startTime = mySecond();
-    centralCopy(a, b, c, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_COPY], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_COPY], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_COPY], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_CENTRAL_COPY, centralCopy(a, b, c, chunkSize));
 
     /* RS_CENTRAL_SCALE */
-    shmem_barrier_all();
-    startTime = mySecond();
-    centralScale(a, b, c, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_SCALE], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_SCALE], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_SCALE], &localFlops,
-                            1, 0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_CENTRAL_SCALE, centralScale(a, b, c, chunkSize, scalar));
 
     /* RS_CENTRAL_ADD */
-    shmem_barrier_all();
-    startTime = mySecond();
-    centralAdd(a, b, c, chunkSize);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_ADD], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_ADD], &localMbps, 1, 0,
-                            0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_ADD], &localFlops, 1,
-                            0, 0, size, pWrk, pSync);
-
-    shmem_free(pWrk);
-    shmem_free(pSync);
+    SHMEM_BENCHMARK(RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize));
 
     /* RS_CENTRAL_TRIAD */
-    shmem_barrier_all();
-    startTime = mySecond();
-    centralTriad(a, b, c, chunkSize, scalar);
-    shmem_barrier_all();
-    endTime = mySecond();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    pWrk = static_cast<double *>(shmem_malloc(size * sizeof(double)));
-    pSync = static_cast<long *>(shmem_malloc(size * sizeof(long)));
-
-    shmem_double_max_to_all(&TIMES[RSBaseImpl::RS_CENTRAL_TRIAD], &localRunTime,
-                            1, 0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&MBPS[RSBaseImpl::RS_CENTRAL_TRIAD], &localMbps, 1,
-                            0, 0, size, pWrk, pSync);
-    shmem_double_max_to_all(&FLOPS[RSBaseImpl::RS_CENTRAL_TRIAD], &localFlops,
-                            1, 0, 0, size, pWrk, pSync);
+    SHMEM_BENCHMARK(RS_CENTRAL_TRIAD, centralTriad(a, b, c, chunkSize, scalar));
 
     break;
 
@@ -1287,6 +396,8 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
       std::cout << "RS_SHMEM_OMP::execute() - ERROR: KERNEL NOT SET"
                 << std::endl;
     }
+    shmem_free(pWrk);
+    shmem_free(pSync);
     return false;
   }
 
