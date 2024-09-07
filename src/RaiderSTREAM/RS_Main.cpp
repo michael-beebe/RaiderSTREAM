@@ -450,11 +450,13 @@ void runBenchSHMEMOMP(RSOpts *Opts) {
       RSBaseImpl::RSKernelType kernelType =
           static_cast<RSBaseImpl::RSKernelType>(i);
       std::string kernelName = BenchTypeTable[i].Notes;
-      printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS,
+      printTiming(kernelName, SHMEM_TIMES[i], SHMEM_MBPS, SHMEM_FLOPS,
                   kernelType, runKernelType, headerPrinted);
     }
   }
 
+  shmem_barrier_all();
+  
   /* Free the RS_SHMEM_OMP object, finalize OpenSHMEM */
   shmem_free(SHMEM_TIMES);
   shmem_free(SHMEM_MBPS);
