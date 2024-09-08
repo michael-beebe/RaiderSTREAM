@@ -28,8 +28,6 @@ private:
   ssize_t streamArraySize;
   int numPEs;
   int lArgc;
-  int numGangs;
-  int numWorkers;
   char **lArgv;
   double *a;
   double *b;
@@ -61,72 +59,72 @@ public:
 };
 
 extern "C" {
-double seqCopy(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double seqCopy(double *d_a, double *d_b, double *d_c,
                ssize_t streamArraySize);
 
-double seqScale(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double seqScale(double *d_a, double *d_b, double *d_c,
                 ssize_t streamArraySize, double scalar);
 
-double seqAdd(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double seqAdd(double *d_a, double *d_b, double *d_c,
               ssize_t streamArraySize);
 
-double seqTriad(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double seqTriad(double *d_a, double *d_b, double *d_c,
                 ssize_t streamArraySize, double scalar);
 
-double gatherCopy(int ngangs, int nworkers, double *d_a, double *d_b,
+double gatherCopy(double *d_a, double *d_b,
                   double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize);
 
-double gatherScale(int ngangs, int nworkers, double *d_a, double *d_b,
+double gatherScale(double *d_a, double *d_b,
                    double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize,
                    double scalar);
 
-double gatherAdd(int ngangs, int nworkers, double *d_a, double *d_b,
+double gatherAdd(double *d_a, double *d_b,
                  double *d_c, ssize_t *d_IDX1, ssize_t *d_IDX2,
                  ssize_t streamArraySize);
 
-double gatherTriad(int ngangs, int nworkers, double *d_a, double *d_b,
+double gatherTriad(double *d_a, double *d_b,
                    double *d_c, ssize_t *d_IDX1, ssize_t *d_IDX2,
                    ssize_t streamArraySize, double scalar);
 
-double scatterCopy(int ngangs, int nworkers, double *d_a, double *d_b,
+double scatterCopy(double *d_a, double *d_b,
                    double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize);
 
-double scatterScale(int ngangs, int nworkers, double *d_a, double *d_b,
+double scatterScale(double *d_a, double *d_b,
                     double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize,
                     double scalar);
 
-double scatterAdd(int ngangs, int nworkers, double *d_a, double *d_b,
+double scatterAdd(double *d_a, double *d_b,
                   double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize);
 
-double scatterTriad(int ngangs, int nworkers, double *d_a, double *d_b,
+double scatterTriad(double *d_a, double *d_b,
                     double *d_c, ssize_t *d_IDX1, ssize_t streamArraySize,
                     double scalar);
 
-double sgCopy(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double sgCopy(double *d_a, double *d_b, double *d_c,
               ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t streamArraySize);
 
-double sgScale(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double sgScale(double *d_a, double *d_b, double *d_c,
                ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t streamArraySize,
                double scalar);
 
-double sgAdd(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double sgAdd(double *d_a, double *d_b, double *d_c,
              ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t *d_IDX3,
              ssize_t streamArraySize);
 
-double sgTriad(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double sgTriad(double *d_a, double *d_b, double *d_c,
                ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t *d_IDX3,
                ssize_t streamArraySize, double scalar);
 
-double centralCopy(int ngangs, int nworkers, double *d_a, double *d_b,
+double centralCopy(double *d_a, double *d_b,
                    double *d_c, ssize_t streamArraySize);
 
-double centralScale(int ngangs, int nworkers, double *d_a, double *d_b,
+double centralScale(double *d_a, double *d_b,
                     double *d_c, ssize_t streamArraySize, double scalar);
 
-double centralAdd(int ngangs, int nworkers, double *d_a, double *d_b,
+double centralAdd(double *d_a, double *d_b,
                   double *d_c, ssize_t streamArraySize);
 
-double centralTriad(int ngangs, int nworkers, double *d_a, double *d_b,
+double centralTriad(double *d_a, double *d_b,
                     double *d_c, ssize_t streamArraySize, double scalar);
 }
 

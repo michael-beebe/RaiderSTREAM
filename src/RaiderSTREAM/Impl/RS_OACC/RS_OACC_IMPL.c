@@ -24,7 +24,7 @@ double mySecond() {
  *
  * @param streamArraySize Size of the stream array.
  **************************************************/
-double seqCopy(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double seqCopy(double *d_a, double *d_b, double *d_c,
                ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -42,7 +42,7 @@ double seqCopy(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-double seqScale(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double seqScale(double *d_a, double *d_b, double *d_c,
                 ssize_t streamArraySize, double scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -59,7 +59,7 @@ double seqScale(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
  *
  * @param streamArraySize Size of the stream array.
  **************************************************/
-double seqAdd(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double seqAdd(double *d_a, double *d_b, double *d_c,
               ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -77,7 +77,7 @@ double seqAdd(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-double seqTriad(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double seqTriad(double *d_a, double *d_b, double *d_c,
                 ssize_t streamArraySize, double scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -95,7 +95,7 @@ double seqTriad(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double gatherCopy(int ngangs, int nworkers, double *d_a, double *d_b,
+double gatherCopy(double *d_a, double *d_b,
                   double *d_c, ssize_t *d_idx1, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -115,7 +115,7 @@ double gatherCopy(int ngangs, int nworkers, double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double gatherScale(int ngangs, int nworkers, double *d_a, double *d_b,
+double gatherScale(double *d_a, double *d_b,
                    double *d_c, ssize_t *d_idx1, ssize_t streamArraySize,
                    double scalar) {
   double start = mySecond();
@@ -134,7 +134,7 @@ double gatherScale(int ngangs, int nworkers, double *d_a, double *d_b,
  * @param streamArraySize Size of the stream array.
  ************************i**************************/
 
-double gatherAdd(int ngangs, int nworkers, double *d_a, double *d_b,
+double gatherAdd(double *d_a, double *d_b,
                  double *d_c, ssize_t *d_idx1, ssize_t *d_idx2,
                  ssize_t streamArraySize) {
   double start = mySecond();
@@ -154,7 +154,7 @@ double gatherAdd(int ngangs, int nworkers, double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double gatherTriad(int ngangs, int nworkers, double *d_a, double *d_b,
+double gatherTriad(double *d_a, double *d_b,
                    double *d_c, ssize_t *d_idx1, ssize_t *d_idx2,
                    ssize_t streamArraySize, double scalar) {
   double start = mySecond();
@@ -173,7 +173,7 @@ double gatherTriad(int ngangs, int nworkers, double *d_a, double *d_b,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double scatterCopy(int ngangs, int nworkers, double *d_a, double *d_b,
+double scatterCopy(double *d_a, double *d_b,
                    double *d_c, ssize_t *d_idx1, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -192,7 +192,7 @@ double scatterCopy(int ngangs, int nworkers, double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double scatterScale(int ngangs, int nworkers, double *d_a, double *d_b,
+double scatterScale(double *d_a, double *d_b,
                     double *d_c, ssize_t *d_idx1, ssize_t streamArraySize,
                     double scalar) {
   double start = mySecond();
@@ -211,7 +211,7 @@ double scatterScale(int ngangs, int nworkers, double *d_a, double *d_b,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double scatterAdd(int ngangs, int nworkers, double *d_a, double *d_b,
+double scatterAdd(double *d_a, double *d_b,
                   double *d_c, ssize_t *d_idx1, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -230,7 +230,7 @@ double scatterAdd(int ngangs, int nworkers, double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double scatterTriad(int ngangs, int nworkers, double *d_a, double *d_b,
+double scatterTriad(double *d_a, double *d_b,
                     double *d_c, ssize_t *d_idx1, ssize_t streamArraySize,
                     double scalar) {
   double start = mySecond();
@@ -249,7 +249,7 @@ double scatterTriad(int ngangs, int nworkers, double *d_a, double *d_b,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double sgCopy(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double sgCopy(double *d_a, double *d_b, double *d_c,
               ssize_t *d_idx1, ssize_t *d_idx2, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -268,7 +268,7 @@ double sgCopy(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double sgScale(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double sgScale(double *d_a, double *d_b, double *d_c,
                ssize_t *d_idx1, ssize_t *d_idx2, ssize_t streamArraySize,
                double scalar) {
   double start = mySecond();
@@ -287,7 +287,7 @@ double sgScale(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double sgAdd(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double sgAdd(double *d_a, double *d_b, double *d_c,
              ssize_t *d_idx1, ssize_t *d_idx2, ssize_t *d_idx3,
              ssize_t streamArraySize) {
   double start = mySecond();
@@ -307,7 +307,7 @@ double sgAdd(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double sgTriad(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
+double sgTriad(double *d_a, double *d_b, double *d_c,
                ssize_t *d_idx1, ssize_t *d_idx2, ssize_t *d_idx3,
                ssize_t streamArraySize, double scalar) {
   double start = mySecond();
@@ -326,7 +326,7 @@ double sgTriad(int ngangs, int nworkers, double *d_a, double *d_b, double *d_c,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double centralCopy(int ngangs, int nworkers, double *d_a, double *d_b,
+double centralCopy(double *d_a, double *d_b,
                    double *d_c, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -345,7 +345,7 @@ double centralCopy(int ngangs, int nworkers, double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double centralScale(int ngangs, int nworkers, double *d_a, double *d_b,
+double centralScale(double *d_a, double *d_b,
                     double *d_c, ssize_t streamArraySize, double scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -363,7 +363,7 @@ double centralScale(int ngangs, int nworkers, double *d_a, double *d_b,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double centralAdd(int ngangs, int nworkers, double *d_a, double *d_b,
+double centralAdd(double *d_a, double *d_b,
                   double *d_c, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -382,7 +382,7 @@ double centralAdd(int ngangs, int nworkers, double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double centralTriad(int ngangs, int nworkers, double *d_a, double *d_b,
+double centralTriad(double *d_a, double *d_b,
                     double *d_c, ssize_t streamArraySize, double scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
