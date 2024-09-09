@@ -79,6 +79,7 @@ bool RSOpts::enableBenchmark(std::string benchName) {
 bool RSOpts::parseOpts(int argc, char **argv) {
   lArgc = argc;
   lArgv = argv;
+
   for (int i = 1; i < argc; i++) {
     std::string s(argv[i]);
 
@@ -156,6 +157,12 @@ bool RSOpts::parseOpts(int argc, char **argv) {
     return false;
   }
 #endif
+
+  /* Update BYTES, FLOATOPS arrays with given streamArraySize */
+  for(int i = 0; i < NUM_KERNELS; i++) {
+    BYTES[i] *= streamArraySize;
+    FLOATOPS[i] *= streamArraySize;
+  }
 
   return true; /* Options are valid */
 }
