@@ -49,115 +49,115 @@ public:
 extern "C" { // FIXME: these might need to take in a `int numPEs` argument
   void seqCopy(
     double *a, double *b, double *c,
-    ssize_t chunkSize, ssize_t start
+    ssize_t chunkSize
   );
 
   void seqScale(
     double *a, double *b, double *c,
-    ssize_t chunkSize, ssize_t start, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void seqAdd(
     double *a, double *b, double *c,
-    ssize_t chunkSize, ssize_t start
+    ssize_t chunkSize
   );
 
   void seqTriad(
     double *a, double *b, double *c,
-    ssize_t chunkSize, ssize_t start, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void gatherCopy(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, ssize_t start
+    ssize_t chunkSize
   );
 
   void gatherScale(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, ssize_t start, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void gatherAdd(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize, ssize_t start
+    ssize_t chunkSize
   );
 
   void gatherTriad(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize, ssize_t start, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void scatterCopy(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, ssize_t start
+    ssize_t chunkSize
   );
 
   void scatterScale(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, ssize_t start, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void scatterAdd(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, ssize_t start
+    ssize_t chunkSize
   );
 
   void scatterTriad(
     double *a, double *b, double *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, ssize_t start, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void sgCopy(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize, ssize_t start
+    ssize_t chunkSize
   );
 
   void sgScale(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize, ssize_t start, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void sgAdd(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
-    ssize_t chunkSize, ssize_t start
+    ssize_t chunkSize
   );
 
   void sgTriad(
     double *a, double *b, double *c,
     ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
-    ssize_t chunkSize, ssize_t start, double scalar
+    ssize_t chunkSize, double scalar
   );
 
   void centralCopy(
     double *a, double *b, double *c,
-    ssize_t chunkSize, ssize_t start
+    ssize_t chunkSize
   );
 
   void centralScale(
     double *a, double *b, double *c,
-    ssize_t chunkSize, ssize_t start,
+    ssize_t chunkSize,
     double scalar
   );
 
   void centralAdd(
     double *a, double *b, double *c,
-    ssize_t chunkSize, ssize_t start
+    ssize_t chunkSize
   );
 
   void centralTriad(
     double *a, double *b, double *c,
-    ssize_t chunkSize, ssize_t start, double scalar
+    ssize_t chunkSize, double scalar
   );
 }
 
