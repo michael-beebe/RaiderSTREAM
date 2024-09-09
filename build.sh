@@ -44,6 +44,7 @@ cmake \
 # --- OpenSHMEM ---
 # cmake                                   \
 #   -DENABLE_SHMEM_OMP=ON                 \
+#   -DSHMEM_1_5=ON                        \
 #   -DCMAKE_C_COMPILER=`which oshcc`      \
 #   -DCMAKE_CXX_COMPILER=`which oshc++`   \
 #   -DCMAKE_C_FLAGS="-fopenmp"            \

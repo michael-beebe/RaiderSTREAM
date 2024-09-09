@@ -46,10 +46,46 @@ With RaiderSTREAM, we address these two limitations by:
 * $\lambda$ = `STREAM_ARRAY_SIZE`
 
 
-<!-- TODO: ## Building RaiderSTREAM<a id="build"></a> -->
+## Building RaiderSTREAM<a id="build"></a>
 
-<!-- TODO: ## RaiderSTREAM Options<a id="build"></a> -->
+```sh
+$ mkdir build
+$ cd build
+$ cmake [your options] ../
+$ make
+```
 
+## RaiderSTREAM Options<a id="build"></a>
+
+### Compile-time Flags
+Sensible defaults for each parallelization backend can be found in [build.sh](/build.sh).
+
+Backends are not additive. Exactly one backend must be enabled.
+
+| Flag                | Behavior                                                                                                                                |
+|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| *Backends*          | Exactly one backend must be enabled.                                                                                                     |
+| `ENABLE_OMP`        | If nonempty, use OpenMP for parallelization.                                                                                            |
+| `ENABLE_MPI_OMP`    | If nonempty, use MPI for communication and OpenMP for parallelization.                                                                  |
+| `ENABLE_SHMEM_OMP`  | If nonempty, use OpenSHMEM for communication and OpenMP for parallelization. One of either `SHMEM_1_5` or `SHMEM_1_4` must also be set. |
+| `ENABLE_CUDA`       | If nonempty, use CUDA to run benchmarks on an accelerator.                                                                              |
+| `ENABLE_OMP_TARGET` | If nonempty, use OpenMP to run benchmarks on an accelerator.                                                                            |
+| `ENABLE_OACC`       | If nonempty, use OpenACC to run benchmarks on an accelerator.                                                                           |
+| *Other*             |                                                                                                                                         |
+| `SHMEM_1_5`         | Use OpenSHMEM 1.5 routines. Ignored on non-OpenSHMEM backends.                                                                          |
+| `SHMEM_1_4`         | Use OpenSHMEM 1.4 routines. Ignored on non-OpenSHMEM backends.                                                                          |
+
+### Run-time Flags
+Sensible defaults for most backends can be found in [run.sh](/run.sh);
+
+| Flag          | Purpose                                           | Requires      |
+|---------------|---------------------------------------------------|---------------|
+| -s, --size    | Size of data arrays. See [Run Rules](#run-rules). |               |
+| -l, --list    | List all kernels and access patterns.             |               |
+| -k, --kernel  | Select kernel and access pattern to be run.       |               |
+| -np, --pes    | Set amount of PEs.                                |               |
+| -t, --threads | Set threads per block.                            | `ENABLE_CUDA` |
+| -b, --blocks  | Set blocks.                                       | `ENABLE_CUDA` |
 
 ## Run Rules<a id="run_rules"></a>
 STREAM is intended to measure the bandwidth from main memory. However, it can be used to measure cache bandwidth as well by the adjusting the STREAM array size such that the memory needed to allocate the arrays can fit in the cache level of interest. The general rule for STREAM array size is that each array must be at least 4x the size of the sum of all the lastlevel caches, or 1 million elements – whichever is larger
@@ -58,8 +94,8 @@ STREAM is intended to measure the bandwidth from main memory. However, it can be
 The gather and scatter benchmark kernels are similar in that they both provide insight into the real-world performance one can expect from a given system in a scientific computing setting. However, there are differences between these two memory access patterns that should be understood.
 * The gather memory access pattern is characterized by randomly indexed loads coupled with sequential stores. This can help give us an understanding of read performance from sparse datasets such as arrays or matrices.
 * The scatter memory access pattern can be considered the inverse of its gather counterpart, and is characterized by the combination of sequential loads coupled together with randomly indexed stores. This pattern can give us an understanding of write performance to sparse datasets.
-<!-- TODO: Scater-gather -->
-<!-- TODO: Central -->
+* The scatter-gather memory access pattern is a combination of both the gather and scatter patterns, both reading from and writing to random indexes. This pattern is representative of operations that read and write to sparse datasets, such as matrix multiplication on sparse matrices.
+* The central memory access pattern is characterized by two fixed indexes. This pattern acts as a speed-of-light benchmark for the other access patterns.
 
 ![Gather Scatter](.github/readme_images/gather_scatter.png)
 
