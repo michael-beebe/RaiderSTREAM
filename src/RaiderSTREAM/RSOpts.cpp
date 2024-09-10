@@ -121,7 +121,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
       setNumPEs(atoi(argv[i + 1]));
       i++;
     }
-#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
+#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OACC_
     else if ((s == "-b") || (s == "--blocks")) {
       if (i + 1 > (argc - 1)) {
         std::cout << "Error: --blocks requires an argument" << std::endl;
@@ -182,7 +182,7 @@ void RSOpts::printOpts() {
   } else {
     std::cout << "OMP_NUM_THREADS: (not set)" << std::endl;
   }
-#if _ENABLE_OMP_TARGET_ || _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OACC_
   std::cout << "Blocks: " << threadBlocks << std::endl;
   std::cout << "Threads/Block: " << threadsPerBlock << std::endl;
 #endif
@@ -222,9 +222,8 @@ void RSOpts::printHelp() {
       << std::endl;
   std::cout << "  -np, --pes                Specify the number of PEs"
             << std::endl;
-#if _ENABLE_OMP_TARGET_ || _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OACC_
+#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OACC_
   std::cout << "  -b, --blocks              Specify the number of CUDA blocks "
-               "or OMP teams"
             << std::endl;
   std::cout
       << "  -t, --threads             Specify the number of threads per block"

@@ -58,7 +58,7 @@ private:
   int numPEs = 1;
 	int lArgc;
   char **lArgv;
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
 		int threadBlocks;
 		int threadsPerBlock;
 	#endif
@@ -169,7 +169,7 @@ public:
    */
   int getNumPEs() const { return numPEs; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OACC_
     /**
      * @brief Gets the number of work groups.
      *
@@ -215,7 +215,7 @@ public:
    */
 	void setKernelName(std::string name) { kernelName = name; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OACC_
     /**
      * @brief Sets the number of work groups.
      *
