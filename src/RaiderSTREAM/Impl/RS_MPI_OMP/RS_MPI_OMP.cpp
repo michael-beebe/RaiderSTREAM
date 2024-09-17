@@ -26,7 +26,7 @@ RS_MPI_OMP::RS_MPI_OMP(const RSOpts &opts)
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
       numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
-      idx2(nullptr), idx3(nullptr), scalar(3.0) {}
+      idx2(nullptr), idx3(nullptr), scalar(3) {}
 
 RS_MPI_OMP::~RS_MPI_OMP() {}
 

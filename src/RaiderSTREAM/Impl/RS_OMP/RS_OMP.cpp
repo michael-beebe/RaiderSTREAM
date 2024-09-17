@@ -24,7 +24,7 @@ RS_OMP::RS_OMP(const RSOpts &opts)
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), numPEs(opts.getNumPEs()),
       lArgc(0), lArgv(nullptr), a(nullptr), b(nullptr), c(nullptr),
-      idx1(nullptr), idx2(nullptr), idx3(nullptr), scalar(3.0) {}
+      idx1(nullptr), idx2(nullptr), idx3(nullptr), scalar(3) {}
 
 RS_OMP::~RS_OMP() {}
 

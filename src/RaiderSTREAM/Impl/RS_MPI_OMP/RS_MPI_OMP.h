@@ -30,7 +30,7 @@ private:
   ssize_t *idx1;
   ssize_t *idx2;
   ssize_t *idx3;
-  ssize_t scalar;
+  STREAM_TYPE scalar;
 
 public:
   RS_MPI_OMP(const RSOpts& opts);
@@ -54,7 +54,7 @@ extern "C" { // FIXME: these might need to take in a `int numPEs` argument
 
   void seqScale(
     STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void seqAdd(
@@ -64,7 +64,7 @@ extern "C" { // FIXME: these might need to take in a `int numPEs` argument
 
   void seqTriad(
     STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void gatherCopy(
@@ -76,7 +76,7 @@ extern "C" { // FIXME: these might need to take in a `int numPEs` argument
   void gatherScale(
     STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void gatherAdd(
@@ -88,7 +88,7 @@ extern "C" { // FIXME: these might need to take in a `int numPEs` argument
   void gatherTriad(
     STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void scatterCopy(
@@ -100,7 +100,7 @@ extern "C" { // FIXME: these might need to take in a `int numPEs` argument
   void scatterScale(
     STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void scatterAdd(
@@ -112,7 +112,7 @@ extern "C" { // FIXME: these might need to take in a `int numPEs` argument
   void scatterTriad(
     STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void sgCopy(
@@ -124,7 +124,7 @@ extern "C" { // FIXME: these might need to take in a `int numPEs` argument
   void sgScale(
     STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void sgAdd(
@@ -136,7 +136,7 @@ extern "C" { // FIXME: these might need to take in a `int numPEs` argument
   void sgTriad(
     STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void centralCopy(
@@ -147,7 +147,7 @@ extern "C" { // FIXME: these might need to take in a `int numPEs` argument
   void centralScale(
     STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t chunkSize,
-    double scalar
+    STREAM_TYPE scalar
   );
 
   void centralAdd(
@@ -157,7 +157,7 @@ extern "C" { // FIXME: these might need to take in a `int numPEs` argument
 
   void centralTriad(
     STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 }
 

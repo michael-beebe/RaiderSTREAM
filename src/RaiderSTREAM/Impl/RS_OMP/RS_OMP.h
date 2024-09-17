@@ -35,7 +35,7 @@ private:
   ssize_t *idx1;
   ssize_t *idx2;
   ssize_t *idx3;
-  ssize_t scalar;
+  STREAM_TYPE scalar;
 
 public:
   RS_OMP(const RSOpts &opts);
@@ -54,58 +54,58 @@ extern "C" {
 void seqCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t streamArraySize);
 
 void seqScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t streamArraySize,
-              double scalar);
+              STREAM_TYPE scalar);
 
 void seqAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t streamArraySize);
 
 void seqTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t streamArraySize,
-              double scalar);
+              STREAM_TYPE scalar);
 
 void gatherCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
                 ssize_t streamArraySize);
 
 void gatherScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
-                 ssize_t streamArraySize, double scalar);
+                 ssize_t streamArraySize, STREAM_TYPE scalar);
 
 void gatherAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1, ssize_t *IDX2,
                ssize_t streamArraySize);
 
 void gatherTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1, ssize_t *IDX2,
-                 ssize_t streamArraySize, double scalar);
+                 ssize_t streamArraySize, STREAM_TYPE scalar);
 
 void scatterCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
                  ssize_t streamArraySize);
 
 void scatterScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
-                  ssize_t streamArraySize, double scalar);
+                  ssize_t streamArraySize, STREAM_TYPE scalar);
 
 void scatterAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
                 ssize_t streamArraySize);
 
 void scatterTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
-                  ssize_t streamArraySize, double scalar);
+                  ssize_t streamArraySize, STREAM_TYPE scalar);
 
 void sgCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1, ssize_t *IDX2,
             ssize_t streamArraySize);
 
 void sgScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1, ssize_t *IDX2,
-             ssize_t streamArraySize, double scalar);
+             ssize_t streamArraySize, STREAM_TYPE scalar);
 
 void sgAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1, ssize_t *IDX2,
            ssize_t *IDX3, ssize_t streamArraySize);
 
 void sgTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1, ssize_t *IDX2,
-             ssize_t *IDX3, ssize_t streamArraySize, double scalar);
+             ssize_t *IDX3, ssize_t streamArraySize, STREAM_TYPE scalar);
 
 void centralCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t streamArraySize);
 
 void centralScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t streamArraySize,
-                  double scalar);
+                  STREAM_TYPE scalar);
 
 void centralAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t streamArraySize);
 
 void centralTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t streamArraySize,
-                  double scalar);
+                  STREAM_TYPE scalar);
 }
 
 #endif /* _RS_OMP_H_ */

@@ -70,7 +70,7 @@ RS_SHMEM_OMP::RS_SHMEM_OMP(const RSOpts &opts)
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
       numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
-      idx2(nullptr), idx3(nullptr), scalar(3.0) {}
+      idx2(nullptr), idx3(nullptr), scalar(3) {}
 
 RS_SHMEM_OMP::~RS_SHMEM_OMP() {}
 
@@ -105,9 +105,9 @@ bool RS_SHMEM_OMP::allocateData() {
   }
 
   /* Allocate memory for the local chunks in symmetric heap space */
-  a = static_cast<double *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
-  b = static_cast<double *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
-  c = static_cast<double *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  a = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  b = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  c = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
   idx1 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   idx2 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   idx3 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
