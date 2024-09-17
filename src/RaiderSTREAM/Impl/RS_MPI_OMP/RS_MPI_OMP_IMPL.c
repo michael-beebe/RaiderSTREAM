@@ -17,7 +17,7 @@
  * @param chunkSize Size of the chunk.
  **************************************************/
 void seqCopy(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t chunkSize)
 {
   #pragma omp parallel for
@@ -32,7 +32,7 @@ void seqCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void seqScale(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t chunkSize, double scalar)
 {
   #pragma omp parallel for
@@ -46,7 +46,7 @@ void seqScale(
  * @param chunkSize Size of the chunk.
  **************************************************/
 void seqAdd(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t chunkSize)
 {
   #pragma omp parallel for
@@ -61,7 +61,7 @@ void seqAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void seqTriad(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t chunkSize, double scalar)
 {
   #pragma omp parallel for
@@ -75,7 +75,7 @@ void seqTriad(
  * @param chunkSize Size of the chunk.
  **************************************************/
 void gatherCopy(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t chunkSize)
 {
   #pragma omp parallel for
@@ -90,7 +90,7 @@ void gatherCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void gatherScale(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1,
   ssize_t chunkSize, double scalar)
 {
@@ -105,7 +105,7 @@ void gatherScale(
  * @param chunkSize Size of the chunk.
  **************************************************/
 void gatherAdd(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t chunkSize)
 {
@@ -121,7 +121,7 @@ void gatherAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void gatherTriad(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t chunkSize, double scalar)
 {
@@ -136,7 +136,7 @@ void gatherTriad(
  * @param chunkSize Size of the chunk.
  **************************************************/
 void scatterCopy(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1,
   ssize_t chunkSize)
 {
@@ -152,7 +152,7 @@ void scatterCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void scatterScale(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1,
   ssize_t chunkSize, double scalar)
 {
@@ -167,7 +167,7 @@ void scatterScale(
  * @param chunkSize Size of the chunk.
  **************************************************/
 void scatterAdd(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1,
   ssize_t chunkSize)
 {
@@ -183,7 +183,7 @@ void scatterAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void scatterTriad(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1,
   ssize_t chunkSize, double scalar)
 {
@@ -198,7 +198,7 @@ void scatterTriad(
  * @param chunkSize Size of the chunk.
  **************************************************/
 void sgCopy(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t chunkSize)
 {
@@ -214,7 +214,7 @@ void sgCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void sgScale(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t chunkSize, double scalar)
 {
@@ -229,7 +229,7 @@ void sgScale(
  * @param chunkSize Size of the chunk.
  **************************************************/
 void sgAdd(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t chunkSize)
 {
@@ -245,7 +245,7 @@ void sgAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void sgTriad(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t chunkSize, double scalar)
 {
@@ -260,7 +260,7 @@ void sgTriad(
  * @param chunkSize Size of the chunk.
  **************************************************/
 void centralCopy(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t chunkSize)
 {
   #pragma omp parallel for
@@ -275,7 +275,7 @@ void centralCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void centralScale(
-  double *a,double *b, double *c,
+  STREAM_TYPE *a,STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t chunkSize, double scalar)
 {
   #pragma omp parallel for
@@ -289,7 +289,7 @@ void centralScale(
  * @param chunkSize Size of the chunk.
  **************************************************/
 void centralAdd(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t chunkSize)
 {
   #pragma omp parallel for
@@ -304,7 +304,7 @@ void centralAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void centralTriad(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t chunkSize, double scalar)
 {
   #pragma omp parallel for

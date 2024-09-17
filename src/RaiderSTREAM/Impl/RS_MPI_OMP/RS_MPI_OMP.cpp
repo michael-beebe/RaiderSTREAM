@@ -61,9 +61,9 @@ bool RS_MPI_OMP::allocateData() {
   }
 
   /* Allocate memory for the local chunks in local heap space */
-  MPI_Alloc_mem(chunkSize * sizeof(double), MPI_INFO_NULL, &a);
-  MPI_Alloc_mem(chunkSize * sizeof(double), MPI_INFO_NULL, &b);
-  MPI_Alloc_mem(chunkSize * sizeof(double), MPI_INFO_NULL, &c);
+  MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &a);
+  MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &b);
+  MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &c);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx1);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx2);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx3);
