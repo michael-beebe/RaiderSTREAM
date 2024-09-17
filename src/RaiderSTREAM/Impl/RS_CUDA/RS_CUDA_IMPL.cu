@@ -1,5 +1,3 @@
-#define STREAM_TYPE double
-
 /**************************************************
  * @brief Scales data in a device array.
  *
