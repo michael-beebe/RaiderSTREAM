@@ -62,18 +62,20 @@ Sensible defaults for each parallelization backend can be found in [build.sh](/b
 
 Backends are not additive. Exactly one backend must be enabled.
 
-| Flag                | Behavior                                                                                                                                |
-|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| *Backends*          | Exactly one backend must be enabled.                                                                                                     |
-| `ENABLE_OMP`        | If nonempty, use OpenMP for parallelization.                                                                                            |
-| `ENABLE_MPI_OMP`    | If nonempty, use MPI for communication and OpenMP for parallelization.                                                                  |
-| `ENABLE_SHMEM_OMP`  | If nonempty, use OpenSHMEM for communication and OpenMP for parallelization. One of either `SHMEM_1_5` or `SHMEM_1_4` must also be set. |
-| `ENABLE_CUDA`       | If nonempty, use CUDA to run benchmarks on an accelerator.                                                                              |
-| `ENABLE_OMP_TARGET` | If nonempty, use OpenMP to run benchmarks on an accelerator.                                                                            |
-| `ENABLE_OACC`       | If nonempty, use OpenACC to run benchmarks on an accelerator.                                                                           |
-| *Other*             |                                                                                                                                         |
-| `SHMEM_1_5`         | Use OpenSHMEM 1.5 routines. Ignored on non-OpenSHMEM backends.                                                                          |
-| `SHMEM_1_4`         | Use OpenSHMEM 1.4 routines. Ignored on non-OpenSHMEM backends.                                                                          |
+| Flag                | Behavior                                                                                                                                                                  |
+|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `STREAM_TYPE`       | Data type used in benchmarks. Accepts anything that:<br>multiplies by itself, converts from a positive integer,<br>adds to itself, and is copyable. Defaults to 'double'. |
+|                     |                                                                                                                                                                           |
+| *Backends*          | Exactly one backend must be enabled.                                                                                                                                      |
+| `ENABLE_OMP`        | If nonempty, use OpenMP for parallelization.                                                                                                                              |
+| `ENABLE_MPI_OMP`    | If nonempty, use MPI for communication and OpenMP for parallelization.                                                                                                    |
+| `ENABLE_SHMEM_OMP`  | If nonempty, use OpenSHMEM for communication and OpenMP for parallelization.<br>One of either `SHMEM_1_5` or `SHMEM_1_4` must also be set.                                |
+| `ENABLE_CUDA`       | If nonempty, use CUDA to run benchmarks on an accelerator.                                                                                                                |
+| `ENABLE_OMP_TARGET` | If nonempty, use OpenMP to run benchmarks on an accelerator.                                                                                                              |
+| `ENABLE_OACC`       | If nonempty, use OpenACC to run benchmarks on an accelerator.                                                                                                             |
+| *Other*             |                                                                                                                                                                           |
+| `SHMEM_1_5`         | Use OpenSHMEM 1.5 routines. Ignored on non-OpenSHMEM backends.                                                                                                            |
+| `SHMEM_1_4`         | Use OpenSHMEM 1.4 routines. Ignored on non-OpenSHMEM backends.                                                                                                            |
 
 ### Run-time Flags
 Sensible defaults for most backends can be found in [run.sh](/run.sh);
