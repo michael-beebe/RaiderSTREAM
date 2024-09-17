@@ -41,7 +41,7 @@ if( RS_LINKER_FLAGS )
   message(STATUS "USING MACHINE-SPECIFIC LINKER_FLAGS: ${RS_LINKER_FLAGS}")
 endif()
 
-set(STREAM_TYPE "double")
+set(STREAM_TYPE "double" CACHE STRING "Data type to use for kernels.")
 add_definitions(-DSTREAM_TYPE=${STREAM_TYPE})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -std=c99 ${RS_CFLAGS}")
