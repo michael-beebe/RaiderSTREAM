@@ -221,7 +221,7 @@ public:
    * @param arrayElements Number of elements in the array
    * @param value Value to initialize the array with
    */
-  void initStreamArray(double *array, ssize_t arrayElements, double value) {
+  void initStreamArray(STREAM_TYPE *array, ssize_t arrayElements, double value) {
     for (ssize_t i = 0; i < arrayElements; i++)
       array[i] = value;
   }
