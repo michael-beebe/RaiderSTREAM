@@ -11,6 +11,13 @@
 #include "RaiderSTREAM/RSOpts.h"
 #include <algorithm>
 
+// The below macros are ONLY used so we
+// can get the STREAM_TYPE as a string,
+// for the options printout. Please refactor
+// at some point.
+#define STRINGIFY(x) STRINGIFYP(x)
+#define STRINGIFYP(x) #x
+
 BenchType BenchTypeTable[] = {
   /* {  Name, Arg, Notes, KType, Enabled, ReqArq } */
   { "seq_copy", "", "Sequential Copy",      RSBaseImpl::RS_SEQ_COPY, false, false },
@@ -175,7 +182,7 @@ void RSOpts::printOpts() {
   std::cout << "Kernel Type: " << static_cast<int>(getKernelType())
             << std::endl;
   std::cout << "Stream Array Size: " << streamArraySize << std::endl;
-  std::cout << "Stream Data Type: " << STREAM_TYPE << std::endl;
+  std::cout << "Stream Data Type: " << STRINGIFY(STREAM_TYPE) << std::endl;
   std::cout << "Number of PEs: " << numPEs << std::endl;
   char *ompNumThreads = getenv("OMP_NUM_THREADS");
   if (ompNumThreads != nullptr) {
