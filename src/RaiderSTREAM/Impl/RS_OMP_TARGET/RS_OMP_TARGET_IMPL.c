@@ -31,7 +31,7 @@
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double seqCopy(int nteams, int threads, double *a, double *b, double *c,
+double seqCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                ssize_t streamArraySize) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
@@ -52,8 +52,8 @@ double seqCopy(int nteams, int threads, double *a, double *b, double *c,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double seqScale(int nteams, int threads, double *a, double *b, double *c,
-                ssize_t streamArraySize, double scalar) {
+double seqScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                ssize_t streamArraySize, STREAM_TYPE scalar) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
               c [0:streamArraySize], streamArraySize, scalar) {
@@ -72,7 +72,7 @@ double seqScale(int nteams, int threads, double *a, double *b, double *c,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double seqAdd(int nteams, int threads, double *a, double *b, double *c,
+double seqAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
               ssize_t streamArraySize) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
@@ -93,8 +93,8 @@ double seqAdd(int nteams, int threads, double *a, double *b, double *c,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double seqTriad(int nteams, int threads, double *a, double *b, double *c,
-                ssize_t streamArraySize, double scalar) {
+double seqTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                ssize_t streamArraySize, STREAM_TYPE scalar) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
               c [0:streamArraySize], streamArraySize, scalar) {
@@ -113,7 +113,7 @@ double seqTriad(int nteams, int threads, double *a, double *b, double *c,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double gatherCopy(int nteams, int threads, double *a, double *b, double *c,
+double gatherCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                   ssize_t *idx1, ssize_t streamArraySize) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
@@ -135,8 +135,8 @@ double gatherCopy(int nteams, int threads, double *a, double *b, double *c,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double gatherScale(int nteams, int threads, double *a, double *b, double *c,
-                   ssize_t *idx1, ssize_t streamArraySize, double scalar) {
+double gatherScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                   ssize_t *idx1, ssize_t streamArraySize, STREAM_TYPE scalar) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
               c [0:streamArraySize], idx1 [0:streamArraySize], streamArraySize,
@@ -156,7 +156,7 @@ double gatherScale(int nteams, int threads, double *a, double *b, double *c,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double gatherAdd(int nteams, int threads, double *a, double *b, double *c,
+double gatherAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                  ssize_t *idx1, ssize_t *idx2, ssize_t streamArraySize) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
@@ -178,9 +178,9 @@ double gatherAdd(int nteams, int threads, double *a, double *b, double *c,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double gatherTriad(int nteams, int threads, double *a, double *b, double *c,
+double gatherTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                    ssize_t *idx1, ssize_t *idx2, ssize_t streamArraySize,
-                   double scalar) {
+                   STREAM_TYPE scalar) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
               c [0:streamArraySize], idx1 [0:streamArraySize],
@@ -200,7 +200,7 @@ double gatherTriad(int nteams, int threads, double *a, double *b, double *c,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double scatterCopy(int nteams, int threads, double *a, double *b, double *c,
+double scatterCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                    ssize_t *idx1, ssize_t streamArraySize) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
@@ -222,8 +222,8 @@ double scatterCopy(int nteams, int threads, double *a, double *b, double *c,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double scatterScale(int nteams, int threads, double *a, double *b, double *c,
-                    ssize_t *idx1, ssize_t streamArraySize, double scalar) {
+double scatterScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                    ssize_t *idx1, ssize_t streamArraySize, STREAM_TYPE scalar) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
               c [0:streamArraySize], idx1 [0:streamArraySize], streamArraySize,
@@ -243,7 +243,7 @@ double scatterScale(int nteams, int threads, double *a, double *b, double *c,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double scatterAdd(int nteams, int threads, double *a, double *b, double *c,
+double scatterAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                   ssize_t *idx1, ssize_t streamArraySize) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
@@ -265,8 +265,8 @@ double scatterAdd(int nteams, int threads, double *a, double *b, double *c,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double scatterTriad(int nteams, int threads, double *a, double *b, double *c,
-                    ssize_t *idx1, ssize_t streamArraySize, double scalar) {
+double scatterTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                    ssize_t *idx1, ssize_t streamArraySize, STREAM_TYPE scalar) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
               c [0:streamArraySize], idx1 [0:streamArraySize], streamArraySize,
@@ -286,7 +286,7 @@ double scatterTriad(int nteams, int threads, double *a, double *b, double *c,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double sgCopy(int nteams, int threads, double *a, double *b, double *c,
+double sgCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
               ssize_t *idx1, ssize_t *idx2, ssize_t streamArraySize) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
@@ -308,9 +308,9 @@ double sgCopy(int nteams, int threads, double *a, double *b, double *c,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double sgScale(int nteams, int threads, double *a, double *b, double *c,
+double sgScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                ssize_t *idx1, ssize_t *idx2, ssize_t streamArraySize,
-               double scalar) {
+               STREAM_TYPE scalar) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
               c [0:streamArraySize], idx1 [0:streamArraySize],
@@ -330,7 +330,7 @@ double sgScale(int nteams, int threads, double *a, double *b, double *c,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double sgAdd(int nteams, int threads, double *a, double *b, double *c,
+double sgAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
              ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
              ssize_t streamArraySize) {
   double time = 0;
@@ -354,9 +354,9 @@ double sgAdd(int nteams, int threads, double *a, double *b, double *c,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double sgTriad(int nteams, int threads, double *a, double *b, double *c,
+double sgTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
-               ssize_t streamArraySize, double scalar) {
+               ssize_t streamArraySize, STREAM_TYPE scalar) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
               c [0:streamArraySize], idx1 [0:streamArraySize],
@@ -377,7 +377,7 @@ double sgTriad(int nteams, int threads, double *a, double *b, double *c,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double centralCopy(int nteams, int threads, double *a, double *b, double *c,
+double centralCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                    ssize_t streamArraySize) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
@@ -398,8 +398,8 @@ double centralCopy(int nteams, int threads, double *a, double *b, double *c,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double centralScale(int nteams, int threads, double *a, double *b, double *c,
-                    ssize_t streamArraySize, double scalar) {
+double centralScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                    ssize_t streamArraySize, STREAM_TYPE scalar) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
               c [0:streamArraySize], streamArraySize, scalar) {
@@ -418,7 +418,7 @@ double centralScale(int nteams, int threads, double *a, double *b, double *c,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double centralAdd(int nteams, int threads, double *a, double *b, double *c,
+double centralAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                   ssize_t streamArraySize) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
@@ -439,8 +439,8 @@ double centralAdd(int nteams, int threads, double *a, double *b, double *c,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-double centralTriad(int nteams, int threads, double *a, double *b, double *c,
-                    ssize_t streamArraySize, double scalar) {
+double centralTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                    ssize_t streamArraySize, STREAM_TYPE scalar) {
   double time = 0;
   WITH_TARGET(a [0:streamArraySize], b [0:streamArraySize],
               c [0:streamArraySize], streamArraySize, scalar) {
