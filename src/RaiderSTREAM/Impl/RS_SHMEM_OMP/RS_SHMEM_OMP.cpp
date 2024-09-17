@@ -105,9 +105,9 @@ bool RS_SHMEM_OMP::allocateData() {
   }
 
   /* Allocate memory for the local chunks in symmetric heap space */
-  a = static_cast<double *>(shmem_malloc(chunkSize * sizeof(double)));
-  b = static_cast<double *>(shmem_malloc(chunkSize * sizeof(double)));
-  c = static_cast<double *>(shmem_malloc(chunkSize * sizeof(double)));
+  a = static_cast<double *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  b = static_cast<double *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  c = static_cast<double *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
   idx1 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   idx2 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   idx3 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
