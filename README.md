@@ -65,7 +65,6 @@ Backends are not additive. Exactly one backend must be enabled.
 | Flag                | Behavior                                                                                                                                                                  |
 |---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `STREAM_TYPE`       | Data type used in benchmarks. Accepts anything that:<br>multiplies by itself, converts from a positive integer,<br>adds to itself, and is copyable. Defaults to 'double'. |
-|                     |                                                                                                                                                                           |
 | *Backends*          | Exactly one backend must be enabled.                                                                                                                                      |
 | `ENABLE_OMP`        | If nonempty, use OpenMP for parallelization.                                                                                                                              |
 | `ENABLE_MPI_OMP`    | If nonempty, use MPI for communication and OpenMP for parallelization.                                                                                                    |
