@@ -46,6 +46,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -std=c++11 ${RS_CXXFLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall -g ${RS_CXXFLAGS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O0 -std=c++11 ${RS_CXXFLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${RS_LINKER_FLAGS}")
+set(STREAM_TYPE "double" CACHE STRING "Datatype used in kernels. Defaults to \"double\".")
+add_definitions(-DSTREAM_TYPE=${STREAM_TYPE})
 
 if( DEBUG )
   add_definitions(-D_DEBUG_=1)

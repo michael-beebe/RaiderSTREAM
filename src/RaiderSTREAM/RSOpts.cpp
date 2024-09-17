@@ -175,6 +175,7 @@ void RSOpts::printOpts() {
   std::cout << "Kernel Type: " << static_cast<int>(getKernelType())
             << std::endl;
   std::cout << "Stream Array Size: " << streamArraySize << std::endl;
+  std::cout << "Stream Data Type: " << STREAM_TYPE << std::endl;
   std::cout << "Number of PEs: " << numPEs << std::endl;
   char *ompNumThreads = getenv("OMP_NUM_THREADS");
   if (ompNumThreads != nullptr) {
