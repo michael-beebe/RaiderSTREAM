@@ -9,6 +9,9 @@ export OMP_NUM_THREADS=96
 # --- OpenACC Test  
 #  ./raiderstream -k all -s 50000000 -b 1360 -t 32
 
+# --- CUDA Test
+# ./raiderstream -k all -s 50000000 -b 256 -t 256
+
 # --- MPI/OpenMP Test
 # mpirun -np 4 --mca btl ^openib raiderstream -k all -s 10000000 -np 4
 
