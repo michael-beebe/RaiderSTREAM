@@ -144,6 +144,8 @@ endif()
 
 if (ENABLE_CUDA)
   enable_language(CUDA)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_ENABLE_CUDA_")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ENABLE_CUDA_")
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -D_ENABLE_CUDA_")
   message(STATUS "ENABLING CUDA Implementation")
 else()
