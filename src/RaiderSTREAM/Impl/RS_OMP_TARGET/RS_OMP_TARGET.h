@@ -41,15 +41,14 @@ private:
   int device;
 
 public:
-  RS_OMP_TARGET(const RSOpts& opts);
+  RS_OMP_TARGET(const RSOpts &opts);
 
   ~RS_OMP_TARGET();
 
   virtual bool allocateData() override;
 
-  virtual bool execute(
-    double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS
-  ) override;
+  virtual bool execute(double *TIMES, double *MBPS, double *FLOPS,
+                       double *BYTES, double *FLOATOPS) override;
 
   virtual bool freeData() override;
 };
