@@ -40,12 +40,21 @@ RS_OMP_TARGET::~RS_OMP_TARGET() {}
  *         successful, false otherwise.
  **********************************************/
 bool RS_OMP_TARGET::allocateData() {
+<<<<<<< HEAD
   a = new STREAM_TYPE[streamArraySize];
   b = new STREAM_TYPE[streamArraySize];
   c = new STREAM_TYPE[streamArraySize];
   idx1 = new ssize_t[streamArraySize];
   idx2 = new ssize_t[streamArraySize];
   idx3 = new ssize_t[streamArraySize];
+=======
+  STREAM_TYPE *a = new STREAM_TYPE[streamArraySize];
+  STREAM_TYPE *b = new STREAM_TYPE[streamArraySize];
+  STREAM_TYPE *c = new STREAM_TYPE[streamArraySize];
+  ssize_t *idx1 = new ssize_t[streamArraySize];
+  ssize_t *idx2 = new ssize_t[streamArraySize];
+  ssize_t *idx3 = new ssize_t[streamArraySize];
+>>>>>>> cd9e359 (Update OMP_T impl to use STREAM_TYPE)
 
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
