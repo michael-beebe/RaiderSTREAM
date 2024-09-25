@@ -18,7 +18,7 @@
  * about our code. This copy is done
  * outside of benchmark time recording.
  */
-#define SANITYCHECK                                                            \
+#define CUDA_SANITYCHECK                                                       \
   do {                                                                         \
     cudaMemcpy(a, d_a, streamArraySize, cudaMemcpyDeviceToHost);               \
     cudaMemcpy(b, d_b, streamArraySize, cudaMemcpyDeviceToHost);               \
@@ -367,7 +367,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
     seqCopy<<<threadBlocks, threadsPerBlock>>>(d_a, d_b, d_c, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
@@ -383,7 +383,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                 streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
@@ -398,7 +398,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
     seqAdd<<<threadBlocks, threadsPerBlock>>>(d_a, d_b, d_c, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
@@ -414,7 +414,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                 streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
@@ -431,7 +431,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                   streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
@@ -447,7 +447,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
         d_a, d_b, d_c, scalar, d_idx1, d_idx2, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
@@ -463,7 +463,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                  streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
@@ -479,7 +479,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
         d_a, d_b, d_c, scalar, d_idx1, d_idx2, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
@@ -496,7 +496,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                    d_idx2, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
@@ -512,7 +512,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
         d_a, d_b, d_c, scalar, d_idx1, d_idx2, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
@@ -528,7 +528,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                   streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
@@ -544,7 +544,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
         d_a, d_b, d_c, scalar, d_idx1, d_idx2, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
@@ -561,7 +561,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                               d_idx3, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
@@ -577,7 +577,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                d_idx2, d_idx3, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
@@ -593,7 +593,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                              d_idx3, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
@@ -609,7 +609,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                d_idx2, d_idx3, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
@@ -626,7 +626,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                    streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
@@ -642,7 +642,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                     streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
@@ -658,7 +658,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                   streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
@@ -674,7 +674,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                     streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
@@ -691,7 +691,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
     seqCopy<<<threadBlocks, threadsPerBlock>>>(d_a, d_b, d_c, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
@@ -706,7 +706,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                 streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
@@ -720,7 +720,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
     seqAdd<<<threadBlocks, threadsPerBlock>>>(d_a, d_b, d_c, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
@@ -735,7 +735,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                 streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
@@ -750,7 +750,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                   streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
@@ -765,7 +765,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
         d_a, d_b, d_c, scalar, d_idx1, d_idx2, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
@@ -780,7 +780,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                  streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
@@ -795,7 +795,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
         d_a, d_b, d_c, scalar, d_idx1, d_idx2, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
@@ -810,7 +810,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                    d_idx2, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
@@ -825,7 +825,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
         d_a, d_b, d_c, scalar, d_idx1, d_idx2, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
@@ -840,7 +840,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                   streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
@@ -855,7 +855,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
         d_a, d_b, d_c, scalar, d_idx1, d_idx2, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
@@ -870,7 +870,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                               d_idx3, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
@@ -885,7 +885,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                d_idx2, d_idx3, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
@@ -900,7 +900,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                              d_idx3, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
@@ -915,7 +915,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                d_idx2, d_idx3, streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
@@ -930,7 +930,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                    streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
@@ -945,7 +945,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                     streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
@@ -960,7 +960,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                   streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
@@ -975,7 +975,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                                                     streamArraySize);
     cudaDeviceSynchronize();
     endTime = mySecond();
-    SANITYCHECK;
+    CUDA_SANITYCHECK;
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
     flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
@@ -991,16 +991,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
     return false;
   }
 
-  cudaMemcpy(a, d_a, streamArraySize, cudaMemcpyDeviceToHost);
-  cudaMemcpy(b, d_b, streamArraySize, cudaMemcpyDeviceToHost);
-  cudaMemcpy(c, d_c, streamArraySize, cudaMemcpyDeviceToHost);
-
-  // prevent compiler from optimizing out the benchmarks
-  acc = 0.0;
-  for (ssize_t i = 1; i < streamArraySize; i *= 2) {
-    acc += a[i] + b[i] + c[i];
-  }
-  std::cout << "Compiler sanity check: " << acc << std::endl;
+  CUDA_SANITYCHECK;
 
   return true;
 }
