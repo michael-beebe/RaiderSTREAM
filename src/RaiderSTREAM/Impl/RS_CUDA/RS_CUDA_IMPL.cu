@@ -16,6 +16,23 @@ __global__ void seqCopy(STREAM_TYPE *__restrict__ d_a,
 }
 
 /**************************************************
+ * @brief Copies data from one device array to another.
+ *
+ * @param d_a Source device array.
+ * @param d_b Unused in this function.
+ * @param d_c Destination device array.
+ * @param streamArraySize Size of the stream array.
+ **************************************************/
+__global__ void seqCopy(STREAM_TYPE *__restrict__ d_a,
+                        STREAM_TYPE *__restrict__ d_b,
+                        STREAM_TYPE *__restrict__ d_c,
+                        ssize_t streamArraySize) {
+  ssize_t j = blockIdx.x * blockDim.x + threadIdx.x;
+  if (j < streamArraySize)
+    d_c[j] = d_a[j];
+}
+
+/**************************************************
  * @brief Scales data in a device array.
  *
  * @param d_a Unused in this function.
