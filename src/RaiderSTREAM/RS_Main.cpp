@@ -50,6 +50,10 @@
 #include "Impl/RS_MPI_CUDA/RS_MPI_CUDA.cuh"
 #endif
 
+#ifdef _ENABLE_SHMEM_OMP_TARGET_
+#include "Impl/RS_SHMEM_OMP_TARGET/RS_SHMEM_OMP_TARGET.h"
+#endif
+
 /************************************************************************************/
 void printTiming(const std::string &kernelName, double totalRuntime,
                  const double *MBPS, const double *FLOPS,
@@ -527,6 +531,105 @@ void runBenchMPICUDA(RSOpts *Opts) {
 }
 #endif
 
+#ifdef _ENABLE_SHMEM_OMP_TARGET_
+void runBenchSHMEMOMPTARGET(RSOpts *Opts) {
+  /* Initialize OpenSHMEM */
+  shmem_init();
+  int myRank = shmem_my_pe();
+
+  /* Initialize OpenMP */
+  omp_get_num_threads();
+
+  /* Initialize the RS_SHMEM_OMP object */
+  RS_SHMEM_OMP_TARGET *RS = new RS_SHMEM_OMP_TARGET(*Opts);
+  if (!RS) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RS_SHMEM_OMP OBJECT" << std::endl;
+  }
+
+  /* Allocate Data */
+  double *SHMEM_TIMES =
+      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_MBPS =
+      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_FLOPS =
+      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+
+  double *SHMEM_BYTES =
+      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_FLOATOPS =
+      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  for (int i = 0; i < NUM_KERNELS; i++) {
+    SHMEM_BYTES[i] = Opts->BYTES[i];
+    SHMEM_FLOATOPS[i] = Opts->FLOATOPS[i];
+  }
+
+  if (!RS->allocateData()) {
+    std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_SHMEM_OMP_TARGET"
+              << std::endl;
+    shmem_finalize();
+    delete RS;
+    return;
+  }
+
+  /* Execute the benchmark */
+  if (!RS->execute(SHMEM_TIMES, SHMEM_MBPS, SHMEM_FLOPS, SHMEM_BYTES,
+                   SHMEM_FLOATOPS)) {
+    std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_SHMEM_OMP_TARGET"
+              << std::endl;
+    RS->freeData();
+    shmem_finalize();
+    delete RS;
+    return;
+  }
+
+  /* Free the data */
+  if (!RS->freeData()) {
+    std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_SHMEM_OMP_TARGET"
+              << std::endl;
+    shmem_finalize();
+    delete RS;
+    return;
+  }
+
+  /* Benchmark output */
+  if (myRank == 0) {
+    Opts->printLogo();
+    Opts->printOpts();
+// std::cout << "Symmetric heap size: " << shmem_info_get_heap_size() <<
+// std::endl;
+#pragma omp parallel
+    {
+#pragma omp single
+      {
+        std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads()
+                  << std::endl;
+      }
+    }
+    RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
+    bool headerPrinted = false;
+    for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
+      RSBaseImpl::RSKernelType kernelType =
+          static_cast<RSBaseImpl::RSKernelType>(i);
+      std::string kernelName = BenchTypeTable[i].Notes;
+      printTiming(kernelName, SHMEM_TIMES[i], SHMEM_MBPS, SHMEM_FLOPS,
+                  kernelType, runKernelType, headerPrinted);
+    }
+  }
+
+  shmem_barrier_all();
+
+  /* Free the RS_SHMEM_OMP object, finalize OpenSHMEM */
+  shmem_free(SHMEM_TIMES);
+  shmem_free(SHMEM_MBPS);
+  shmem_free(SHMEM_FLOPS);
+  shmem_free(SHMEM_BYTES);
+  shmem_free(SHMEM_FLOATOPS);
+
+  shmem_finalize();
+  delete RS;
+}
+#endif
+
 /************************************************************************************/
 int main(int argc, char **argv) {
   RSOpts *Opts = new RSOpts();
@@ -563,6 +666,10 @@ int main(int argc, char **argv) {
 
 #ifdef _ENABLE_MPI_CUDA_
   runBenchMPICUDA(Opts);
+#endif
+
+#ifdef _ENABLE_SHMEM_OMP_TARGET_
+  runBenchSHMEMOMPTARGET(Opts);
 #endif
 
   return 0;

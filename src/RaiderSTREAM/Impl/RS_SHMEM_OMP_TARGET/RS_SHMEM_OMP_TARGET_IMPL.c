@@ -1,5 +1,5 @@
 //
-// _RS_OMP_TARGET_IMPL_C_
+// _RS_SHMEM_OMP_TARGET_IMPL_C_
 //
 // Copyright (C) 2022-2024 Texas Tech University
 // All Rights Reserved
@@ -15,7 +15,7 @@
 #define DO_PRAGMA(x) _Pragma(#x)
 #endif
 
-// This is (manually :[) copied to ../RS_SHMEM_OMP_TARGET/RS_SHMEM_OMP_TARGET_IMPL.c.
+// This is (manually :[) copied from ../RS_OMP_TARGET/RS_OMP_TARGET_IMPL.c.
 // If you update this, consider updating that file too.
 #define LOOP_PRAGMA(...) DO_PRAGMA(omp target teams distribute parallel for simd is_device_ptr(__VA_ARGS__))
 
@@ -25,8 +25,8 @@
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void seqCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-             STREAM_TYPE *c, ssize_t streamArraySize) {
+void seqCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+             ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c)
   for (ssize_t j = 0; j < streamArraySize; j++)
     c[j] = a[j];
@@ -39,8 +39,8 @@ void seqCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void seqScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-              STREAM_TYPE *c, ssize_t streamArraySize, STREAM_TYPE scalar) {
+void seqScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+              ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c)
   for (long j = 0; j < streamArraySize; j++)
     b[j] = scalar * c[j];
@@ -52,8 +52,8 @@ void seqScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void seqAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-            STREAM_TYPE *c, ssize_t streamArraySize) {
+void seqAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+            ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c)
   for (long j = 0; j < streamArraySize; j++)
     c[j] = a[j] + b[j];
@@ -66,8 +66,8 @@ void seqAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void seqTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-              STREAM_TYPE *c, ssize_t streamArraySize, STREAM_TYPE scalar) {
+void seqTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+              ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c)
   for (long j = 0; j < streamArraySize; j++)
     a[j] = b[j] + scalar * c[j];
@@ -79,8 +79,8 @@ void seqTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void gatherCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-                STREAM_TYPE *c, ssize_t *idx1, ssize_t streamArraySize) {
+void gatherCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+                ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1)
   for (long j = 0; j < streamArraySize; j++)
     c[j] = a[idx1[j]];
@@ -93,9 +93,8 @@ void gatherCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void gatherScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-                 STREAM_TYPE *c, ssize_t *idx1, ssize_t streamArraySize,
-                 STREAM_TYPE scalar) {
+void gatherScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+                 ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c, idx1)
   for (long j = 0; j < streamArraySize; j++)
     b[j] = scalar * c[idx1[j]];
@@ -107,9 +106,8 @@ void gatherScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void gatherAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-               STREAM_TYPE *c, ssize_t *idx1, ssize_t *idx2,
-               ssize_t streamArraySize) {
+void gatherAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+               ssize_t *idx2, ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
   for (long j = 0; j < streamArraySize; j++)
     c[j] = a[idx1[j]] + b[idx2[j]];
@@ -122,9 +120,8 @@ void gatherAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void gatherTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-                 STREAM_TYPE *c, ssize_t *idx1, ssize_t *idx2,
-                 ssize_t streamArraySize, STREAM_TYPE scalar) {
+void gatherTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+                 ssize_t *idx2, ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
   for (long j = 0; j < streamArraySize; j++)
     a[j] = b[idx1[j]] + scalar * c[idx2[j]];
@@ -136,8 +133,8 @@ void gatherTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void scatterCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-                 STREAM_TYPE *c, ssize_t *idx1, ssize_t streamArraySize) {
+void scatterCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+                 ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1)
   for (long j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[j];
@@ -150,9 +147,8 @@ void scatterCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void scatterScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-                  STREAM_TYPE *c, ssize_t *idx1, ssize_t streamArraySize,
-                  STREAM_TYPE scalar) {
+void scatterScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+                  ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c, idx1)
   for (long j = 0; j < streamArraySize; j++)
     b[idx1[j]] = scalar * c[j];
@@ -164,8 +160,8 @@ void scatterScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void scatterAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-                STREAM_TYPE *c, ssize_t *idx1, ssize_t streamArraySize) {
+void scatterAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+                ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1)
   for (long j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[j] + b[j];
@@ -178,9 +174,8 @@ void scatterAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void scatterTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-                  STREAM_TYPE *c, ssize_t *idx1, ssize_t streamArraySize,
-                  STREAM_TYPE scalar) {
+void scatterTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+                  ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c, idx1)
   for (long j = 0; j < streamArraySize; j++)
     a[idx1[j]] = b[j] + scalar * c[j];
@@ -192,9 +187,8 @@ void scatterTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void sgCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-            STREAM_TYPE *c, ssize_t *idx1, ssize_t *idx2,
-            ssize_t streamArraySize) {
+void sgCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+            ssize_t *idx2, ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
   for (long j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[idx2[j]];
@@ -207,9 +201,8 @@ void sgCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void sgScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-             STREAM_TYPE *c, ssize_t *idx1, ssize_t *idx2,
-             ssize_t streamArraySize, STREAM_TYPE scalar) {
+void sgScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+             ssize_t *idx2, ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
   for (long j = 0; j < streamArraySize; j++)
     b[idx2[j]] = scalar * c[idx1[j]];
@@ -221,9 +214,8 @@ void sgScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void sgAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-           STREAM_TYPE *c, ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
-           ssize_t streamArraySize) {
+void sgAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+           ssize_t *idx2, ssize_t *idx3, ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1, idx2, idx3)
   for (long j = 0; j < streamArraySize; j++)
     c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
@@ -236,9 +228,9 @@ void sgAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void sgTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-             STREAM_TYPE *c, ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
-             ssize_t streamArraySize, STREAM_TYPE scalar) {
+void sgTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
+             ssize_t *idx2, ssize_t *idx3, ssize_t streamArraySize,
+             STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c, idx1, idx2, idx3)
   for (long j = 0; j < streamArraySize; j++)
     a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
@@ -250,8 +242,8 @@ void sgTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void centralCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-                 STREAM_TYPE *c, ssize_t streamArraySize) {
+void centralCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                 ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c)
   for (long j = 0; j < streamArraySize; j++)
     c[0] = a[0];
@@ -264,8 +256,8 @@ void centralCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void centralScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-                  STREAM_TYPE *c, ssize_t streamArraySize, STREAM_TYPE scalar) {
+void centralScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                  ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c)
   for (long j = 0; j < streamArraySize; j++)
     b[0] = scalar * c[0];
@@ -277,8 +269,8 @@ void centralScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param streamArraySize Size of the stream array.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void centralAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-                STREAM_TYPE *c, ssize_t streamArraySize) {
+void centralAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c)
   for (long j = 0; j < streamArraySize; j++)
     c[0] = a[0] + b[0];
@@ -291,8 +283,8 @@ void centralAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
  * @param scalar Scalar value for operations.
  * @return Internally measured benchmark runtime.
  **************************************************/
-void centralTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b,
-                  STREAM_TYPE *c, ssize_t streamArraySize, STREAM_TYPE scalar) {
+void centralTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                  ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c)
   for (long j = 0; j < streamArraySize; j++)
     a[0] = b[0] + scalar * c[0];
