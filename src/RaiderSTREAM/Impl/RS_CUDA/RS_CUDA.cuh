@@ -63,56 +63,56 @@ public:
 
 __global__ void seqCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
                         ssize_t streamArraySize);
-__global__ void seqScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c, double scalar,
+__global__ void seqScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c, STREAM_TYPE scalar,
                          ssize_t streamArraySize);
 __global__ void seqAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
                        ssize_t streamArraySize);
-__global__ void seqTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c, double scalar,
+__global__ void seqTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c, STREAM_TYPE scalar,
                          ssize_t streamArraySize);
 __global__ void gatherCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
                            ssize_t *d_idx1, ssize_t *d_idx2,
                            ssize_t streamArraySize);
 __global__ void gatherScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
-                            double scalar, ssize_t *d_idx1, ssize_t *d_idx2,
+                            STREAM_TYPE scalar, ssize_t *d_idx1, ssize_t *d_idx2,
                             ssize_t streamArraySize);
 __global__ void gatherAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
                           ssize_t *d_idx1, ssize_t *d_idx2,
                           ssize_t streamArraySize);
 __global__ void gatherTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
-                            double scalar, ssize_t *d_idx1, ssize_t *d_idx2,
+                            STREAM_TYPE scalar, ssize_t *d_idx1, ssize_t *d_idx2,
                             ssize_t streamArraySize);
 __global__ void scatterCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
                             ssize_t *d_idx1, ssize_t *d_idx2,
                             ssize_t streamArraySize);
 __global__ void scatterScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
-                             double scalar, ssize_t *d_idx1, ssize_t *d_idx2,
+                             STREAM_TYPE scalar, ssize_t *d_idx1, ssize_t *d_idx2,
                              ssize_t streamArraySize);
 __global__ void scatterAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
                            ssize_t *d_idx1, ssize_t *d_idx2,
                            ssize_t streamArraySize);
 __global__ void scatterTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
-                             double scalar, ssize_t *d_idx1, ssize_t *d_idx2,
+                             STREAM_TYPE scalar, ssize_t *d_idx1, ssize_t *d_idx2,
                              ssize_t streamArraySize);
 __global__ void sgCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c, ssize_t *d_idx1,
                        ssize_t *d_idx2, ssize_t *d_idx3,
                        ssize_t streamArraySize);
-__global__ void sgScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c, double scalar,
+__global__ void sgScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c, STREAM_TYPE scalar,
                         ssize_t *d_idx1, ssize_t *d_idx2, ssize_t *d_idx3,
                         ssize_t streamArraySize);
 __global__ void sgAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c, ssize_t *d_idx1,
                       ssize_t *d_idx2, ssize_t *d_idx3,
                       ssize_t streamArraySize);
-__global__ void sgTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c, double scalar,
+__global__ void sgTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c, STREAM_TYPE scalar,
                         ssize_t *d_idx1, ssize_t *d_idx2, ssize_t *d_idx3,
                         ssize_t streamArraySize);
 __global__ void centralCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
                             ssize_t streamArraySize);
 __global__ void centralScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
-                             double scalar, ssize_t streamArraySize);
+                             STREAM_TYPE scalar, ssize_t streamArraySize);
 __global__ void centralAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
                            ssize_t streamArraySize);
 __global__ void centralTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
-                             double scalar, ssize_t streamArraySize);
+                             STREAM_TYPE scalar, ssize_t streamArraySize);
 
 #endif /* _RS_CUDA_CUH_ */
 #endif /* _ENABLE_CUDA_ */
