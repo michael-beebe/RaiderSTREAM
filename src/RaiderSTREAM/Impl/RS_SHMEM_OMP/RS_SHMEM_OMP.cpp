@@ -12,15 +12,6 @@
 
 #ifdef _RS_SHMEM_OMP_H_
 
-#ifdef _DEBUG_
-#define DBG(x)                                                                 \
-  if (myRank == 0)                                                             \
-    std::cout << "debug " #x " = " << x << std::endl;
-#endif
-#ifndef _DEBUG_
-#define DBG(x)
-#endif
-
 #ifdef _SHMEM_1_5_
 #define SHMEM_BENCHMARK(k, f)                                                  \
   do {                                                                         \
@@ -58,15 +49,11 @@
                             pSync);                                            \
     shmem_double_sum_to_all(totalMbps, &mbps, 1, 0, 0, size, pWrk, pSync);     \
     shmem_double_sum_to_all(totalFlops, &flops, 1, 0, 0, size, pWrk, pSync);   \
-    DBG(runTime);                                                              \
-    DBG(*totalRunTime);                                                        \
-    DBG(TIMES[k]);                                                             \
     if (myRank == 0) {                                                         \
       TIMES[k] = *totalRunTime / size;                                         \
       MBPS[k] = *totalMbps / size;                                             \
       FLOPS[k] = *totalFlops / size;                                           \
     }                                                                          \
-    DBG(TIMES[k]);                                                             \
   } while (false)
 #endif
 
@@ -83,7 +70,7 @@ RS_SHMEM_OMP::RS_SHMEM_OMP(const RSOpts &opts)
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
       numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
-      idx2(nullptr), idx3(nullptr), scalar(3.0) {}
+      idx2(nullptr), idx3(nullptr), scalar(3) {}
 
 RS_SHMEM_OMP::~RS_SHMEM_OMP() {}
 
@@ -118,9 +105,9 @@ bool RS_SHMEM_OMP::allocateData() {
   }
 
   /* Allocate memory for the local chunks in symmetric heap space */
-  a = static_cast<double *>(shmem_malloc(chunkSize * sizeof(double)));
-  b = static_cast<double *>(shmem_malloc(chunkSize * sizeof(double)));
-  c = static_cast<double *>(shmem_malloc(chunkSize * sizeof(double)));
+  a = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  b = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  c = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
   idx1 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   idx2 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   idx3 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));

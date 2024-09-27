@@ -17,7 +17,7 @@
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void seqCopy(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t streamArraySize)
 {
   #pragma omp parallel for
@@ -32,8 +32,8 @@ void seqCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void seqScale(
-  double *a, double *b, double *c,
-  ssize_t streamArraySize, double scalar)
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+  ssize_t streamArraySize, STREAM_TYPE scalar)
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; j++)
@@ -46,7 +46,7 @@ void seqScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void seqAdd(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t streamArraySize)
 {
   #pragma omp parallel for
@@ -61,8 +61,8 @@ void seqAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void seqTriad(
-  double *a, double *b, double *c,
-  ssize_t streamArraySize, double scalar)
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+  ssize_t streamArraySize, STREAM_TYPE scalar)
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; j++)
@@ -75,7 +75,7 @@ void seqTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void gatherCopy(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t streamArraySize)
 {
   #pragma omp parallel for
@@ -90,9 +90,9 @@ void gatherCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void gatherScale(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1,
-  ssize_t streamArraySize, double scalar)
+  ssize_t streamArraySize, STREAM_TYPE scalar)
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; j++)
@@ -105,7 +105,7 @@ void gatherScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void gatherAdd(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
 {
@@ -121,9 +121,9 @@ void gatherAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void gatherTriad(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2,
-  ssize_t streamArraySize, double scalar)
+  ssize_t streamArraySize, STREAM_TYPE scalar)
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; j++)
@@ -136,7 +136,7 @@ void gatherTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void scatterCopy(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1,
   ssize_t streamArraySize)
 {
@@ -152,9 +152,9 @@ void scatterCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void scatterScale(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1,
-  ssize_t streamArraySize, double scalar)
+  ssize_t streamArraySize, STREAM_TYPE scalar)
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; j++)
@@ -167,7 +167,7 @@ void scatterScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void scatterAdd(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1,
   ssize_t streamArraySize)
 {
@@ -183,9 +183,9 @@ void scatterAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void scatterTriad(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1,
-  ssize_t streamArraySize, double scalar)
+  ssize_t streamArraySize, STREAM_TYPE scalar)
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; j++)
@@ -198,7 +198,7 @@ void scatterTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void sgCopy(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2,
   ssize_t streamArraySize)
 {
@@ -214,9 +214,9 @@ void sgCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void sgScale(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2,
-  ssize_t streamArraySize, double scalar)
+  ssize_t streamArraySize, STREAM_TYPE scalar)
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; j++)
@@ -229,7 +229,7 @@ void sgScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void sgAdd(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
   ssize_t streamArraySize)
 {
@@ -245,9 +245,9 @@ void sgAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void sgTriad(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t *idx1, ssize_t *idx2, ssize_t *idx3,
-  ssize_t streamArraySize, double scalar)
+  ssize_t streamArraySize, STREAM_TYPE scalar)
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; j++)
@@ -260,7 +260,7 @@ void sgTriad(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void centralCopy(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t streamArraySize)
 {
   #pragma omp parallel for
@@ -275,8 +275,8 @@ void centralCopy(
  * @param scalar Scalar value for operations.
  **************************************************/
 void centralScale(
-  double *a,double *b, double *c,
-  ssize_t streamArraySize, double scalar)
+  STREAM_TYPE *a,STREAM_TYPE *b, STREAM_TYPE *c,
+  ssize_t streamArraySize, STREAM_TYPE scalar)
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; j++)
@@ -289,7 +289,7 @@ void centralScale(
  * @param streamArraySize Size of the stream array.
  **************************************************/
 void centralAdd(
-  double *a, double *b, double *c,
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
   ssize_t streamArraySize)
 {
   #pragma omp parallel for
@@ -304,8 +304,8 @@ void centralAdd(
  * @param scalar Scalar value for operations.
  **************************************************/
 void centralTriad(
-  double *a, double *b, double *c,
-  ssize_t streamArraySize, double scalar)
+  STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+  ssize_t streamArraySize, STREAM_TYPE scalar)
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; j++)

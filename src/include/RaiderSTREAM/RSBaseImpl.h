@@ -213,15 +213,15 @@ public:
   }
 
   /**
-   * @brief Initializes a double array with a specific value
+   * @brief Initializes a STREAM_TYPE array with a specific value
    *
-   * This function initializes a double array with a specified value.
+   * This function initializes a STREAM_TYPE array with a specified value.
    *
-   * @param array Pointer to the double array to be initialized
+   * @param array Pointer to the STREAM_TYPE array to be initialized
    * @param arrayElements Number of elements in the array
    * @param value Value to initialize the array with
    */
-  void initStreamArray(double *array, ssize_t arrayElements, double value) {
+  void initStreamArray(STREAM_TYPE *array, ssize_t arrayElements, STREAM_TYPE value) {
     for (ssize_t i = 0; i < arrayElements; i++)
       array[i] = value;
   }

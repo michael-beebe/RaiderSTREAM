@@ -40,12 +40,13 @@ RS_OMP_TARGET::~RS_OMP_TARGET() {}
  *         successful, false otherwise.
  **********************************************/
 bool RS_OMP_TARGET::allocateData() {
-  double *a = new double[streamArraySize];
-  double *b = new double[streamArraySize];
-  double *c = new double[streamArraySize];
+  STREAM_TYPE *a = new STREAM_TYPE[streamArraySize];
+  STREAM_TYPE *b = new STREAM_TYPE[streamArraySize];
+  STREAM_TYPE *c = new STREAM_TYPE[streamArraySize];
   ssize_t *idx1 = new ssize_t[streamArraySize];
   ssize_t *idx2 = new ssize_t[streamArraySize];
   ssize_t *idx3 = new ssize_t[streamArraySize];
+
 
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
@@ -172,9 +173,9 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   RSBaseImpl::RSKernelType kType = getKernelType();
 
-  double *a = d_a;
-  double *b = d_b;
-  double *c = d_c;
+  STREAM_TYPE *a = d_a;
+  STREAM_TYPE *b = d_b;
+  STREAM_TYPE *c = d_c;
   ssize_t *idx1 = d_idx1;
   ssize_t *idx2 = d_idx2;
   ssize_t *idx3 = d_idx3;

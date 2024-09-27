@@ -24,13 +24,13 @@ private:
   int lArgc;
   char **lArgv;
   int numPEs;
-  double *a;
-  double *b;
-  double *c;
+  STREAM_TYPE *a;
+  STREAM_TYPE *b;
+  STREAM_TYPE *c;
   ssize_t *idx1;
   ssize_t *idx2;
   ssize_t *idx3;
-  ssize_t scalar;
+  STREAM_TYPE scalar;
 
 public:
   RS_MPI_OMP(const RSOpts& opts);
@@ -48,116 +48,116 @@ public:
 
 extern "C" { // FIXME: these might need to take in a `int numPEs` argument
   void seqCopy(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t chunkSize
   );
 
   void seqScale(
-    double *a, double *b, double *c,
-    ssize_t chunkSize, double scalar
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void seqAdd(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t chunkSize
   );
 
   void seqTriad(
-    double *a, double *b, double *c,
-    ssize_t chunkSize, double scalar
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void gatherCopy(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1,
     ssize_t chunkSize
   );
 
   void gatherScale(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void gatherAdd(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1, ssize_t *IDX2,
     ssize_t chunkSize
   );
 
   void gatherTriad(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void scatterCopy(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1,
     ssize_t chunkSize
   );
 
   void scatterScale(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void scatterAdd(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1,
     ssize_t chunkSize
   );
 
   void scatterTriad(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void sgCopy(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1, ssize_t *IDX2,
     ssize_t chunkSize
   );
 
   void sgScale(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void sgAdd(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
     ssize_t chunkSize
   );
 
   void sgTriad(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
-    ssize_t chunkSize, double scalar
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 
   void centralCopy(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t chunkSize
   );
 
   void centralScale(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t chunkSize,
-    double scalar
+    STREAM_TYPE scalar
   );
 
   void centralAdd(
-    double *a, double *b, double *c,
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     ssize_t chunkSize
   );
 
   void centralTriad(
-    double *a, double *b, double *c,
-    ssize_t chunkSize, double scalar
+    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+    ssize_t chunkSize, STREAM_TYPE scalar
   );
 }
 

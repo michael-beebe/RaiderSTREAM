@@ -23,7 +23,7 @@
     cudaMemcpy(a, d_a, streamArraySize, cudaMemcpyDeviceToHost);               \
     cudaMemcpy(b, d_b, streamArraySize, cudaMemcpyDeviceToHost);               \
     cudaMemcpy(c, d_c, streamArraySize, cudaMemcpyDeviceToHost);               \
-    acc = 0.0;                                                                 \
+    acc = 0;                                                                 \
     for (ssize_t i = 1; i < streamArraySize; i *= 2) {                         \
       acc += a[i] + b[i] + c[i];                                               \
     }                                                                          \
@@ -82,9 +82,9 @@ bool RS_CUDA::allocateData() {
   }
 
   /* Allocate host memory */
-  a = new double[streamArraySize];
-  b = new double[streamArraySize];
-  c = new double[streamArraySize];
+  a = new STREAM_TYPE[streamArraySize];
+  b = new STREAM_TYPE[streamArraySize];
+  c = new STREAM_TYPE[streamArraySize];
   idx1 = new ssize_t[streamArraySize];
   idx2 = new ssize_t[streamArraySize];
   idx3 = new ssize_t[streamArraySize];
@@ -93,7 +93,7 @@ bool RS_CUDA::allocateData() {
     a[i] = b[i] = c[i] = i;
   }
 
-  streamArrayMemSize = streamArraySize * sizeof(double);
+  streamArrayMemSize = streamArraySize * sizeof(STREAM_TYPE);
   idxArrayMemSize = streamArraySize * sizeof(ssize_t);
 
 #ifdef _ARRAYGEN_
@@ -235,7 +235,7 @@ bool RS_CUDA::allocateData() {
     return false;
   }
 
-  double acc = 0.0;
+  STREAM_TYPE acc = 0.0;
   for (ssize_t i = 1; i < streamArraySize; i *= 2) {
     acc += a[i] + b[i] + c[i];
   }
@@ -343,7 +343,7 @@ bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
   double runTime = 0.0;
   double mbps = 0.0;
   double flops = 0.0;
-  double acc;
+  STREAM_TYPE acc;
 
   /* cuda likes to be too smart for its
    * own good, and will delay certain init

@@ -1,5 +1,3 @@
-#define STREAM_TYPE double
-
 /**************************************************
  * @brief Copies data from one device array to another.
  *

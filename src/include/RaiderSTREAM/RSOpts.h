@@ -58,7 +58,7 @@ private:
   int numPEs = 1;
 	int lArgc;
   char **lArgv;
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
 		int threadBlocks;
 		int threadsPerBlock;
 	#endif
@@ -169,7 +169,7 @@ public:
    */
   int getNumPEs() const { return numPEs; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OACC_
     /**
      * @brief Gets the number of work groups.
      *
@@ -215,7 +215,7 @@ public:
    */
 	void setKernelName(std::string name) { kernelName = name; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_OACC_
+	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OACC_
     /**
      * @brief Sets the number of work groups.
      *
@@ -244,30 +244,30 @@ public:
    */
   double BYTES[NUM_KERNELS] = {
 		// Original Kernels
-		static_cast<double>(2 * sizeof(double)), // Copy
-		static_cast<double>(2 * sizeof(double)), // Scale
-		static_cast<double>(3 * sizeof(double)), // Add
-		static_cast<double>(3 * sizeof(double)), // Triad
+		static_cast<double>(2 * sizeof(STREAM_TYPE)), // Copy
+		static_cast<double>(2 * sizeof(STREAM_TYPE)), // Scale
+		static_cast<double>(3 * sizeof(STREAM_TYPE)), // Add
+		static_cast<double>(3 * sizeof(STREAM_TYPE)), // Triad
 		// Gather Kernels
-		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t)))), // GATHER Copy
-		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t)))), // GATHER Scale
-		static_cast<double>(((3 * sizeof(double)) + (2 * sizeof(ssize_t)))), // GATHER Add
-		static_cast<double>(((3 * sizeof(double)) + (2 * sizeof(ssize_t)))), // GATHER Triad
+		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // GATHER Copy
+		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // GATHER Scale
+		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t)))), // GATHER Add
+		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t)))), // GATHER Triad
 		// Scatter Kernels
-		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t)))), // SCATTER Copy
-		static_cast<double>(((2 * sizeof(double)) + (1 * sizeof(ssize_t)))), // SCATTER Scale
-		static_cast<double>(((3 * sizeof(double)) + (1 * sizeof(ssize_t)))), // SCATTER Add
-		static_cast<double>(((3 * sizeof(double)) + (1 * sizeof(ssize_t)))), // SCATTER Triad
+		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // SCATTER Copy
+		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // SCATTER Scale
+		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // SCATTER Add
+		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // SCATTER Triad
 		// Scatter-Gather Kernels
-		static_cast<double>(((2 * sizeof(double)) + (2 * sizeof(ssize_t)))), // SG Copy
-		static_cast<double>(((2 * sizeof(double)) + (2 * sizeof(ssize_t)))), // SG Scale
-		static_cast<double>(((3 * sizeof(double)) + (3 * sizeof(ssize_t)))), // SG Add
-		static_cast<double>(((3 * sizeof(double)) + (3 * sizeof(ssize_t)))), // SG Triad
+		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t)))), // SG Copy
+		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t)))), // SG Scale
+		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t)))), // SG Add
+		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t)))), // SG Triad
 		// Central Kernels
-		static_cast<double>(2 * sizeof(double)), // Central Copy
-		static_cast<double>(2 * sizeof(double)), // Central Scale
-		static_cast<double>(3 * sizeof(double)), // Central Add
-		static_cast<double>(3 * sizeof(double)), // Central Triad
+		static_cast<double>(2 * sizeof(STREAM_TYPE)), // Central Copy
+		static_cast<double>(2 * sizeof(STREAM_TYPE)), // Central Scale
+		static_cast<double>(3 * sizeof(STREAM_TYPE)), // Central Add
+		static_cast<double>(3 * sizeof(STREAM_TYPE)), // Central Triad
   };
 
   /**
