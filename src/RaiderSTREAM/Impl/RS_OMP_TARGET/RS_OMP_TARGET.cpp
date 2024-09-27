@@ -58,14 +58,14 @@ bool RS_OMP_TARGET::allocateData() {
   initRandomIdxArray(idx3, streamArraySize);
 #endif
 
-  size_t data_size = sizeof(double) * streamArraySize;
+  size_t data_size = sizeof(STREAM_TYPE) * streamArraySize;
   size_t idx_size = sizeof(ssize_t) * streamArraySize;
   int host = omp_get_initial_device();
 
   //omp_set_default_allocator(omp_low_lat_mem_alloc);
-  d_a = (double *)omp_target_alloc(data_size, device);
-  d_b = (double *)omp_target_alloc(data_size, device);
-  d_c = (double *)omp_target_alloc(data_size, device);
+  d_a = (STREAM_TYPE *)omp_target_alloc(data_size, device);
+  d_b = (STREAM_TYPE *)omp_target_alloc(data_size, device);
+  d_c = (STREAM_TYPE *)omp_target_alloc(data_size, device);
   d_idx1 = (ssize_t *)omp_target_alloc(idx_size, device);
   d_idx2 = (ssize_t *)omp_target_alloc(idx_size, device);
   d_idx3 = (ssize_t *)omp_target_alloc(idx_size, device);
