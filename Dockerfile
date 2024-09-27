@@ -1,6 +1,6 @@
 FROM --platform=linux/amd64 archlinux:base-devel
 FROM ljmf00/archlinux
-ARG impl=SHMEM_OMP_TARGET
+ARG impl=SHMEM_OACC
 ARG streamtype=double
 ARG streamsize=4096000
 ARG npes=2
