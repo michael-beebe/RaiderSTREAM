@@ -57,12 +57,12 @@ bool RS_OACC::setDevice() {
  **********************************************/
 bool RS_OACC::allocateData() {
 
-  size_t streamMemArraySize = streamArraySize * sizeof(double);
+  size_t streamMemArraySize = streamArraySize * sizeof(STREAM_TYPE);
   size_t idxMemArraySize = streamArraySize * sizeof(ssize_t);
 
-  a = new double[streamArraySize];
-  b = new double[streamArraySize];
-  c = new double[streamArraySize];
+  a = new STREAM_TYPE[streamArraySize];
+  b = new STREAM_TYPE[streamArraySize];
+  c = new STREAM_TYPE[streamArraySize];
   idx1 = new ssize_t[streamArraySize];
   idx2 = new ssize_t[streamArraySize];
   idx3 = new ssize_t[streamArraySize];
@@ -81,7 +81,7 @@ bool RS_OACC::allocateData() {
 #endif
 
   /* a -> d_a */
-  d_a = (double *)acc_malloc(streamMemArraySize);
+  d_a = (STREAM_TYPE *)acc_malloc(streamMemArraySize);
   if (d_a == nullptr) {
     std::cerr << "RS_OACC::allocateData: 'd_a' could not be allocated on device"
               << std::endl;
@@ -96,7 +96,7 @@ bool RS_OACC::allocateData() {
   acc_memcpy_to_device(d_a, a, streamMemArraySize);
 
   /* b -> d_b */
-  d_b = (double *)acc_malloc(streamMemArraySize);
+  d_b = (STREAM_TYPE *)acc_malloc(streamMemArraySize);
   if (d_b == nullptr) {
     std::cerr << "RS_OACC:allocateData: 'd_b' could not be allocated on device";
     free(a);
@@ -111,7 +111,7 @@ bool RS_OACC::allocateData() {
   acc_memcpy_to_device(d_b, b, streamMemArraySize);
 
   /* c -> d_c */
-  d_c = (double *)acc_malloc(streamMemArraySize);
+  d_c = (STREAM_TYPE *)acc_malloc(streamMemArraySize);
   if (d_c == nullptr) {
     std::cerr << "RS_OACC:allocateData: 'd_c' could not be allocated on device";
     free(a);
@@ -186,11 +186,11 @@ bool RS_OACC::allocateData() {
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /* Verify that copying data back and forth works as expected */
-  double *test_a = new double[streamArraySize];
+  STREAM_TYPE *test_a = new STREAM_TYPE[streamArraySize];
   acc_memcpy_from_device(test_a, d_a, streamMemArraySize);
-  double *test_b = new double[streamArraySize];
+  STREAM_TYPE *test_b = new STREAM_TYPE[streamArraySize];
   acc_memcpy_from_device(test_b, d_b, streamMemArraySize);
-  double *test_c = new double[streamArraySize];
+  STREAM_TYPE *test_c = new STREAM_TYPE[streamArraySize];
   acc_memcpy_from_device(test_c, d_c, streamMemArraySize);
   ssize_t *test_idx1 = new ssize_t[streamArraySize];
   acc_memcpy_from_device(test_idx1, d_idx1, idxMemArraySize);

@@ -24,7 +24,7 @@ double mySecond() {
  *
  * @param streamArraySize Size of the stream array.
  **************************************************/
-double seqCopy(double *d_a, double *d_b, double *d_c,
+double seqCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
                ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -42,8 +42,8 @@ double seqCopy(double *d_a, double *d_b, double *d_c,
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-double seqScale(double *d_a, double *d_b, double *d_c,
-                ssize_t streamArraySize, double scalar) {
+double seqScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
+                ssize_t streamArraySize, STREAM_TYPE scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c)
@@ -59,7 +59,7 @@ double seqScale(double *d_a, double *d_b, double *d_c,
  *
  * @param streamArraySize Size of the stream array.
  **************************************************/
-double seqAdd(double *d_a, double *d_b, double *d_c,
+double seqAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
               ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -77,8 +77,8 @@ double seqAdd(double *d_a, double *d_b, double *d_c,
  * @param streamArraySize Size of the stream array.
  * @param scalar Scalar value for operations.
  **************************************************/
-double seqTriad(double *d_a, double *d_b, double *d_c,
-                ssize_t streamArraySize, double scalar) {
+double seqTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
+                ssize_t streamArraySize, STREAM_TYPE scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c)
@@ -95,8 +95,8 @@ double seqTriad(double *d_a, double *d_b, double *d_c,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double gatherCopy(double *d_a, double *d_b,
-                  double *d_c, ssize_t *d_idx1, ssize_t streamArraySize) {
+double gatherCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                  STREAM_TYPE *d_c, ssize_t *d_idx1, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c, d_idx1)
@@ -115,9 +115,9 @@ double gatherCopy(double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double gatherScale(double *d_a, double *d_b,
-                   double *d_c, ssize_t *d_idx1, ssize_t streamArraySize,
-                   double scalar) {
+double gatherScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                   STREAM_TYPE *d_c, ssize_t *d_idx1, ssize_t streamArraySize,
+                   STREAM_TYPE scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c, d_idx1)
@@ -134,8 +134,8 @@ double gatherScale(double *d_a, double *d_b,
  * @param streamArraySize Size of the stream array.
  ************************i**************************/
 
-double gatherAdd(double *d_a, double *d_b,
-                 double *d_c, ssize_t *d_idx1, ssize_t *d_idx2,
+double gatherAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                 STREAM_TYPE *d_c, ssize_t *d_idx1, ssize_t *d_idx2,
                  ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -154,9 +154,9 @@ double gatherAdd(double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double gatherTriad(double *d_a, double *d_b,
-                   double *d_c, ssize_t *d_idx1, ssize_t *d_idx2,
-                   ssize_t streamArraySize, double scalar) {
+double gatherTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                   STREAM_TYPE *d_c, ssize_t *d_idx1, ssize_t *d_idx2,
+                   ssize_t streamArraySize, STREAM_TYPE scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
@@ -173,8 +173,8 @@ double gatherTriad(double *d_a, double *d_b,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double scatterCopy(double *d_a, double *d_b,
-                   double *d_c, ssize_t *d_idx1, ssize_t streamArraySize) {
+double scatterCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                   STREAM_TYPE *d_c, ssize_t *d_idx1, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c, d_idx1)
@@ -192,9 +192,9 @@ double scatterCopy(double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double scatterScale(double *d_a, double *d_b,
-                    double *d_c, ssize_t *d_idx1, ssize_t streamArraySize,
-                    double scalar) {
+double scatterScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                    STREAM_TYPE *d_c, ssize_t *d_idx1, ssize_t streamArraySize,
+                    STREAM_TYPE scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c, d_idx1)
@@ -211,8 +211,8 @@ double scatterScale(double *d_a, double *d_b,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double scatterAdd(double *d_a, double *d_b,
-                  double *d_c, ssize_t *d_idx1, ssize_t streamArraySize) {
+double scatterAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                  STREAM_TYPE *d_c, ssize_t *d_idx1, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c, d_idx1)
@@ -230,9 +230,9 @@ double scatterAdd(double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double scatterTriad(double *d_a, double *d_b,
-                    double *d_c, ssize_t *d_idx1, ssize_t streamArraySize,
-                    double scalar) {
+double scatterTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                    STREAM_TYPE *d_c, ssize_t *d_idx1, ssize_t streamArraySize,
+                    STREAM_TYPE scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c, d_idx1)
@@ -249,7 +249,7 @@ double scatterTriad(double *d_a, double *d_b,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double sgCopy(double *d_a, double *d_b, double *d_c,
+double sgCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
               ssize_t *d_idx1, ssize_t *d_idx2, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
@@ -268,9 +268,9 @@ double sgCopy(double *d_a, double *d_b, double *d_c,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double sgScale(double *d_a, double *d_b, double *d_c,
+double sgScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
                ssize_t *d_idx1, ssize_t *d_idx2, ssize_t streamArraySize,
-               double scalar) {
+               STREAM_TYPE scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c, d_idx1, d_idx2)
@@ -287,7 +287,7 @@ double sgScale(double *d_a, double *d_b, double *d_c,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double sgAdd(double *d_a, double *d_b, double *d_c,
+double sgAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
              ssize_t *d_idx1, ssize_t *d_idx2, ssize_t *d_idx3,
              ssize_t streamArraySize) {
   double start = mySecond();
@@ -307,9 +307,9 @@ double sgAdd(double *d_a, double *d_b, double *d_c,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double sgTriad(double *d_a, double *d_b, double *d_c,
+double sgTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
                ssize_t *d_idx1, ssize_t *d_idx2, ssize_t *d_idx3,
-               ssize_t streamArraySize, double scalar) {
+               ssize_t streamArraySize, STREAM_TYPE scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3)
@@ -326,8 +326,8 @@ double sgTriad(double *d_a, double *d_b, double *d_c,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double centralCopy(double *d_a, double *d_b,
-                   double *d_c, ssize_t streamArraySize) {
+double centralCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                   STREAM_TYPE *d_c, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c)
@@ -345,8 +345,8 @@ double centralCopy(double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double centralScale(double *d_a, double *d_b,
-                    double *d_c, ssize_t streamArraySize, double scalar) {
+double centralScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                    STREAM_TYPE *d_c, ssize_t streamArraySize, STREAM_TYPE scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c)
@@ -363,8 +363,8 @@ double centralScale(double *d_a, double *d_b,
  * @param streamArraySize Size of the stream array.
  **************************************************/
 
-double centralAdd(double *d_a, double *d_b,
-                  double *d_c, ssize_t streamArraySize) {
+double centralAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                  STREAM_TYPE *d_c, ssize_t streamArraySize) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c)
@@ -382,8 +382,8 @@ double centralAdd(double *d_a, double *d_b,
  * @param scalar Scalar value for operations.
  **************************************************/
 
-double centralTriad(double *d_a, double *d_b,
-                    double *d_c, ssize_t streamArraySize, double scalar) {
+double centralTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                    STREAM_TYPE *d_c, ssize_t streamArraySize, STREAM_TYPE scalar) {
   double start = mySecond();
 #pragma acc parallel loop \
     deviceptr(d_a, d_b, d_c)
