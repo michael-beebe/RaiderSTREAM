@@ -202,21 +202,6 @@ void runBenchOACC(RSOpts *Opts) {
   /* Print the timing */
   Opts->printLogo();
   Opts->printOpts();
-  // #pragma acc parallel
-  // {
-  //   int gang_num = acc_get_gang_num();
-  //   int gang_size = acc_get_gang_size();
-  //   int worker_num = acc_get_worker_num();
-  //   int vector_length = acc_get_vector_length();
-
-  //   #pragma acc serial
-  //   {
-  //     std::cout << "Gang number: " << gang_num << std::endl;
-  //     std::cout << "Gang size: " << gang_size << std::endl;
-  //     std::cout << "Worker number: " << worker_num << std::endl;
-  //     std::cout << "Vector length: " << vector_length << std::endl;
-  //   }
-  // }
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   bool headerPrinted = false;
   for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {

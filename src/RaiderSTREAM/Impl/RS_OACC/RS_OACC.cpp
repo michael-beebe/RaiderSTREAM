@@ -11,7 +11,6 @@
 #include "RS_OACC.h"
 
 #ifdef _RS_OACC_H_
-#define _DEBUG_
 
 #include <stdio.h>
 
@@ -37,11 +36,10 @@ RS_OACC::~RS_OACC() {}
  * @brief Set and echo info about the current device.
  **************************************************/
 bool RS_OACC::setDevice() {
-  // std::cout <<"OpenACC version: "<< _OPENACC <<std::endl;
+  std::cout <<"OpenACC version: "<< _OPENACC <<std::endl;
   acc_device_t device = acc_get_device_type();
   std::cout << "The device type is: " << device << std::endl;
-  acc_set_device_type(device); // Device type is nvidia by default, must be
-                               // changed if not running on a nvidia device
+  acc_set_device_type(device);
   acc_init(device);
   std::cout << "The name of the device we are using is: "
             << acc_get_property_string(0, device, acc_property_name)
@@ -59,8 +57,8 @@ bool RS_OACC::setDevice() {
  **********************************************/
 bool RS_OACC::allocateData() {
 
-  ssize_t streamMemArraySize = streamArraySize * sizeof(double);
-  ssize_t idxMemArraySize = streamArraySize * sizeof(ssize_t);
+  size_t streamMemArraySize = streamArraySize * sizeof(double);
+  size_t idxMemArraySize = streamArraySize * sizeof(ssize_t);
 
   a = new double[streamArraySize];
   b = new double[streamArraySize];
@@ -68,6 +66,9 @@ bool RS_OACC::allocateData() {
   idx1 = new ssize_t[streamArraySize];
   idx2 = new ssize_t[streamArraySize];
   idx3 = new ssize_t[streamArraySize];
+  initStreamArray(a, streamArraySize, 0.0);
+  initStreamArray(b, streamArraySize, 1.0);
+  initStreamArray(c, streamArraySize, 2.0);
 
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
@@ -182,20 +183,20 @@ bool RS_OACC::allocateData() {
   }
   acc_memcpy_to_device(d_idx3, idx3, idxMemArraySize);
 
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /* Verify that copying data back and forth works as expected */
   double *test_a = new double[streamArraySize];
-  double *test_b = new double[streamArraySize];
-  double *test_c = new double[streamArraySize];
-  ssize_t *test_idx1 = new ssize_t[streamArraySize];
-  ssize_t *test_idx2 = new ssize_t[streamArraySize];
-  ssize_t *test_idx3 = new ssize_t[streamArraySize];
-
   acc_memcpy_from_device(test_a, d_a, streamMemArraySize);
+  double *test_b = new double[streamArraySize];
   acc_memcpy_from_device(test_b, d_b, streamMemArraySize);
+  double *test_c = new double[streamArraySize];
   acc_memcpy_from_device(test_c, d_c, streamMemArraySize);
+  ssize_t *test_idx1 = new ssize_t[streamArraySize];
   acc_memcpy_from_device(test_idx1, d_idx1, idxMemArraySize);
+  ssize_t *test_idx2 = new ssize_t[streamArraySize];
   acc_memcpy_from_device(test_idx2, d_idx2, idxMemArraySize);
+  ssize_t *test_idx3 = new ssize_t[streamArraySize];
   acc_memcpy_from_device(test_idx3, d_idx3, idxMemArraySize);
 
   bool success = true;
@@ -240,6 +241,9 @@ bool RS_OACC::allocateData() {
   delete[] test_a;
   delete[] test_b;
   delete[] test_c;
+  delete[] test_idx1;
+  delete[] test_idx2;
+  delete[] test_idx3;
   if (!success) {
     free(a);
     free(b);
