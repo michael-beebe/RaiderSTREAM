@@ -62,31 +62,35 @@ Sensible defaults for each parallelization backend can be found in [build.sh](/b
 
 Backends are not additive. Exactly one backend must be enabled.
 
-| Flag                | Behavior                                                                                                                                                                  |
-|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `STREAM_TYPE`       | Data type used in benchmarks. Accepts anything that:<br>multiplies by itself, converts from a positive integer,<br>adds to itself, and is copyable. Defaults to 'double'. |
-| *Backends*          | Exactly one backend must be enabled.                                                                                                                                      |
-| `ENABLE_OMP`        | If nonempty, use OpenMP for parallelization.                                                                                                                              |
-| `ENABLE_MPI_OMP`    | If nonempty, use MPI for communication and OpenMP for parallelization.                                                                                                    |
-| `ENABLE_SHMEM_OMP`  | If nonempty, use OpenSHMEM for communication and OpenMP for parallelization.<br>One of either `SHMEM_1_5` or `SHMEM_1_4` must also be set.                                |
-| `ENABLE_CUDA`       | If nonempty, use CUDA to run benchmarks on an accelerator.                                                                                                                |
-| `ENABLE_OMP_TARGET` | If nonempty, use OpenMP to run benchmarks on an accelerator.                                                                                                              |
-| `ENABLE_OACC`       | If nonempty, use OpenACC to run benchmarks on an accelerator.                                                                                                             |
-| *Other*             |                                                                                                                                                                           |
-| `SHMEM_1_5`         | Use OpenSHMEM 1.5 routines. Ignored on non-OpenSHMEM backends.                                                                                                            |
-| `SHMEM_1_4`         | Use OpenSHMEM 1.4 routines. Ignored on non-OpenSHMEM backends.                                                                                                            |
+| Flag                      | Behavior                                                                                                                                                                  |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `STREAM_TYPE`             | Data type used in benchmarks. Accepts anything that:<br>multiplies by itself, converts from a positive integer,<br>adds to itself, and is copyable. Defaults to 'double'. |
+| *Backends*                | Exactly one backend must be enabled.                                                                                                                                      |
+| `ENABLE_OMP`              | If nonempty, use OpenMP for parallelization.                                                                                                                              |
+| `ENABLE_MPI_OMP`          | If nonempty, use MPI for communication and OpenMP for parallelization.                                                                                                    |
+| `ENABLE_SHMEM_OMP`        | If nonempty, use OpenSHMEM for communication and OpenMP for parallelization.<br>One of either `SHMEM_1_5` or `SHMEM_1_4` must also be set.                                |
+| `ENABLE_CUDA`             | If nonempty, use CUDA to run benchmarks on an accelerator.                                                                                                                |
+| `ENABLE_OMP_TARGET`       | If nonempty, use OpenMP to run benchmarks on an accelerator.                                                                                                              |
+| `ENABLE_OACC`             | If nonempty, use OpenACC to run benchmarks on an accelerator.                                                                                                             |
+| `ENABLE_SHMEM_CUDA`       | If nonempty, use OpenSHMEM for communication and CUDA for benchmark offloading.<br> One of either `SHMEM_1_5` or `SHMEM_1_4` must be set.                                 |
+| `ENABLE_SHMEM_OPENACC`    | If nonempty, use OpenSHMEM for communication and OpenACC for benchmark offloading.<br> One of either `SHMEM_1_5` or `SHMEM_1_4` must be set.                              |
+| `ENABLE_SHMEM_OMP_TARGET` | If nonempty, use OpenSHMEM for communication and OpenMP for benchmark offloading.<br> One of either `SHMEM_1_5` or `SHMEM_1_4` must be set.                                 |
+| *Other*                   |                                                                                                                                                                           |
+| `SHMEM_1_5`               | Use OpenSHMEM 1.5 routines. Ignored on non-OpenSHMEM backends.                                                                                                            |
+| `SHMEM_1_4`               | Use OpenSHMEM 1.4 routines. Ignored on non-OpenSHMEM backends.                                                                                                            |
 
 ### Run-time Flags
 Sensible defaults for most backends can be found in [run.sh](/run.sh);
 
-| Flag          | Purpose                                           | Requires      |
-|---------------|---------------------------------------------------|---------------|
-| -s, --size    | Size of data arrays. See [Run Rules](#run-rules). |               |
-| -l, --list    | List all kernels and access patterns.             |               |
-| -k, --kernel  | Select kernel and access pattern to be run.       |               |
-| -np, --pes    | Set amount of PEs.                                |               |
-| -t, --threads | Set threads per block.                            | `ENABLE_CUDA` |
-| -b, --blocks  | Set blocks.                                       | `ENABLE_CUDA` |
+| Flag          | Purpose                                           | Requires                                            |
+|---------------|---------------------------------------------------|-----------------------------------------------------|
+| -s, --size    | Size of data arrays. See [Run Rules](#run-rules). |                                                     |
+| -l, --list    | List all kernels and access patterns.             |                                                     |
+| -k, --kernel  | Select kernel and access pattern to be run.       |                                                     |
+| -np, --pes    | Set amount of PEs.                                |                                                     |
+| -t, --threads | Set threads per block.                            | `ENABLE_[SHMEM_]CUDA`                               |
+| -b, --blocks  | Set blocks.                                       | `ENABLE_[SHMEM_]CUDA`                               |
+| -d, --device  | Set device ID to use when offloading.             | `ENABLE_[SHMEM_]CUDA || ENABLE_[SHMEM_]_OMP_TARGET` |
 
 ## Run Rules<a id="run_rules"></a>
 STREAM is intended to measure the bandwidth from main memory. However, it can be used to measure cache bandwidth as well by the adjusting the STREAM array size such that the memory needed to allocate the arrays can fit in the cache level of interest. The general rule for STREAM array size is that each array must be at least 4x the size of the sum of all the lastlevel caches, or 1 million elements – whichever is larger
