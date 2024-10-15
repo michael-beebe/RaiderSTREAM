@@ -83,7 +83,7 @@ RS_SHMEM_OMP_TARGET::RS_SHMEM_OMP_TARGET(const RSOpts &opts)
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
       numPEs(opts.getNumPEs()), d_a(nullptr), d_b(nullptr), d_idx1(nullptr),
-      d_idx2(nullptr), d_idx3(nullptr), scalar(3) {}
+      d_idx2(nullptr), d_idx3(nullptr), scalar(3), deviceId(opts.getDeviceId()) {}
 
 RS_SHMEM_OMP_TARGET::~RS_SHMEM_OMP_TARGET() {}
 
@@ -142,23 +142,23 @@ bool RS_SHMEM_OMP_TARGET::allocateData() {
 
   size_t data_size = sizeof(STREAM_TYPE) * chunkSize;
   size_t idx_size = sizeof(ssize_t) * chunkSize;
+  std::cout << "device: " << deviceId << std::endl;
   int host = omp_get_initial_device();
-  int device = omp_get_default_device();
 
-  //omp_set_default_allocator(omp_low_lat_mem_alloc);
-  d_a = (STREAM_TYPE *)omp_target_alloc(data_size, device);
-  d_b = (STREAM_TYPE *)omp_target_alloc(data_size, device);
-  d_c = (STREAM_TYPE *)omp_target_alloc(data_size, device);
-  d_idx1 = (ssize_t *)omp_target_alloc(idx_size, device);
-  d_idx2 = (ssize_t *)omp_target_alloc(idx_size, device);
-  d_idx3 = (ssize_t *)omp_target_alloc(idx_size, device);
+  omp_set_default_device(deviceId);
+  d_a = (STREAM_TYPE *)omp_target_alloc(data_size, deviceId);
+  d_b = (STREAM_TYPE *)omp_target_alloc(data_size, deviceId);
+  d_c = (STREAM_TYPE *)omp_target_alloc(data_size, deviceId);
+  d_idx1 = (ssize_t *)omp_target_alloc(idx_size, deviceId);
+  d_idx2 = (ssize_t *)omp_target_alloc(idx_size, deviceId);
+  d_idx3 = (ssize_t *)omp_target_alloc(idx_size, deviceId);
 
-  omp_target_memcpy(d_a, a, data_size, 0, 0, device, host);
-  omp_target_memcpy(d_b, b, data_size, 0, 0, device, host);
-  omp_target_memcpy(d_c, c, data_size, 0, 0, device, host);
-  omp_target_memcpy(d_idx1, idx1, idx_size, 0, 0, device, host);
-  omp_target_memcpy(d_idx2, idx2, idx_size, 0, 0, device, host);
-  omp_target_memcpy(d_idx3, idx3, idx_size, 0, 0, device, host);
+  omp_target_memcpy(d_a, a, data_size, 0, 0, deviceId, host);
+  omp_target_memcpy(d_b, b, data_size, 0, 0, deviceId, host);
+  omp_target_memcpy(d_c, c, data_size, 0, 0, deviceId, host);
+  omp_target_memcpy(d_idx1, idx1, idx_size, 0, 0, deviceId, host);
+  omp_target_memcpy(d_idx2, idx2, idx_size, 0, 0, deviceId, host);
+  omp_target_memcpy(d_idx3, idx3, idx_size, 0, 0, deviceId, host);
 
 #ifdef _DEBUG_
   if (myRank == 0) {

@@ -97,7 +97,7 @@ RS_SHMEM_CUDA::RS_SHMEM_CUDA(const RSOpts &opts)
       d_c(nullptr), idx1(nullptr), idx2(nullptr), idx3(nullptr),
       d_idx1(nullptr), d_idx2(nullptr), d_idx3(nullptr), scalar(3.0),
       threadBlocks(opts.getThreadBlocks()),
-      threadsPerBlock(opts.getThreadsPerBlocks()) {}
+      threadsPerBlock(opts.getThreadsPerBlocks()), deviceId(opts.getDeviceId()) {}
 
 RS_SHMEM_CUDA::~RS_SHMEM_CUDA() {}
 
@@ -121,6 +121,11 @@ bool RS_SHMEM_CUDA::printCudaDeviceProps() {
  *         successful, false otherwise.
  **********************************************/
 bool RS_SHMEM_CUDA::allocateData() {
+  if(cudaSetDevice(deviceId) != cudaSuccess) {
+    std::cout << "RS_SHMEM_CUDA::allocateData() - ERROR: failed setting CUDA device to "
+              << deviceId
+              << std::endl;
+  }
   int myRank = shmem_my_pe(); /* Current rank */
   int size = shmem_n_pes();   /* Number of shmem ranks */
 

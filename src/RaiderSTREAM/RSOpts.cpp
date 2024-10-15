@@ -11,6 +11,13 @@
 #include "RaiderSTREAM/RSOpts.h"
 #include <algorithm>
 
+#ifdef _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
+#include <cuda.h>
+#endif
+#ifdef _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+#include <omp.h>
+#endif
+
 // The below macros are ONLY used so we
 // can get the STREAM_TYPE as a string,
 // for the options printout. Please refactor
@@ -47,7 +54,14 @@ BenchType BenchTypeTable[] = {
 /* RSOpts Constructor */
 RSOpts::RSOpts()
     : isHelp(false), isList(false), streamArraySize(1000000), numPEs(1),
-      lArgc(0), lArgv(nullptr) {}
+      lArgc(0), lArgv(nullptr)
+#ifdef _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
+      deviceId(0)
+#endif
+#ifdef _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+      deviceId(omp.get_default_device())
+#endif
+{}
 
 /* RSOpts Destructor */
 RSOpts::~RSOpts() {}
@@ -142,6 +156,16 @@ bool RSOpts::parseOpts(int argc, char **argv) {
         return false;
       }
       setThreadsPerBlocks(atoi(argv[i + 1]));
+      i++;
+    }
+#endif
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+    else if ((s == "-d") || (s == "--device")) {
+      if (i + 1 > (argc - 1)) {
+        std::cout << "Error: --device requires an argument" << std::endl;
+        return false;
+      }
+      setDeviceId(atoi(argv[i + 1]));
       i++;
     }
 #endif

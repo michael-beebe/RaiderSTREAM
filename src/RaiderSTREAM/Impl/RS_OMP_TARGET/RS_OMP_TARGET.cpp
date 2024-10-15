@@ -28,7 +28,7 @@ RS_OMP_TARGET::RS_OMP_TARGET(const RSOpts &opts)
       threadsPerTeam(opts.getThreadsPerBlocks()), lArgc(0), lArgv(nullptr),
       d_a(nullptr), d_b(nullptr), d_c(nullptr), d_idx1(nullptr),
       d_idx2(nullptr), d_idx3(nullptr), scalar(3.0),
-      device(omp_get_default_device()) {}
+      device(opts.getDeviceId()) {}
 
 RS_OMP_TARGET::~RS_OMP_TARGET() {}
 
@@ -62,7 +62,7 @@ bool RS_OMP_TARGET::allocateData() {
   size_t idx_size = sizeof(ssize_t) * streamArraySize;
   int host = omp_get_initial_device();
 
-  //omp_set_default_allocator(omp_low_lat_mem_alloc);
+  omp_set_default_device(device);
   d_a = (double *)omp_target_alloc(data_size, device);
   d_b = (double *)omp_target_alloc(data_size, device);
   d_c = (double *)omp_target_alloc(data_size, device);

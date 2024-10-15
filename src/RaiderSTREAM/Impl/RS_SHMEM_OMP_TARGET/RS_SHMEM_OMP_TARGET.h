@@ -31,6 +31,7 @@ private:
   ssize_t *d_idx2;
   ssize_t *d_idx3;
   STREAM_TYPE scalar;
+  int deviceId;
 
 public:
   RS_SHMEM_OMP_TARGET(const RSOpts& opts);

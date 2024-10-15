@@ -1,12 +1,12 @@
 FROM --platform=linux/amd64 archlinux:base-devel
 FROM ljmf00/archlinux
-ARG impl=SHMEM_OACC
+ARG impl=SHMEM_OMP_TARGET
 ARG streamtype=double
 ARG streamsize=4096000
-ARG npes=2
+ARG npes=1
 ARG ompnumthreads=2
 ARG kernel=all
-ARG launcher="mpiexec.hydra -n 2"
+ARG launcher="mpiexec.hydra -n 1"
 ARG cc=oshcc
 ARG cxx=oshc++
 ARG cflags
@@ -86,7 +86,7 @@ RUN CC=${cc} CXX=${cxx} VERBOSE=1 cmake \
 RUN VERBOSE=1 make -j$(nproc)
 ENV PATH=$PATH:/scratch/RaiderSTREAM/build/bin
 
-# RUN yes | pacman -S openmpi
+RUN yes | pacman -S gdb icu
 
 ENV OMP_NUM_THREADS=${ompnumthreads}
 ENV STREAMSIZE=${streamsize}
@@ -94,6 +94,5 @@ ENV NPES=${npes}
 ENV KERNEL=${kernel}
 ENV LAUNCHER=${launcher}
 ENV RUNFLAGS=${runflags}
-ENV OMP_TARGET_OFFLOAD=MANDATORY
 # it's docker, so there's no* risk to host fs from root
-ENTRYPOINT $LAUNCHER /scratch/RaiderSTREAM/build/bin/raiderstream -s $STREAMSIZE -np $NPES -k $KERNEL $RUNFLAGS
+ENTRYPOINT $LAUNCHER $(which gdb) --args /scratch/RaiderSTREAM/build/bin/raiderstream -s $STREAMSIZE -np $NPES -k $KERNEL $RUNFLAGS

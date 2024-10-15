@@ -18,6 +18,7 @@
 #include <getopt.h>
 #include <string>
 #include <iomanip>
+#include <climits>
 
 
 #include "RSBaseImpl.h"
@@ -61,6 +62,9 @@ private:
 	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
 		int threadBlocks;
 		int threadsPerBlock;
+	#endif
+	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+		int deviceId = 0;
 	#endif
 
   /**
@@ -187,6 +191,14 @@ public:
      */
 		int getThreadsPerBlocks() const { return threadsPerBlock; }
 	#endif
+	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+    /**
+     *  @brief Gets the device ID the user specified.
+     *
+     *  @returns The specified device ID, or 0.
+     */
+    int getDeviceId() const { return deviceId; }
+  #endif
 
 /****************************************************
  * 									 Setters
@@ -233,6 +245,14 @@ public:
      */
 		void setThreadsPerBlocks(int threads) { threadsPerBlock = threads; }
 	#endif
+	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+    /**
+     *  @brief Gets the device ID the user specified.
+     *
+     *  @returns The specified device ID, or INT_MAX if the id was not specified.
+     */
+    void setDeviceId(int id) { deviceId = id; }
+  #endif
 
 /****************************************************
  * 						Arrays used in kernels

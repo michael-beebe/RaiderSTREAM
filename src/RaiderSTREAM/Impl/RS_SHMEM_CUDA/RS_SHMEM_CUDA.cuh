@@ -46,6 +46,7 @@ private:
   ssize_t idxArrayMemSize;
   int threadBlocks;
   int threadsPerBlock;
+  int deviceId;
 
 public:
   RS_SHMEM_CUDA(const RSOpts &opts);
