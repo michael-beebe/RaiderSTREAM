@@ -12,15 +12,6 @@
 
 #ifdef _RS_SHMEM_OACC_H_
 
-#ifdef _DEBUG_
-#define DBG(x)                                                                 \
-  if (myRank == 0)                                                             \
-    std::cout << "debug " #x " = " << x << std::endl;
-#endif
-#ifndef _DEBUG_
-#define DBG(x)
-#endif
-
 #ifdef _SHMEM_1_5_
 #define SHMEM_BENCHMARK(k, f)                                                  \
   do {                                                                         \
@@ -58,15 +49,11 @@
                             pSync);                                            \
     shmem_double_sum_to_all(totalMbps, &mbps, 1, 0, 0, size, pWrk, pSync);     \
     shmem_double_sum_to_all(totalFlops, &flops, 1, 0, 0, size, pWrk, pSync);   \
-    DBG(runTime);                                                              \
-    DBG(*totalRunTime);                                                        \
-    DBG(TIMES[k]);                                                             \
     if (myRank == 0) {                                                         \
       TIMES[k] = *totalRunTime / size;                                         \
       MBPS[k] = *totalMbps / size;                                             \
       FLOPS[k] = *totalFlops / size;                                           \
     }                                                                          \
-    DBG(TIMES[k]);                                                             \
   } while (false)
 #endif
 
