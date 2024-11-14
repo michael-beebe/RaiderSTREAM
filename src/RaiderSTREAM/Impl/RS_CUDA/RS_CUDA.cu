@@ -46,7 +46,7 @@ RS_CUDA::RS_CUDA(const RSOpts &opts)
       d_c(nullptr), idx1(nullptr), idx2(nullptr), idx3(nullptr),
       d_idx1(nullptr), d_idx2(nullptr), d_idx3(nullptr), scalar(3.0),
       threadBlocks(opts.getThreadBlocks()),
-      threadsPerBlock(opts.getThreadsPerBlocks()) {}
+      threadsPerBlock(opts.getThreadsPerBlocks()), deviceId(opts.getDeviceId()) {}
 
 RS_CUDA::~RS_CUDA() {}
 
@@ -70,6 +70,11 @@ bool RS_CUDA::printCudaDeviceProps() {
  *         successful, false otherwise.
  **********************************************/
 bool RS_CUDA::allocateData() {
+  if(cudaSetDevice(deviceId) != cudaSuccess) {
+    std::cout << "RS_CUDA::allocateData() - ERROR: failed setting CUDA device to "
+              << deviceId
+              << std::endl;
+  }
   if (threadBlocks <= 0) {
     std::cout << "RS_CUDA::AllocateData: threadBlocks must be greater than 0"
               << std::endl;
