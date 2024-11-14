@@ -12,20 +12,20 @@ cd build
 # --- Configure the project with CMake
 #-----------------------------------------
 # --- OpenMP ---
-cmake \
-  -DENABLE_OMP=ON \
-  -DCMAKE_C_FLAGS="-fopenmp" \
-  -DCMAKE_CXX_FLAGS="-fopenmp" \
-  ../
+#cmake \
+#  -DENABLE_OMP=ON \
+#  -DCMAKE_C_FLAGS="-fopenmp" \
+#  -DCMAKE_CXX_FLAGS="-fopenmp" \
+#  ../
 
 # --- OpenACC ---
-# cmake \
-#   -DENABLE_OACC=ON \
-#   -DCMAKE_C_COMPILER=`which nvc` \
-#   -DCMAKE_CXX_COMPILER=`which nvc++` \
-#   -DCMAKE_C_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
-#   -DCMAKE_CXX_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
-#   ../
+ cmake \
+   -DENABLE_OACC=ON \
+   -DCMAKE_C_COMPILER=`which nvc` \
+   -DCMAKE_CXX_COMPILER=`which nvc++` \
+   -DCMAKE_C_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
+   -DCMAKE_CXX_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
+   ../
 
 # --- OpenMP + Offload ---
 # cmake \

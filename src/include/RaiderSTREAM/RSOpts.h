@@ -59,6 +59,7 @@ private:
   int numPEs = 1;
 	int lArgc;
   char **lArgv;
+
 	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
 		int threadBlocks;
 		int threadsPerBlock;
@@ -173,6 +174,7 @@ public:
    */
   int getNumPEs() const { return numPEs; }
 
+  // FIXME: do we need this for OpenACC? I think not
 	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OACC_
     /**
      * @brief Gets the number of work groups.
@@ -182,6 +184,7 @@ public:
      * @returns The number of working groups.
      */
 		int getThreadBlocks() const { return threadBlocks; }
+  
     /**
      * @brief Gets the number of workers per work group.
      *
