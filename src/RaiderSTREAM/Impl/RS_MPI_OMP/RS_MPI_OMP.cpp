@@ -26,7 +26,7 @@ RS_MPI_OMP::RS_MPI_OMP(const RSOpts &opts)
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
       numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
-      idx2(nullptr), idx3(nullptr), scalar(3.0) {}
+      idx2(nullptr), idx3(nullptr), scalar(3) {}
 
 RS_MPI_OMP::~RS_MPI_OMP() {}
 
@@ -61,9 +61,9 @@ bool RS_MPI_OMP::allocateData() {
   }
 
   /* Allocate memory for the local chunks in local heap space */
-  MPI_Alloc_mem(chunkSize * sizeof(double), MPI_INFO_NULL, &a);
-  MPI_Alloc_mem(chunkSize * sizeof(double), MPI_INFO_NULL, &b);
-  MPI_Alloc_mem(chunkSize * sizeof(double), MPI_INFO_NULL, &c);
+  MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &a);
+  MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &b);
+  MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &c);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx1);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx2);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx3);

@@ -31,6 +31,18 @@ if (ENABLE_SHMEM_OMP)
   add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_SHMEM_OBJS>)
 endif()
 
+if (ENABLE_SHMEM_OMP_TARGET)
+  add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_SHMEM_OMP_TARGET_OBJS>)
+endif()
+
+if (ENABLE_SHMEM_CUDA)
+  add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_SHMEM_CUDA_OBJS>)
+endif()
+
+if (ENABLE_SHMEM_OACC)
+  add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_SHMEM_OACC_OBJS>)
+endif()
+
 if (ENABLE_CUDA)
   add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_CUDA_OBJS>)
 endif()

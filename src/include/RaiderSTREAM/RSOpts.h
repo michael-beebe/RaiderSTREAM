@@ -18,6 +18,7 @@
 #include <getopt.h>
 #include <string>
 #include <iomanip>
+#include <climits>
 
 
 #include "RSBaseImpl.h"
@@ -58,9 +59,13 @@ private:
   int numPEs = 1;
 	int lArgc;
   char **lArgv;
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+
+	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
 		int threadBlocks;
 		int threadsPerBlock;
+	#endif
+	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+		int deviceId = 0;
 	#endif
 
   /**
@@ -169,7 +174,8 @@ public:
    */
   int getNumPEs() const { return numPEs; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+  // FIXME: do we need this for OpenACC? I think not
+	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OACC_
     /**
      * @brief Gets the number of work groups.
      *
@@ -178,6 +184,7 @@ public:
      * @returns The number of working groups.
      */
 		int getThreadBlocks() const { return threadBlocks; }
+  
     /**
      * @brief Gets the number of workers per work group.
      *
@@ -187,6 +194,14 @@ public:
      */
 		int getThreadsPerBlocks() const { return threadsPerBlock; }
 	#endif
+	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+    /**
+     *  @brief Gets the device ID the user specified.
+     *
+     *  @returns The specified device ID, or 0.
+     */
+    int getDeviceId() const { return deviceId; }
+  #endif
 
 /****************************************************
  * 									 Setters
@@ -215,7 +230,7 @@ public:
    */
 	void setKernelName(std::string name) { kernelName = name; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
+	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OACC_
     /**
      * @brief Sets the number of work groups.
      *
@@ -233,6 +248,14 @@ public:
      */
 		void setThreadsPerBlocks(int threads) { threadsPerBlock = threads; }
 	#endif
+	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+    /**
+     *  @brief Gets the device ID the user specified.
+     *
+     *  @returns The specified device ID, or INT_MAX if the id was not specified.
+     */
+    void setDeviceId(int id) { deviceId = id; }
+  #endif
 
 /****************************************************
  * 						Arrays used in kernels

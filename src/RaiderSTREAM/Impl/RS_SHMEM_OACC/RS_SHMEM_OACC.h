@@ -1,5 +1,5 @@
 //
-// _RS_MPI_OMP_H_
+// _RS_SHMEM_OACC_H_
 //
 // Copyright (C) 2022-2024 Texas Tech University
 // All Rights Reserved
@@ -8,37 +8,37 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#ifdef _ENABLE_MPI_OMP_
-#ifndef _RS_MPI_OMP_H_
-#define _RS_MPI_OMP_H_
+#ifdef _ENABLE_SHMEM_OACC_
+#ifndef _RS_SHMEM_OACC_H_
+#define _RS_SHMEM_OACC_H_
 
-#include <mpi.h>
-#include <omp.h>
+#include <shmem.h>
+#include <openacc.h>
 
 #include "RaiderSTREAM/RaiderSTREAM.h"
 
-class RS_MPI_OMP : public RSBaseImpl {
+class RS_SHMEM_OACC: public RSBaseImpl {
 private:
   std::string kernelName;
   ssize_t streamArraySize;
   int lArgc;
   char **lArgv;
   int numPEs;
-  STREAM_TYPE *a;
-  STREAM_TYPE *b;
-  STREAM_TYPE *c;
-  ssize_t *idx1;
-  ssize_t *idx2;
-  ssize_t *idx3;
+  STREAM_TYPE *d_a;
+  STREAM_TYPE *d_b;
+  STREAM_TYPE *d_c;
+  ssize_t *d_idx1;
+  ssize_t *d_idx2;
+  ssize_t *d_idx3;
   STREAM_TYPE scalar;
 
 public:
-  RS_MPI_OMP(const RSOpts& opts);
+  RS_SHMEM_OACC(const RSOpts& opts);
 
-  ~RS_MPI_OMP();
+  ~RS_SHMEM_OACC();
 
   virtual bool allocateData() override;
-
+  
   virtual bool execute(
     double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS
   ) override;
@@ -161,5 +161,5 @@ extern "C" { // FIXME: these might need to take in a `int numPEs` argument
   );
 }
 
-#endif /* _RS_MPI_OMP_H_ */
-#endif /* _ENABLE_MPI_OMP_ */
+#endif /* _RS_SHMEM_OACC_H_ */
+#endif /* _ENABLE_SHMEM_OACC_ */

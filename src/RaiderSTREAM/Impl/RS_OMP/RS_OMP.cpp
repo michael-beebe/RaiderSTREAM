@@ -24,7 +24,7 @@ RS_OMP::RS_OMP(const RSOpts &opts)
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), numPEs(opts.getNumPEs()),
       lArgc(0), lArgv(nullptr), a(nullptr), b(nullptr), c(nullptr),
-      idx1(nullptr), idx2(nullptr), idx3(nullptr), scalar(3.0) {}
+      idx1(nullptr), idx2(nullptr), idx3(nullptr), scalar(3) {}
 
 RS_OMP::~RS_OMP() {}
 
@@ -36,9 +36,9 @@ RS_OMP::~RS_OMP() {}
  *         successful, false otherwise.
  **********************************************/
 bool RS_OMP::allocateData() {
-  a = new double[streamArraySize];
-  b = new double[streamArraySize];
-  c = new double[streamArraySize];
+  a = new STREAM_TYPE[streamArraySize];
+  b = new STREAM_TYPE[streamArraySize];
+  c = new STREAM_TYPE[streamArraySize];
   idx1 = new ssize_t[streamArraySize];
   idx2 = new ssize_t[streamArraySize];
   idx3 = new ssize_t[streamArraySize];
