@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 from dataclasses import dataclass
-from typing import TypeVar
 
 todo = lambda: Exception("not yet implemented")
 
 base_args = {
     "-s": 4194304,
-    "-k": "seqCopy",
+    "-k": "all",
 }
 
 @dataclass
@@ -37,7 +36,7 @@ def run_rstream(rstream_bin: str, **append_args) -> dict[str, BenchResult]:
 
     out = subprocess.check_output([
         rstream_bin,
-        *flatten([[k, str(v)] for k, v in args])
+        *flatten([[k, str(v)] for k, v in args.items()])
     ], encoding='UTF-8')
 
     return parse_output(out.splitlines())
@@ -63,7 +62,12 @@ def parse_output(lines: list[str]) -> dict[str, BenchResult]:
     def parse_line(line: str) -> BenchResult:
         blocks = re.split(r"\s{2,}", line)
         [name, rt_raw, mb_raw, flops_raw] = blocks
-        return BenchResult(kernel=name, runtime=float(rt_raw), mbps=int(mb_raw), flops=int(flops_raw))
+        return BenchResult(
+            kernel=name,
+            runtime=float(rt_raw),
+            mbps=int(mb_raw),
+            flops=0 if flops_raw == '-' else int(flops_raw)
+        )
 
     # find the benchmark kernel line
     start = next(filter(lambda l: l[1].startswith("Benchmark Kernel"), enumerate(lines)))[0]
