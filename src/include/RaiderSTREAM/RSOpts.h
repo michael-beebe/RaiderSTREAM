@@ -175,7 +175,7 @@ public:
   int getNumPEs() const { return numPEs; }
 
   // FIXME: do we need this for OpenACC? I think not
-	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OACC_
+	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA__
     /**
      * @brief Gets the number of work groups.
      *
@@ -230,7 +230,7 @@ public:
    */
 	void setKernelName(std::string name) { kernelName = name; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OACC_
+	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
     /**
      * @brief Sets the number of work groups.
      *
