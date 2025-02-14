@@ -9,6 +9,7 @@
 //
 
 #include "RS_OMP_TARGET.h"
+#include <iostream>
 
 #ifdef _RS_OMP_TARGET_H_
 
@@ -24,8 +25,7 @@ RS_OMP_TARGET::RS_OMP_TARGET(const RSOpts &opts)
                  opts.getKernelTypeFromName(opts.getKernelName())),
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), numPEs(opts.getNumPEs()),
-      numTeams(opts.getThreadBlocks()),
-      threadsPerTeam(opts.getThreadsPerBlocks()), lArgc(0), lArgv(nullptr),
+      lArgc(0), lArgv(nullptr),
       d_a(nullptr), d_b(nullptr), d_c(nullptr), d_idx1(nullptr),
       d_idx2(nullptr), d_idx3(nullptr), scalar(3.0),
       device(opts.getDeviceId()) {}
@@ -46,7 +46,6 @@ bool RS_OMP_TARGET::allocateData() {
   ssize_t *idx1 = new ssize_t[streamArraySize];
   ssize_t *idx2 = new ssize_t[streamArraySize];
   ssize_t *idx3 = new ssize_t[streamArraySize];
-
 
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
@@ -76,7 +75,6 @@ bool RS_OMP_TARGET::allocateData() {
   omp_target_memcpy(d_idx1, idx1, idx_size, 0, 0, device, host);
   omp_target_memcpy(d_idx2, idx2, idx_size, 0, 0, device, host);
   omp_target_memcpy(d_idx3, idx3, idx_size, 0, 0, device, host);
-
 
 
 #ifdef _DEBUG_
@@ -183,12 +181,12 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
   // libgomp likes to be lazy when it comes to initializing
   // the device. run a kernel before benchmarks so we don't
   // initialize the device while keeping track of runtime.
-  seqCopy(numTeams, threadsPerTeam, a, b, c, streamArraySize);
+  //seqCopy(a, b, c, streamArraySize);
   switch (kType) {
   /* SEQUENTIAL KERNELS */
   case RSBaseImpl::RS_SEQ_COPY:
     start = mySecond();
-    seqCopy(numTeams, threadsPerTeam, a, b, c, streamArraySize);
+    seqCopy(a, b, c, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
@@ -200,7 +198,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SEQ_SCALE:
     start = mySecond();
-    seqScale(numTeams, threadsPerTeam, a, b, c, streamArraySize, scalar);
+    seqScale(a, b, c, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
@@ -212,7 +210,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SEQ_ADD:
     start = mySecond();
-    seqAdd(numTeams, threadsPerTeam, a, b, c, streamArraySize);
+    seqAdd(a, b, c, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
@@ -224,7 +222,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SEQ_TRIAD:
     start = mySecond();
-    seqTriad(numTeams, threadsPerTeam, a, b, c, streamArraySize, scalar);
+    seqTriad(a, b, c, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
@@ -237,7 +235,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
   /* GATHER KERNELS */
   case RSBaseImpl::RS_GATHER_COPY:
     start = mySecond();
-    gatherCopy(numTeams, threadsPerTeam, a, b, c, d_idx1, streamArraySize);
+    gatherCopy(a, b, c, d_idx1, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
@@ -249,7 +247,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_GATHER_SCALE:
     start = mySecond();
-    gatherScale(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize,
+    gatherScale(a, b, c, idx1, streamArraySize,
                 scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -262,7 +260,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_GATHER_ADD:
     start = mySecond();
-    gatherAdd(numTeams, threadsPerTeam, a, b, c, idx1, idx2, streamArraySize);
+    gatherAdd(a, b, c, idx1, idx2, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
@@ -274,7 +272,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_GATHER_TRIAD:
     start = mySecond();
-    gatherTriad(numTeams, threadsPerTeam, a, b, c, idx1, idx2, streamArraySize,
+    gatherTriad(a, b, c, idx1, idx2, streamArraySize,
                 scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -288,7 +286,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
   /* SCATTER KERNELS */
   case RSBaseImpl::RS_SCATTER_COPY:
     start = mySecond();
-    scatterCopy(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize);
+    scatterCopy(a, b, c, idx1, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
@@ -300,7 +298,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SCATTER_SCALE:
     start = mySecond();
-    scatterScale(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize,
+    scatterScale(a, b, c, idx1, streamArraySize,
                  scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -313,7 +311,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SCATTER_ADD:
     start = mySecond();
-    scatterAdd(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize);
+    scatterAdd(a, b, c, idx1, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
@@ -325,7 +323,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SCATTER_TRIAD:
     start = mySecond();
-    scatterTriad(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize,
+    scatterTriad(a, b, c, idx1, streamArraySize,
                  scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -339,7 +337,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
   /* SCATTER-GATHER KERNELS */
   case RSBaseImpl::RS_SG_COPY:
     start = mySecond();
-    sgCopy(numTeams, threadsPerTeam, a, b, c, idx1, idx2, streamArraySize);
+    sgCopy(a, b, c, idx1, idx2, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
@@ -351,7 +349,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SG_SCALE:
     start = mySecond();
-    sgScale(numTeams, threadsPerTeam, a, b, c, idx1, idx2, streamArraySize,
+    sgScale(a, b, c, idx1, idx2, streamArraySize,
             scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -364,7 +362,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SG_ADD:
     start = mySecond();
-    sgAdd(numTeams, threadsPerTeam, a, b, c, idx1, idx2, idx3, streamArraySize);
+    sgAdd(a, b, c, idx1, idx2, idx3, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
@@ -376,7 +374,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SG_TRIAD:
     start = mySecond();
-    sgTriad(numTeams, threadsPerTeam, a, b, c, idx1, idx2, idx3,
+    sgTriad(a, b, c, idx1, idx2, idx3,
             streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -390,7 +388,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
   /* CENTRAL KERNELS */
   case RSBaseImpl::RS_CENTRAL_COPY:
     start = mySecond();
-    centralCopy(numTeams, threadsPerTeam, a, b, c, streamArraySize);
+    centralCopy(a, b, c, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
@@ -402,7 +400,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_CENTRAL_SCALE:
     start = mySecond();
-    centralScale(numTeams, threadsPerTeam, a, b, c, streamArraySize, scalar);
+    centralScale(a, b, c, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
@@ -414,7 +412,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_CENTRAL_ADD:
     start = mySecond();
-    centralAdd(numTeams, threadsPerTeam, a, b, c, streamArraySize);
+    centralAdd(a, b, c, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
@@ -426,7 +424,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_CENTRAL_TRIAD:
     start = mySecond();
-    centralTriad(numTeams, threadsPerTeam, a, b, c, streamArraySize, scalar);
+    centralTriad(a, b, c, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
@@ -440,7 +438,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
   case RSBaseImpl::RS_ALL:
     /* RS_SEQ_COPY */
     start = mySecond();
-    seqCopy(numTeams, threadsPerTeam, a, b, c, streamArraySize);
+    seqCopy(a, b, c, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
@@ -451,7 +449,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SEQ_SCALE */
     start = mySecond();
-    seqScale(numTeams, threadsPerTeam, a, b, c, streamArraySize, scalar);
+    seqScale(a, b, c, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
@@ -462,7 +460,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SEQ_ADD */
     start = mySecond();
-    seqAdd(numTeams, threadsPerTeam, a, b, c, streamArraySize);
+    seqAdd(a, b, c, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
@@ -473,7 +471,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SEQ_TRIAD */
     start = mySecond();
-    seqTriad(numTeams, threadsPerTeam, a, b, c, streamArraySize, scalar);
+    seqTriad(a, b, c, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
@@ -484,7 +482,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_GATHER_COPY */
     start = mySecond();
-    gatherCopy(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize);
+    gatherCopy(a, b, c, idx1, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
@@ -495,7 +493,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_GATHER_SCALE */
     start = mySecond();
-    gatherScale(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize,
+    gatherScale(a, b, c, idx1, streamArraySize,
                 scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -507,7 +505,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_GATHER_ADD */
     start = mySecond();
-    gatherAdd(numTeams, threadsPerTeam, a, b, c, idx1, idx2, streamArraySize);
+    gatherAdd(a, b, c, idx1, idx2, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
@@ -518,7 +516,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_GATHER_TRIAD */
     start = mySecond();
-    gatherTriad(numTeams, threadsPerTeam, a, b, c, idx1, idx2, streamArraySize,
+    gatherTriad(a, b, c, idx1, idx2, streamArraySize,
                 scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -530,7 +528,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SCATTER_COPY */
     start = mySecond();
-    scatterCopy(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize);
+    scatterCopy(a, b, c, idx1, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
@@ -541,7 +539,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SCATTER_SCALE */
     start = mySecond();
-    scatterScale(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize,
+    scatterScale(a, b, c, idx1, streamArraySize,
                  scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -553,7 +551,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SCATTER_ADD */
     start = mySecond();
-    scatterAdd(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize);
+    scatterAdd(a, b, c, idx1, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
@@ -564,7 +562,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SCATTER_TRIAD */
     start = mySecond();
-    scatterTriad(numTeams, threadsPerTeam, a, b, c, idx1, streamArraySize,
+    scatterTriad(a, b, c, idx1, streamArraySize,
                  scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -576,7 +574,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SG_COPY */
     start = mySecond();
-    sgCopy(numTeams, threadsPerTeam, a, b, c, idx1, idx2, streamArraySize);
+    sgCopy(a, b, c, idx1, idx2, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
@@ -587,7 +585,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SG_SCALE */
     start = mySecond();
-    sgScale(numTeams, threadsPerTeam, a, b, c, idx1, idx2, streamArraySize,
+    sgScale(a, b, c, idx1, idx2, streamArraySize,
             scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -599,7 +597,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SG_ADD */
     start = mySecond();
-    sgAdd(numTeams, threadsPerTeam, a, b, c, idx1, idx2, idx3, streamArraySize);
+    sgAdd(a, b, c, idx1, idx2, idx3, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
@@ -610,7 +608,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SG_TRIAD */
     start = mySecond();
-    sgTriad(numTeams, threadsPerTeam, a, b, c, idx1, idx2, idx3,
+    sgTriad(a, b, c, idx1, idx2, idx3,
             streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
@@ -622,7 +620,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_CENTRAL_COPY */
     start = mySecond();
-    centralCopy(numTeams, threadsPerTeam, a, b, c, streamArraySize);
+    centralCopy(a, b, c, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
@@ -633,7 +631,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_CENTRAL_SCALE */
     start = mySecond();
-    centralScale(numTeams, threadsPerTeam, a, b, c, streamArraySize, scalar);
+    centralScale(a, b, c, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
@@ -644,7 +642,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_CENTRAL_ADD */
     start = mySecond();
-    centralAdd(numTeams, threadsPerTeam, a, b, c, streamArraySize);
+    centralAdd(a, b, c, streamArraySize);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
@@ -655,7 +653,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_CENTRAL_TRIAD */
     start = mySecond();
-    centralTriad(numTeams, threadsPerTeam, a, b, c, streamArraySize, scalar);
+    centralTriad(a, b, c, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);

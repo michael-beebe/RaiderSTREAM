@@ -27,8 +27,8 @@ private:
   std::string kernelName;
   long streamArraySize;
   int numPEs;
-  int numTeams;
-  int threadsPerTeam;
+  // int numTeams;
+  // int threadsPerTeam;
   int lArgc;
   char **lArgv;
   STREAM_TYPE scalar;
@@ -54,68 +54,68 @@ public:
 };
 
 extern "C" {
-void seqCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void seqCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
              ssize_t streamArraySize);
 
-void seqScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void seqScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
               ssize_t streamArraySize, STREAM_TYPE scalar);
 
-void seqAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void seqAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
             ssize_t streamArraySize);
 
-void seqTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void seqTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
               ssize_t streamArraySize, STREAM_TYPE scalar);
 
-void gatherCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void gatherCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                 ssize_t *IDX1, ssize_t streamArraySize);
 
-void gatherScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void gatherScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                  ssize_t *IDX1, ssize_t streamArraySize, STREAM_TYPE scalar);
 
-void gatherAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void gatherAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                ssize_t *IDX1, ssize_t *IDX2, ssize_t streamArraySize);
 
-void gatherTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void gatherTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                  ssize_t *IDX1, ssize_t *IDX2, ssize_t streamArraySize,
                  STREAM_TYPE scalar);
 
-void scatterCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void scatterCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                  ssize_t *IDX1, ssize_t streamArraySize);
 
-void scatterScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void scatterScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                   ssize_t *IDX1, ssize_t streamArraySize, STREAM_TYPE scalar);
 
-void scatterAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void scatterAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                 ssize_t *IDX1, ssize_t streamArraySize);
 
-void scatterTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void scatterTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                   ssize_t *IDX1, ssize_t streamArraySize, STREAM_TYPE scalar);
 
-void sgCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void sgCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
             ssize_t *IDX1, ssize_t *IDX2, ssize_t streamArraySize);
 
-void sgScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void sgScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
              ssize_t *IDX1, ssize_t *IDX2, ssize_t streamArraySize,
              STREAM_TYPE scalar);
 
-void sgAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void sgAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
            ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
            ssize_t streamArraySize);
 
-void sgTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void sgTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
              ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
              ssize_t streamArraySize, STREAM_TYPE scalar);
 
-void centralCopy(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void centralCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                  ssize_t streamArraySize);
 
-void centralScale(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void centralScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                   ssize_t streamArraySize, STREAM_TYPE scalar);
 
-void centralAdd(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void centralAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                 ssize_t streamArraySize);
 
-void centralTriad(int nteams, int threads, STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+void centralTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                   ssize_t streamArraySize, STREAM_TYPE scalar);
 }
 
