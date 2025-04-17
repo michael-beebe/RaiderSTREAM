@@ -628,13 +628,11 @@ void runBenchSHMEMOACC(RSOpts *Opts) {
   /* Initialize OpenSHMEM */
   shmem_init();
   int myRank = shmem_my_pe();
-
   /* Initialize the RS_SHMEM_OMP object */
   RS_SHMEM_OACC *RS = new RS_SHMEM_OACC(*Opts);
   if (!RS) {
     std::cout << "ERROR: COULD NOT ALLOCATE RS_SHMEM_OACC OBJECT" << std::endl;
   }
-
   /* Allocate Data */
   double *SHMEM_TIMES =
       static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
@@ -807,7 +805,6 @@ int main(int argc, char **argv) {
     delete Opts;
     return -1;
   }
-
 #ifdef _ENABLE_OMP_
   runBenchOMP(Opts);
 #endif
@@ -842,6 +839,10 @@ int main(int argc, char **argv) {
 
 #ifdef _ENABLE_SHMEM_CUDA_
   runBenchSHMEMCUDA(Opts);
+#endif
+
+#ifdef _ENABLE_SHMEM_OACC_
+  runBenchSHMEMOACC(Opts);
 #endif
 
   return 0;

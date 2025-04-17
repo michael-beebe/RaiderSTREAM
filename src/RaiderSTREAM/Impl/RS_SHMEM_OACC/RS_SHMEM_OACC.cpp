@@ -9,6 +9,7 @@
 //
 
 #include "RS_SHMEM_OACC.h"
+#define _DEBUG_
 
 #ifdef _RS_SHMEM_OACC_H_
 
@@ -82,6 +83,7 @@ RS_SHMEM_OACC::~RS_SHMEM_OACC() {}
  *         successful, false otherwise.
  **********************************************/
 bool RS_SHMEM_OACC::allocateData() {
+  std::cout<<_OPENACC<<std::endl;
   int myRank = shmem_my_pe(); /* Current rank */
   int size = shmem_n_pes();   /* Number of shmem ranks */
 
@@ -168,12 +170,20 @@ bool RS_SHMEM_OACC::allocateData() {
     std::cout << "============================================================="
                  "======================"
               << std::endl;
+    STREAM_TYPE *test_a = new STREAM_TYPE[streamArraySize];
+    acc_memcpy_from_device(test_a, d_a, streamMemArraySize);
+    ssize_t *test_idx = new ssize_t[idxMemArraySize];
+    acc_memcpy_from_device(test_idx, d_idx1, idxMemArraySize);
     std::cout << "streamArraySize         = " << streamArraySize << std::endl;
     std::cout << "a[streamArraySize-1]    = " << a[streamArraySize - 1]
+              << std::endl;
+    std::cout << "da[streamArraySize-1]    = " << test_a[streamArraySize - 1]
               << std::endl;
     std::cout << "b[streamArraySize-1]    = " << b[streamArraySize - 1]
               << std::endl;
     std::cout << "c[streamArraySize-1]    = " << c[streamArraySize - 1]
+              << std::endl;
+    std::cout << "d_idx1[streamArraySize-1] = " << test_idx[streamArraySize - 1]
               << std::endl;
     std::cout << "idx1[streamArraySize-1] = " << idx1[streamArraySize - 1]
               << std::endl;
