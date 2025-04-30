@@ -476,7 +476,7 @@ void runBenchSHMEMOMP(RSOpts *Opts) {
   }
 
   shmem_barrier_all();
-  
+
   /* Free the RS_SHMEM_OMP object, finalize OpenSHMEM */
   shmem_free(SHMEM_TIMES);
   shmem_free(SHMEM_MBPS);
@@ -823,7 +823,7 @@ void runBenchSHMEMCUDA(RSOpts *Opts) {
   }
 
   shmem_barrier_all();
-  
+
   /* Free the RS_SHMEM_OMP object, finalize OpenSHMEM */
   shmem_free(SHMEM_TIMES);
   shmem_free(SHMEM_MBPS);

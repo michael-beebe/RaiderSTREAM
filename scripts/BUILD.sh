@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # --- Load required modules
 #module load cmake
@@ -75,6 +76,14 @@ cd build
 #   -DCMAKE_CXX_COMPILER=`which nvcc` \
 #   -DCMAKE_EXE_LINKER_FLAGS="-lcudart -lcudadevrt" \
 #   ../
+
+# --- OpenMP + FHE ---
+cmake \
+  -DENABLE_OMP=ON \
+  -DENABLE_FHE_OMP=ON \
+  -DCKKS=ON \
+  -DCMAKE_PREFIX_PATH=~/software/openfhe \
+  ../
 
 # --- Build the project
 make

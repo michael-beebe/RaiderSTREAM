@@ -1,3 +1,19 @@
+#------------------------------------------------------------------------------
+# Fully‐Homomorphic‐Encryption core library
+#------------------------------------------------------------------------------
+
+if(ENABLE_FHE OR ENABLE_FHE_OMP)
+  message(STATUS ">>> Adding RS_FHE core helper (Impl/RS_FHE)")
+  add_subdirectory(Impl/RS_FHE)
+
+  # make its headers available to everyone
+  include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Impl/RS_FHE
+  )
+endif()
+
+#------------------------------------------------------------------------------
+
 add_subdirectory(Impl)
 add_subdirectory(Arraygen)
 
@@ -45,6 +61,12 @@ endif()
 
 if (ENABLE_CUDA)
   add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_CUDA_OBJS>)
+endif()
+
+if (ENABLE_FHE_OMP)
+  message(STATUS "ENABLING FHE/OpenMP Implementation")
+  add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_FHE_OMP_OBJS>)
+  target_link_libraries(raiderstream PRIVATE RS_FHE)
 endif()
 
 install(TARGETS raiderstream DESTINATION bin)

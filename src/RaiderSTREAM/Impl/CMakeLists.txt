@@ -33,3 +33,7 @@ endif()
 if (ENABLE_OACC)
   add_subdirectory(RS_OACC)
 endif()
+
+if (ENABLE_FHE_OMP)
+  add_subdirectory(RS_FHE_OMP)
+endif()
