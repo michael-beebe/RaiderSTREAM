@@ -1,13 +1,11 @@
-//
-
-// _RS_MPI_OMP_CPP_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RS_MPI_OMP.cpp
+ * @brief Implementation of the RS_MPI_OMP class for hybrid MPI+OpenMP STREAM
+ * benchmarks
+ * @copyright Copyright (C) 2022-2024 Texas Tech University
+ * @author michael.beebe@ttu.edu
+ * @license See LICENSE in the top level directory for licensing details
+ */
 
 #include "RS_MPI_OMP.h"
 
@@ -28,14 +26,20 @@ RS_MPI_OMP::RS_MPI_OMP(const RSOpts &opts)
       numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
       idx2(nullptr), idx3(nullptr), scalar(3) {}
 
+/**************************************************
+ * @brief Destructor for the RS_MPI_OMP class.
+ **************************************************/
 RS_MPI_OMP::~RS_MPI_OMP() {}
 
 /**********************************************
  * @brief Allocates and initializes memory
  *        for data arrays.
  *
- * @return True if allocation is
- *         successful, false otherwise.
+ * Allocates memory for arrays a, b, c and index arrays idx1, idx2, idx3
+ * using MPI shared memory allocation. Initializes the index arrays either
+ * from files or randomly based on configuration.
+ *
+ * @return True if allocation is successful, false otherwise.
  **********************************************/
 bool RS_MPI_OMP::allocateData() {
   int myRank = -1; /* MPI rank */
@@ -113,10 +117,10 @@ bool RS_MPI_OMP::allocateData() {
 }
 
 /**************************************************
- * @brief Frees all allocated memory for the
- *        RS_MPI_OMP object.
+ * @brief Frees all allocated memory for the RS_MPI_OMP object.
  *
- * This function frees memory across all nodes.
+ * Frees memory allocated for arrays a, b, c and index arrays idx1, idx2, idx3
+ * using MPI memory deallocation.
  *
  * @return true if all memory was successfully freed.
  **************************************************/
@@ -143,22 +147,21 @@ bool RS_MPI_OMP::freeData() {
 }
 
 /**************************************************
- * @brief Executes the specified kernel using MPI
- *        and OpenMP.
+ * @brief Executes the specified STREAM benchmark kernel using MPI and OpenMP.
  *
- * @param TIMES Array to store the execution times
- *              for each kernel.
- * @param MBPS Array to store the memory bandwidths
- *             for each kernel.
- * @param FLOPS Array to store the floating-point
- *              operation counts for each kernel.
- * @param BYTES Array to store the byte sizes for
- *              each kernel.
- * @param FLOATOPS Array to store the floating-point
- *                 operation sizes for each kernel.
+ * Executes the selected kernel (copy, scale, add, triad) in either sequential,
+ * gather, scatter, scatter-gather or central mode. Times the execution and
+ * calculates performance metrics.
  *
- * @return True if the execution was successful,
- *         false otherwise.
+ * @param TIMES Array to store the execution times for each kernel.
+ * @param MBPS Array to store the memory bandwidths for each kernel.
+ * @param FLOPS Array to store the floating-point operation counts for each
+ *kernel.
+ * @param BYTES Array to store the byte sizes for each kernel.
+ * @param FLOATOPS Array to store the floating-point operation sizes for each
+ *kernel.
+ *
+ * @return True if the execution was successful, false otherwise.
  **************************************************/
 bool RS_MPI_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
                          double *BYTES, double *FLOATOPS) {

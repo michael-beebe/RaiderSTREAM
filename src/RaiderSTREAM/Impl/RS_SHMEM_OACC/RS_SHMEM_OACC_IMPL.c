@@ -1,12 +1,10 @@
-//
-// _RS_SHMEM_OMP_IMPL_C_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RS_SHMEM_OACC_IMPL.c
+ * @brief Implementation of OpenACC+OpenSHMEM STREAM benchmark kernels
+ * @copyright Copyright (C) 2022-2024 Texas Tech University
+ * @author michael.beebe@ttu.edu
+ * @license See LICENSE in the top level directory for licensing details
+ */
 
 #include <openacc.h>
 #include <sys/types.h>
@@ -15,15 +13,20 @@
 #define DO_PRAGMA(x) _Pragma(#x)
 #endif
 
-// This is (manually :[) copied from ../RS_OACC/RS_OACC_IMPL.c.
-// If you update this, consider updating that file too.
+/**
+ * @brief Macro to generate OpenACC parallel loop pragma with deviceptr clauses
+ * @note This is manually copied from ../RS_OACC/RS_OACC_IMPL.c.
+ *       If you update this, consider updating that file too.
+ */
 #define LOOP_PRAGMA(...) DO_PRAGMA(acc parallel loop deviceptr(__VA_ARGS__))
 
 /**************************************************
  * @brief Copies data from one stream to another.
  *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] streamArraySize Size of the stream array
  **************************************************/
 void seqCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
              ssize_t streamArraySize) {
@@ -35,9 +38,11 @@ void seqCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
 /**************************************************
  * @brief Scales data in a stream.
  *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] streamArraySize Size of the stream array
+ * @param[in] scalar Scalar value for operations
  **************************************************/
 void seqScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
               ssize_t streamArraySize, STREAM_TYPE scalar) {
@@ -49,8 +54,10 @@ void seqScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
 /**************************************************
  * @brief Adds data from two streams.
  *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] streamArraySize Size of the stream array
  **************************************************/
 void seqAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
             ssize_t streamArraySize) {
@@ -62,9 +69,11 @@ void seqAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
 /**************************************************
  * @brief Performs triad operation on stream data.
  *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] streamArraySize Size of the stream array
+ * @param[in] scalar Scalar value for operations
  **************************************************/
 void seqTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
               ssize_t streamArraySize, STREAM_TYPE scalar) {
@@ -76,8 +85,11 @@ void seqTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
 /**************************************************
  * @brief Copies data using gather operation.
  *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] idx1 Index array for gather
+ * @param[in] streamArraySize Size of the stream array
  **************************************************/
 void gatherCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                 ssize_t streamArraySize) {
@@ -89,9 +101,12 @@ void gatherCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Scales data using gather operation.
  *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] idx1 Index array for gather
+ * @param[in] streamArraySize Size of the stream array
+ * @param[in] scalar Scalar value for operations
  **************************************************/
 void gatherScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                  ssize_t streamArraySize, STREAM_TYPE scalar) {
@@ -103,8 +118,12 @@ void gatherScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Adds data using gather operation.
  *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] idx1 First index array for gather
+ * @param[in] idx2 Second index array for gather
+ * @param[in] streamArraySize Size of the stream array
  **************************************************/
 void gatherAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                ssize_t *idx2, ssize_t streamArraySize) {
@@ -116,9 +135,13 @@ void gatherAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Performs triad operation using gather.
  *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] idx1 First index array for gather
+ * @param[in] idx2 Second index array for gather
+ * @param[in] streamArraySize Size of the stream array
+ * @param[in] scalar Scalar value for operations
  **************************************************/
 void gatherTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                  ssize_t *idx2, ssize_t streamArraySize, STREAM_TYPE scalar) {
@@ -130,8 +153,11 @@ void gatherTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Copies data using scatter operation.
  *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] streamArraySize Size of the stream array
  **************************************************/
 void scatterCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                  ssize_t streamArraySize) {
@@ -143,9 +169,12 @@ void scatterCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Scales data using scatter operation.
  *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] streamArraySize Size of the stream array
+ * @param[in] scalar Scalar value for operations
  **************************************************/
 void scatterScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                   ssize_t streamArraySize, STREAM_TYPE scalar) {
@@ -157,8 +186,11 @@ void scatterScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Adds data using scatter operation.
  *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] streamArraySize Size of the stream array
  **************************************************/
 void scatterAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                 ssize_t streamArraySize) {
@@ -170,9 +202,12 @@ void scatterAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Performs triad operation using scatter.
  *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] streamArraySize Size of the stream array
+ * @param[in] scalar Scalar value for operations
  **************************************************/
 void scatterTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                   ssize_t streamArraySize, STREAM_TYPE scalar) {
@@ -184,8 +219,12 @@ void scatterTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Copies data using scatter-gather operation.
  *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] idx2 Index array for gather
+ * @param[in] streamArraySize Size of the stream array
  **************************************************/
 void sgCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
             ssize_t *idx2, ssize_t streamArraySize) {
@@ -197,9 +236,13 @@ void sgCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Scales data using scatter-gather operation.
  *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] idx1 Index array for gather
+ * @param[in] idx2 Index array for scatter
+ * @param[in] streamArraySize Size of the stream array
+ * @param[in] scalar Scalar value for operations
  **************************************************/
 void sgScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
              ssize_t *idx2, ssize_t streamArraySize, STREAM_TYPE scalar) {
@@ -211,8 +254,13 @@ void sgScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Adds data using scatter-gather operation.
  *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] idx2 First index array for gather
+ * @param[in] idx3 Second index array for gather
+ * @param[in] streamArraySize Size of the stream array
  **************************************************/
 void sgAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
            ssize_t *idx2, ssize_t *idx3, ssize_t streamArraySize) {
@@ -224,9 +272,14 @@ void sgAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Performs triad operation using scatter-gather.
  *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] idx1 Index array for gather
+ * @param[in] idx2 Index array for scatter
+ * @param[in] idx3 Index array for gather
+ * @param[in] streamArraySize Size of the stream array
+ * @param[in] scalar Scalar value for operations
  **************************************************/
 void sgTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
              ssize_t *idx2, ssize_t *idx3, ssize_t streamArraySize,
@@ -239,8 +292,10 @@ void sgTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
 /**************************************************
  * @brief Copies data using a central location.
  *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] streamArraySize Size of the stream array
  **************************************************/
 void centralCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                  ssize_t streamArraySize) {
@@ -252,9 +307,11 @@ void centralCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
 /**************************************************
  * @brief Scales data using a central location.
  *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] streamArraySize Size of the stream array
+ * @param[in] scalar Scalar value for operations
  **************************************************/
 void centralScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                   ssize_t streamArraySize, STREAM_TYPE scalar) {
@@ -266,8 +323,10 @@ void centralScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
 /**************************************************
  * @brief Adds data using a central location.
  *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] streamArraySize Size of the stream array
  **************************************************/
 void centralAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                 ssize_t streamArraySize) {
@@ -279,9 +338,11 @@ void centralAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
 /**************************************************
  * @brief Performs triad operation using a central location.
  *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] streamArraySize Size of the stream array
+ * @param[in] scalar Scalar value for operations
  **************************************************/
 void centralTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                   ssize_t streamArraySize, STREAM_TYPE scalar) {

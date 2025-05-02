@@ -1,12 +1,11 @@
-//
-// _RSOPTS_CPP_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RSOpts.cpp
+ * @brief Implementation of RaiderSTREAM options handling
+ * @copyright Copyright (C) 2022-2024 Texas Tech University. All Rights Reserved.
+ * @author michael.beebe@ttu.edu
+ * 
+ * See LICENSE in the top level directory for licensing details
+ */
 
 #include "RaiderSTREAM/RSOpts.h"
 #include <algorithm>
@@ -18,13 +17,16 @@
 #include <omp.h>
 #endif
 
-// The below macros are ONLY used so we
-// can get the STREAM_TYPE as a string,
-// for the options printout. Please refactor
-// at some point.
+/** 
+ * @brief Macros used to get STREAM_TYPE as a string for options printout
+ * @todo Refactor these macros
+ */
 #define STRINGIFY(x) STRINGIFYP(x)
 #define STRINGIFYP(x) #x
 
+/**
+ * @brief Table defining the available benchmark types and their properties
+ */
 BenchType BenchTypeTable[] = {
   /* {  Name, Arg, Notes, KType, Enabled, ReqArq } */
   { "seq_copy", "", "Sequential Copy",      RSBaseImpl::RS_SEQ_COPY, false, false },
@@ -51,7 +53,11 @@ BenchType BenchTypeTable[] = {
   { ".", "", ".",                           RSBaseImpl::RS_NB, false, false }
 };
 
-/* RSOpts Constructor */
+/**
+ * @brief Default constructor for RSOpts
+ * 
+ * Initializes options to default values
+ */
 RSOpts::RSOpts()
     : isHelp(false), isList(false), streamArraySize(1000000), numPEs(1),
       lArgc(0), lArgv(nullptr)
@@ -63,9 +69,16 @@ RSOpts::RSOpts()
 #endif
 {}
 
-/* RSOpts Destructor */
+/**
+ * @brief Destructor for RSOpts
+ */
 RSOpts::~RSOpts() {}
 
+/**
+ * @brief Get kernel type enum from kernel name string
+ * @param kernelName Name of the kernel
+ * @return Corresponding RSKernelType enum value, or RS_NB if not found
+ */
 RSBaseImpl::RSKernelType
 RSOpts::getKernelTypeFromName(const std::string &kernelName) const {
   unsigned Idx = 0;
@@ -78,6 +91,11 @@ RSOpts::getKernelTypeFromName(const std::string &kernelName) const {
   return RSBaseImpl::RS_NB; // Return RS_NB if kernel name not found
 }
 
+/**
+ * @brief Enable a benchmark by name
+ * @param benchName Name of benchmark to enable
+ * @return true if benchmark was found and enabled, false otherwise
+ */
 bool RSOpts::enableBenchmark(std::string benchName) {
   unsigned Idx = 0;
   std::transform(benchName.begin(), benchName.end(), benchName.begin(),
@@ -97,6 +115,12 @@ bool RSOpts::enableBenchmark(std::string benchName) {
   return false;
 }
 
+/**
+ * @brief Parse command line options
+ * @param argc Number of command line arguments
+ * @param argv Array of command line argument strings
+ * @return true if options parsed successfully, false otherwise
+ */
 bool RSOpts::parseOpts(int argc, char **argv) {
   lArgc = argc;
   lArgv = argv;
@@ -199,6 +223,9 @@ bool RSOpts::parseOpts(int argc, char **argv) {
   return true; /* Options are valid */
 }
 
+/**
+ * @brief Print current options configuration
+ */
 void RSOpts::printOpts() {
   std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   std::cout << "RaiderSTREAM Options:" << std::endl;
@@ -222,6 +249,9 @@ void RSOpts::printOpts() {
 #endif
 }
 
+/**
+ * @brief Print list of available benchmarks
+ */
 void RSOpts::printBench() {
   std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   std::cout << "BENCHMARK KERNEL | DESCRIPTION" << std::endl;
@@ -239,6 +269,9 @@ void RSOpts::printBench() {
   std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
 }
 
+/**
+ * @brief Print help message showing command line options
+ */
 void RSOpts::printHelp() {
   unsigned major = RS_VERSION_MAJOR;
   unsigned minor = RS_VERSION_MINOR;
@@ -267,6 +300,9 @@ void RSOpts::printHelp() {
   std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
 }
 
+/**
+ * @brief Print RaiderSTREAM ASCII art logo
+ */
 void RSOpts::printLogo() {
   std::cout << std::endl;
   std::cout << R"(

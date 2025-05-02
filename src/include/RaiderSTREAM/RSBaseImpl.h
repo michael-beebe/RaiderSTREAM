@@ -1,56 +1,82 @@
-//
-// _RSBASEIMPL_H_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RSBaseImpl.h
+ * @brief Base implementation class for RaiderSTREAM benchmark
+ * @copyright Copyright (C) 2022-2024 Texas Tech University. All Rights
+ * Reserved.
+ * @author michael.beebe@ttu.edu
+ *
+ * See LICENSE in the top level directory for licensing details
+ */
 
 #ifndef _RSBASEIMPL_H_
 #define _RSBASEIMPL_H_
 
-#include <iostream>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <stdint.h>
-#include <sys/types.h>
 #include <iomanip>
+#include <iostream>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string>
+#include <sys/time.h>
+#include <sys/types.h>
 
 #include <cstring>
-#include <vector>
 #include <limits>
+#include <vector>
 
-
+/**
+ * @brief Number of benchmark kernels to run
+ */
 #ifndef NUM_KERNELS
 #define NUM_KERNELS 20
 #endif
 
+/**
+ * @brief Number of arrays used in benchmark
+ */
 #ifndef NUM_ARRAYS
 #define NUM_ARRAYS 3
 #endif
 
+/**
+ * @brief Returns minimum of two values
+ * @param x First value
+ * @param y Second value
+ * @return Minimum of x and y
+ */
 #ifndef MIN
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
+/**
+ * @brief Returns maximum of two values
+ * @param x First value
+ * @param y Second value
+ * @return Maximum of x and y
+ */
 #ifndef MAX
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
+/**
+ * @brief Returns absolute value
+ * @param a Input value
+ * @return Absolute value of a
+ */
 #ifndef ABS
 #define ABS(a) ((a) >= 0 ? (a) : -(a))
 #endif
 
+/**
+ * @brief Number of timing samples to collect
+ */
 #define M 20
 
 /**
  * @brief RSBaseImpl class: Base class for RaiderSTREAM implementations
  *
- * This class serves as the base class for RaiderSTREAM benchmark implementations.
- * It includes various utility functions and defines constants for benchmarking.
+ * This class serves as the base class for RaiderSTREAM benchmark
+ * implementations. It includes various utility functions and defines constants
+ * for benchmarking.
  */
 class RSBaseImpl {
 public:
@@ -62,54 +88,58 @@ public:
    * RS_ALL and RS_NB are invalid as an index into benchmark arrays.
    */
   typedef enum {
-    RS_SEQ_COPY = 0,
-    RS_SEQ_SCALE = 1,
-    RS_SEQ_ADD = 2,
-    RS_SEQ_TRIAD = 3,
+    RS_SEQ_COPY = 0,  /**< Sequential copy kernel */
+    RS_SEQ_SCALE = 1, /**< Sequential scale kernel */
+    RS_SEQ_ADD = 2,   /**< Sequential add kernel */
+    RS_SEQ_TRIAD = 3, /**< Sequential triad kernel */
 
-    RS_GATHER_COPY = 4,
-    RS_GATHER_SCALE = 5,
-    RS_GATHER_ADD = 6,
-    RS_GATHER_TRIAD = 7,
+    RS_GATHER_COPY = 4,  /**< Gather copy kernel */
+    RS_GATHER_SCALE = 5, /**< Gather scale kernel */
+    RS_GATHER_ADD = 6,   /**< Gather add kernel */
+    RS_GATHER_TRIAD = 7, /**< Gather triad kernel */
 
-    RS_SCATTER_COPY = 8,
-    RS_SCATTER_SCALE = 9,
-    RS_SCATTER_ADD = 10,
-    RS_SCATTER_TRIAD = 11,
+    RS_SCATTER_COPY = 8,   /**< Scatter copy kernel */
+    RS_SCATTER_SCALE = 9,  /**< Scatter scale kernel */
+    RS_SCATTER_ADD = 10,   /**< Scatter add kernel */
+    RS_SCATTER_TRIAD = 11, /**< Scatter triad kernel */
 
-    RS_SG_COPY = 12,
-    RS_SG_SCALE = 13,
-    RS_SG_ADD = 14,
-    RS_SG_TRIAD = 15,
+    RS_SG_COPY = 12,  /**< Scatter-gather copy kernel */
+    RS_SG_SCALE = 13, /**< Scatter-gather scale kernel */
+    RS_SG_ADD = 14,   /**< Scatter-gather add kernel */
+    RS_SG_TRIAD = 15, /**< Scatter-gather triad kernel */
 
-    RS_CENTRAL_COPY = 16,
-    RS_CENTRAL_SCALE = 17,
-    RS_CENTRAL_ADD = 18,
-    RS_CENTRAL_TRIAD = 19,
-    RS_ALL = 20,
-    RS_NB = 21
+    RS_CENTRAL_COPY = 16,  /**< Central copy kernel */
+    RS_CENTRAL_SCALE = 17, /**< Central scale kernel */
+    RS_CENTRAL_ADD = 18,   /**< Central add kernel */
+    RS_CENTRAL_TRIAD = 19, /**< Central triad kernel */
+    RS_ALL = 20,           /**< Run all kernels */
+    RS_NB = 21             /**< Invalid kernel type */
   } RSKernelType;
 
   /**
    * @brief RSBaseImpl class: Constructor for RSBaseImpl
    *
-   * This constructor initializes the RSBaseImpl object with the provided implementation name and kernel type.
+   * This constructor initializes the RSBaseImpl object with the provided
+   * implementation name and kernel type.
    *
    * @param implName The name of the implementation.
    * @param kType The kernel type for the implementation.
    */
-  RSBaseImpl(const std::string& implName, RSKernelType kType)
-    : Impl(implName), KType(kType) {}
+  RSBaseImpl(const std::string &implName, RSKernelType kType)
+      : Impl(implName), KType(kType) {}
 
+  /**
+   * @brief Virtual destructor
+   */
   virtual ~RSBaseImpl() {}
-
 
   /**
    * @brief getImplName()
    *
    * Returns the name of the current implementation.
    *
-   * This function returns the name of the specific implementation that is being used.
+   * This function returns the name of the specific implementation that is being
+   * used.
    *
    * @return The name of the current implementation.
    */
@@ -156,7 +186,8 @@ public:
    * @return True if the execution was successful,
    *         false otherwise.
    **/
-  virtual bool execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS) = 0;
+  virtual bool execute(double *TIMES, double *MBPS, double *FLOPS,
+                       double *BYTES, double *FLOATOPS) = 0;
 
   /**
    * @brief Initializes an array with random indices.
@@ -171,12 +202,14 @@ public:
    */
   void initRandomIdxArray(ssize_t *array, ssize_t nelems) {
     if (nelems > std::numeric_limits<ssize_t>::max() / sizeof(unsigned char)) {
-      std::cerr << "Error: Array size too large to allocate flags array." << std::endl;
+      std::cerr << "Error: Array size too large to allocate flags array."
+                << std::endl;
       return;
     }
     int success;
     ssize_t i, idx;
-    std::vector<unsigned char> flags(nelems, 0); // Use std::vector to avoid allocation warnings
+    std::vector<unsigned char> flags(
+        nelems, 0); // Use std::vector to avoid allocation warnings
     for (i = 0; i < nelems; i++) {
       success = 0;
       while (success == 0) {
@@ -221,11 +254,11 @@ public:
    * @param arrayElements Number of elements in the array
    * @param value Value to initialize the array with
    */
-  void initStreamArray(STREAM_TYPE *array, ssize_t arrayElements, STREAM_TYPE value) {
+  void initStreamArray(STREAM_TYPE *array, ssize_t arrayElements,
+                       STREAM_TYPE value) {
     for (ssize_t i = 0; i < arrayElements; i++)
       array[i] = value;
   }
-
 
   /**
    * @brief Produces a number repesenting the current time.
@@ -235,8 +268,9 @@ public:
    *
    * @returns A number representing the time since some reference point.
    */
-  // Should this be remade to use the monotonic clock instead? (clock_get[res/time])
-  // It would avoid the shenanigans occuring in checkTick below.
+  // Should this be remade to use the monotonic clock instead?
+  // (clock_get[res/time]) It would avoid the shenanigans occuring in checkTick
+  // below.
   double mySecond() {
     struct timeval tp;
     struct timezone tzp;
@@ -250,7 +284,7 @@ public:
    * In other words: calculate the minimum x such that
    * y = mySecond(), for(i = 0; i < x; i++) ;, mySecond() - y > 0
    *
-   * @returns The minimum
+   * @returns The minimum time difference detectable
    */
   int checkTick() {
     int i, minDelta, delta;
@@ -274,7 +308,7 @@ public:
    *
    * @param startTime The result of the first call to mySecond.
    * @param endTime The result of the second call to mySecond.
-   * @return The difference between the two.
+   * @return The difference between the two times in seconds.
    */
   double calculateRunTime(double startTime, double endTime) {
     return (endTime - startTime);
@@ -284,8 +318,8 @@ public:
    * @brief Calculate the effective MB/s given a bytes and a runtime.
    *
    * @param bytes The amount of bytes moved during the operation.
-   * @param runTime Duration of the operation.
-   * @return The effective MBPS of the operation.
+   * @param runTime Duration of the operation in seconds.
+   * @return The effective memory bandwidth in MB/s.
    */
   double calculateMBPS(double bytes, double runTime) {
     return (bytes / (runTime * 1024.0 * 1024.0));
@@ -295,8 +329,8 @@ public:
    * @brief Calculate the effective FLOPS given a bytes and a runtime.
    *
    * @param floatOps The amount of floating point operations performed.
-   * @param runTime Duration of the operation.
-   * @return The effective FLOPS of the operation.
+   * @param runTime Duration of the operation in seconds.
+   * @return The effective floating point operations per second (FLOPS).
    */
   double calculateFLOPS(double floatOps, double runTime) {
     return (floatOps / runTime);
@@ -305,13 +339,13 @@ public:
   /**
    * @brief Return the kernel chosen to run.
    *
-   * @return The kernel that will be run.
+   * @return The kernel type that will be run.
    */
   RSBaseImpl::RSKernelType getKernelType() { return KType; }
 
 private:
-  std::string Impl;
-  RSBaseImpl::RSKernelType KType;
+  std::string Impl;               /**< Name of the implementation */
+  RSBaseImpl::RSKernelType KType; /**< Type of kernel to run */
 };
 
 #endif // _RSBASEIMPL_H_

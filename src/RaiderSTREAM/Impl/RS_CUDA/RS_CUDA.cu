@@ -1,42 +1,43 @@
-//
-// _RS_CUDA_CU_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RS_CUDA.cu
+ * @brief CUDA implementation of RaiderSTREAM benchmark kernels
+ * @copyright Copyright (C) 2022-2024 Texas Tech University. All Rights Reserved.
+ * @author michael.beebe@ttu.edu
+ *
+ * See LICENSE in the top level directory for licensing details
+ */
 
 #ifdef _ENABLE_CUDA_
 
 #include "RS_CUDA.cuh"
 
-/* This sanitycheck is used to prevent
- * the compiler from getting "too slick
- * with it" when it comes to reasoning
- * about our code. This copy is done
- * outside of benchmark time recording.
+/**
+ * @brief Sanity check macro to prevent over-optimization
+ * 
+ * This macro performs memory copies and computations outside of benchmark timing
+ * to prevent the compiler from over-optimizing the benchmark code. It copies the
+ * device arrays back to host, performs some arithmetic operations, and prints a
+ * checksum value.
  */
 #define CUDA_SANITYCHECK                                                       \
   do {                                                                         \
     cudaMemcpy(a, d_a, streamArraySize, cudaMemcpyDeviceToHost);               \
     cudaMemcpy(b, d_b, streamArraySize, cudaMemcpyDeviceToHost);               \
     cudaMemcpy(c, d_c, streamArraySize, cudaMemcpyDeviceToHost);               \
-    acc = 0;                                                                 \
+    acc = 0;                                                                   \
     for (ssize_t i = 1; i < streamArraySize; i *= 2) {                         \
       acc += a[i] + b[i] + c[i];                                               \
     }                                                                          \
     std::cout << "Compiler sanity check: " << acc << std::endl;                \
   } while (false)
 
-/**************************************************
- * @brief Constructor for the RS_CUDA class.
+/**
+ * @brief Constructor for the RS_CUDA class
  *
- * Initializes the RS_CUDA object with the specified options.
+ * Initializes a new RS_CUDA object with the specified options.
  *
- * @param opts Options for the RS_CUDA object.
- **************************************************/
+ * @param opts Configuration options for the RS_CUDA implementation
+ */
 RS_CUDA::RS_CUDA(const RSOpts &opts)
     : RSBaseImpl("RS_CUDA", opts.getKernelTypeFromName(opts.getKernelName())),
       kernelName(opts.getKernelName()),
@@ -48,27 +49,36 @@ RS_CUDA::RS_CUDA(const RSOpts &opts)
       threadBlocks(opts.getThreadBlocks()),
       threadsPerBlock(opts.getThreadsPerBlocks()), deviceId(opts.getDeviceId()) {}
 
+/**
+ * @brief Destructor for the RS_CUDA class
+ */
 RS_CUDA::~RS_CUDA() {}
 
-/********************************************
- * @brief Print basic info about CUDA device.
+/**
+ * @brief Print basic information about the CUDA device
  *
  * Currently unimplemented.
  *
- * @return If info was obtained successfuly.
- ********************************************/
+ * @return True if device information was obtained successfully
+ */
 bool RS_CUDA::printCudaDeviceProps() {
   // TODO:
   return true;
 }
 
-/**********************************************
- * @brief Allocates and initializes memory for
- *        data arrays and copies data to the device.
+/**
+ * @brief Allocates and initializes memory for data arrays
  *
- * @return True if allocation and copy are
- *         successful, false otherwise.
- **********************************************/
+ * This method:
+ * - Sets the CUDA device
+ * - Validates thread block configuration
+ * - Allocates host arrays (a, b, c, idx1, idx2, idx3)
+ * - Initializes array data
+ * - Allocates device arrays (d_a, d_b, d_c, d_idx1, d_idx2, d_idx3)
+ * - Copies data from host to device arrays
+ *
+ * @return True if allocation and initialization successful, false otherwise
+ */
 bool RS_CUDA::allocateData() {
   if(cudaSetDevice(deviceId) != cudaSuccess) {
     std::cout << "RS_CUDA::allocateData() - ERROR: failed setting CUDA device to "
@@ -275,15 +285,13 @@ bool RS_CUDA::allocateData() {
   return true;
 }
 
-/**************************************************
- * @brief Frees all allocated memory for the
- *        RS_CUDA object.
+/**
+ * @brief Frees all allocated memory
  *
- * This function deallocates memory for both host
- * and device pointers.
+ * Deallocates all host and device memory arrays.
  *
- * @return true if all memory was successfully freed.
- **************************************************/
+ * @return True if all memory was successfully freed
+ */
 bool RS_CUDA::freeData() {
   if (a) {
     delete[] a;
@@ -324,23 +332,26 @@ bool RS_CUDA::freeData() {
   return true;
 }
 
-/**************************************************
- * @brief Executes the specified kernel using CUDA.
+/**
+ * @brief Executes the specified CUDA kernel benchmark
  *
- * @param TIMES Array to store the execution times
- *              for each kernel.
- * @param MBPS Array to store the memory bandwidths
- *             for each kernel.
- * @param FLOPS Array to store the floating-point
- *              operation counts for each kernel.
- * @param BYTES Array to store the byte sizes for
- *              each kernel.
- * @param FLOATOPS Array to store the floating-point
- *                 operation sizes for each kernel.
+ * This method executes the selected kernel benchmark based on the kernel type.
+ * For each kernel:
+ * - Synchronizes the device
+ * - Records start time
+ * - Launches kernel
+ * - Synchronizes the device
+ * - Records end time
+ * - Performs sanity check
+ * - Calculates and stores timing and performance metrics
  *
- * @return True if the execution was successful,
- *         false otherwise.
- **************************************************/
+ * @param[out] TIMES Array to store execution times for each kernel
+ * @param[out] MBPS Array to store memory bandwidth results for each kernel
+ * @param[out] FLOPS Array to store floating point operations per second for each kernel
+ * @param[in] BYTES Array containing byte sizes for each kernel
+ * @param[in] FLOATOPS Array containing floating point operation counts for each kernel
+ * @return True if execution successful, false otherwise
+ */
 bool RS_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                       double *FLOATOPS) {
   double startTime = 0.0;

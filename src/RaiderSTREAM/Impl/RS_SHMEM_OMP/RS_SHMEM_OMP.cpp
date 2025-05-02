@@ -1,17 +1,25 @@
-//
-// _RS_SHMEM_OMP_CPP_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RS_SHMEM_OMP.cpp
+ * @brief Implementation of the RS_SHMEM_OMP class for RaiderSTREAM benchmarks
+ * using OpenSHMEM with OpenMP
+ * @copyright Copyright (C) 2022-2024 Texas Tech University
+ * All Rights Reserved
+ * Contact: michael.beebe@ttu.edu
+ * @license See LICENSE in the top level directory for licensing details
+ */
 
 #include "RS_SHMEM_OMP.h"
 
 #ifdef _RS_SHMEM_OMP_H_
 
+/**
+ * @def SHMEM_BENCHMARK
+ * @brief Macro for benchmarking OpenSHMEM operations using SHMEM 1.5 API
+ * @param k Index for storing results
+ * @param f Function/operation to benchmark
+ * @details Measures execution time, calculates bandwidth and FLOPS, and reduces
+ * results across all PEs
+ */
 #ifdef _SHMEM_1_5_
 #define SHMEM_BENCHMARK(k, f)                                                  \
   do {                                                                         \
@@ -34,6 +42,15 @@
     }                                                                          \
   } while (false)
 #endif
+
+/**
+ * @def SHMEM_BENCHMARK
+ * @brief Macro for benchmarking OpenSHMEM operations using SHMEM 1.4 API
+ * @param k Index for storing results
+ * @param f Function/operation to benchmark
+ * @details Measures execution time, calculates bandwidth and FLOPS, and reduces
+ * results across all PEs
+ */
 #ifdef _SHMEM_1_4_
 #define SHMEM_BENCHMARK(k, f)                                                  \
   do {                                                                         \
@@ -57,13 +74,12 @@
   } while (false)
 #endif
 
-/**************************************************
- * @brief Constructor for the RS_SHMEM class.
- *
- * Initializes the RS_SHMEM object with the specified options.
- *
- * @param opts Options for the RS_SHMEM object.
- **************************************************/
+/**
+ * @brief Constructor for the RS_SHMEM_OMP class
+ * @param opts Options for configuring the RS_SHMEM_OMP instance
+ * @details Initializes the RS_SHMEM_OMP object with the specified kernel type,
+ * array size, and other parameters
+ */
 RS_SHMEM_OMP::RS_SHMEM_OMP(const RSOpts &opts)
     : RSBaseImpl("RS_SHMEM_OMP",
                  opts.getKernelTypeFromName(opts.getKernelName())),
@@ -72,15 +88,17 @@ RS_SHMEM_OMP::RS_SHMEM_OMP(const RSOpts &opts)
       numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
       idx2(nullptr), idx3(nullptr), scalar(3) {}
 
+/**
+ * @brief Destructor for the RS_SHMEM_OMP class
+ */
 RS_SHMEM_OMP::~RS_SHMEM_OMP() {}
 
-/**********************************************
- * @brief Allocates and initializes memory
- *        for data arrays.
- *
- * @return True if allocation is
- *         successful, false otherwise.
- **********************************************/
+/**
+ * @brief Allocates and initializes memory for data arrays
+ * @return true if allocation is successful, false otherwise
+ * @details Allocates symmetric heap memory for arrays and initializes them with
+ * data
+ */
 bool RS_SHMEM_OMP::allocateData() {
   int myRank = shmem_my_pe(); /* Current rank */
   int size = shmem_n_pes();   /* Number of shmem ranks */
@@ -160,12 +178,11 @@ bool RS_SHMEM_OMP::allocateData() {
   return true;
 }
 
-/**************************************************
- * @brief Frees all allocated memory for the
- *        RS_SHMEM object.
- *
- * @return true if all memory was successfully freed.
- **************************************************/
+/**
+ * @brief Frees all allocated memory for the RS_SHMEM_OMP object
+ * @return true if all memory was successfully freed
+ * @details Deallocates symmetric heap memory for all arrays
+ */
 bool RS_SHMEM_OMP::freeData() {
   if (a) {
     shmem_free(a);
@@ -188,23 +205,19 @@ bool RS_SHMEM_OMP::freeData() {
   return true;
 }
 
-/**************************************************
- * @brief Executes the specified kernel using OpenSHMEM.
- *
- * @param TIMES Array to store the execution times
- *              for each kernel.
- * @param MBPS Array to store the memory bandwidths
- *             for each kernel.
- * @param FLOPS Array to store the floating-point
- *              operation counts for each kernel.
- * @param BYTES Array to store the byte sizes for
- *              each kernel.
- * @param FLOATOPS Array to store the floating-point
- *                 operation sizes for each kernel.
- *
- * @return True if the execution was successful,
- *         false otherwise.
- **************************************************/
+/**
+ * @brief Executes the specified kernel using OpenSHMEM
+ * @param[out] TIMES Array to store execution times for each kernel
+ * @param[out] MBPS Array to store memory bandwidths for each kernel
+ * @param[out] FLOPS Array to store floating-point operation counts for each
+ * kernel
+ * @param[in] BYTES Array containing byte sizes for each kernel
+ * @param[in] FLOATOPS Array containing floating-point operation sizes for each
+ * kernel
+ * @return true if execution was successful, false otherwise
+ * @details Executes the selected kernel type(s) and measures performance
+ * metrics
+ */
 bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
                            double *BYTES, double *FLOATOPS) {
   double startTime = 0.0;
@@ -246,8 +259,7 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   switch (kType) {
   /* SEQUENTIAL KERNELS */
   case RSBaseImpl::RS_SEQ_COPY:
-    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_COPY,
-                    seqCopy(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_COPY, seqCopy(a, b, c, chunkSize));
     break;
 
   case RSBaseImpl::RS_SEQ_SCALE:
@@ -323,8 +335,8 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
     break;
 
   case RSBaseImpl::RS_SG_TRIAD:
-    SHMEM_BENCHMARK(RSBaseImpl::RS_SG_TRIAD, sgTriad(a, b, c, idx1, idx2, idx3,
-                                                     chunkSize, scalar));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_SG_TRIAD,
+                    sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar));
     break;
 
   /* CENTRAL KERNELS */
@@ -339,8 +351,7 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
     break;
 
   case RSBaseImpl::RS_CENTRAL_ADD:
-    SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_ADD,
-                    centralAdd(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize));
     break;
 
   case RSBaseImpl::RS_CENTRAL_TRIAD:
@@ -348,12 +359,10 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
                     centralTriad(a, b, c, chunkSize, scalar));
     break;
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /* ALL KERNELS */
   case RSBaseImpl::RS_ALL:
     /* RS_SEQ_COPY */
-    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_COPY,
-                    seqCopy(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_COPY, seqCopy(a, b, c, chunkSize));
 
     /* RS_SEQ_SCALE */
     SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_SCALE,
@@ -411,8 +420,8 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
                     sgAdd(a, b, c, idx1, idx2, idx3, chunkSize));
 
     /* RS_SG_TRIAD */
-    SHMEM_BENCHMARK(RSBaseImpl::RS_SG_TRIAD, sgTriad(a, b, c, idx1, idx2, idx3,
-                                                     chunkSize, scalar));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_SG_TRIAD,
+                    sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar));
 
     /* RS_CENTRAL_COPY */
     SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_COPY,
@@ -423,8 +432,7 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
                     centralScale(a, b, c, chunkSize, scalar));
 
     /* RS_CENTRAL_ADD */
-    SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_ADD,
-                    centralAdd(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize));
 
     /* RS_CENTRAL_TRIAD */
     SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_TRIAD,

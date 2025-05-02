@@ -1,12 +1,12 @@
-//
-// _RS_SHMEM_OMP_TARGET_IMPL_C_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RS_SHMEM_OMP_TARGET_IMPL.c
+ * @brief Implementation of RaiderSTREAM benchmarks using OpenSHMEM with OpenMP
+ * Target offloading
+ * @copyright Copyright (C) 2022-2024 Texas Tech University
+ * All Rights Reserved
+ * Contact: michael.beebe@ttu.edu
+ * @license See LICENSE in the top level directory for licensing details
+ */
 
 #include <omp.h>
 #include <sys/types.h>
@@ -15,16 +15,23 @@
 #define DO_PRAGMA(x) _Pragma(#x)
 #endif
 
-// This is (manually :[) copied from ../RS_OMP_TARGET/RS_OMP_TARGET_IMPL.c.
-// If you update this, consider updating that file too.
+/**
+ * @def LOOP_PRAGMA
+ * @brief Macro for OpenMP target offload pragmas
+ * @details Manually copied from ../RS_OMP_TARGET/RS_OMP_TARGET_IMPL.c.
+ * If you update this, consider updating that file too.
+ * Expands to pragma for teams distribute parallel for with device pointer
+ * clauses
+ */
 #define LOOP_PRAGMA(...) DO_PRAGMA(omp target teams distribute parallel for simd is_device_ptr(__VA_ARGS__))
 
-/**************************************************
- * @brief Copies data from one stream to another.
- *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Copies data from one stream to another using sequential access pattern
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] streamArraySize Size of arrays
+ */
 void seqCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
              ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c)
@@ -32,13 +39,14 @@ void seqCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     c[j] = a[j];
 }
 
-/**************************************************
- * @brief Scales data in a stream.
- *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Scales data using sequential access pattern
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] streamArraySize Size of arrays
+ * @param[in] scalar Scaling factor
+ */
 void seqScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
               ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c)
@@ -46,12 +54,13 @@ void seqScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     b[j] = scalar * c[j];
 }
 
-/**************************************************
- * @brief Adds data from two streams.
- *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Adds data using sequential access pattern
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] streamArraySize Size of arrays
+ */
 void seqAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
             ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c)
@@ -59,13 +68,14 @@ void seqAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     c[j] = a[j] + b[j];
 }
 
-/**************************************************
- * @brief Performs triad operation on stream data.
- *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Performs triad operation using sequential access pattern
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] streamArraySize Size of arrays
+ * @param[in] scalar Scaling factor
+ */
 void seqTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
               ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c)
@@ -73,12 +83,14 @@ void seqTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     a[j] = b[j] + scalar * c[j];
 }
 
-/**************************************************
- * @brief Copies data using gather operation.
- *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Copies data using gather access pattern
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] idx1 Index array for gather
+ * @param[in] streamArraySize Size of arrays
+ */
 void gatherCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                 ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1)
@@ -86,13 +98,15 @@ void gatherCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     c[j] = a[idx1[j]];
 }
 
-/**************************************************
- * @brief Scales data using gather operation.
- *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Scales data using gather access pattern
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] idx1 Index array for gather
+ * @param[in] streamArraySize Size of arrays
+ * @param[in] scalar Scaling factor
+ */
 void gatherScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                  ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c, idx1)
@@ -100,12 +114,15 @@ void gatherScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     b[j] = scalar * c[idx1[j]];
 }
 
-/**************************************************
- * @brief Adds data using gather operation.
- *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Adds data using gather access pattern
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] idx1 First index array for gather
+ * @param[in] idx2 Second index array for gather
+ * @param[in] streamArraySize Size of arrays
+ */
 void gatherAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                ssize_t *idx2, ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
@@ -113,13 +130,16 @@ void gatherAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     c[j] = a[idx1[j]] + b[idx2[j]];
 }
 
-/**************************************************
- * @brief Performs triad operation using gather.
- *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Performs triad operation using gather access pattern
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] idx1 First index array for gather
+ * @param[in] idx2 Second index array for gather
+ * @param[in] streamArraySize Size of arrays
+ * @param[in] scalar Scaling factor
+ */
 void gatherTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                  ssize_t *idx2, ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
@@ -127,12 +147,14 @@ void gatherTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     a[j] = b[idx1[j]] + scalar * c[idx2[j]];
 }
 
-/**************************************************
- * @brief Copies data using scatter operation.
- *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Copies data using scatter access pattern
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] streamArraySize Size of arrays
+ */
 void scatterCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                  ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1)
@@ -140,13 +162,15 @@ void scatterCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     c[idx1[j]] = a[j];
 }
 
-/**************************************************
- * @brief Scales data using scatter operation.
- *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Scales data using scatter access pattern
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] streamArraySize Size of arrays
+ * @param[in] scalar Scaling factor
+ */
 void scatterScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                   ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c, idx1)
@@ -154,12 +178,14 @@ void scatterScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     b[idx1[j]] = scalar * c[j];
 }
 
-/**************************************************
- * @brief Adds data using scatter operation.
- *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Adds data using scatter access pattern
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] streamArraySize Size of arrays
+ */
 void scatterAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                 ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1)
@@ -167,13 +193,15 @@ void scatterAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     c[idx1[j]] = a[j] + b[j];
 }
 
-/**************************************************
- * @brief Performs triad operation using scatter.
- *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Performs triad operation using scatter access pattern
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] streamArraySize Size of arrays
+ * @param[in] scalar Scaling factor
+ */
 void scatterTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
                   ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c, idx1)
@@ -181,12 +209,15 @@ void scatterTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     a[idx1[j]] = b[j] + scalar * c[j];
 }
 
-/**************************************************
- * @brief Copies data using scatter-gather operation.
- *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Copies data using scatter-gather access pattern
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] idx2 Index array for gather
+ * @param[in] streamArraySize Size of arrays
+ */
 void sgCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
             ssize_t *idx2, ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
@@ -194,13 +225,16 @@ void sgCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     c[idx1[j]] = a[idx2[j]];
 }
 
-/**************************************************
- * @brief Scales data using scatter-gather operation.
- *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Scales data using scatter-gather access pattern
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] idx1 Index array for gather
+ * @param[in] idx2 Index array for scatter
+ * @param[in] streamArraySize Size of arrays
+ * @param[in] scalar Scaling factor
+ */
 void sgScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
              ssize_t *idx2, ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c, idx1, idx2)
@@ -208,12 +242,16 @@ void sgScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     b[idx2[j]] = scalar * c[idx1[j]];
 }
 
-/**************************************************
- * @brief Adds data using scatter-gather operation.
- *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Adds data using scatter-gather access pattern
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] idx1 Index array for scatter
+ * @param[in] idx2 First index array for gather
+ * @param[in] idx3 Second index array for gather
+ * @param[in] streamArraySize Size of arrays
+ */
 void sgAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
            ssize_t *idx2, ssize_t *idx3, ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c, idx1, idx2, idx3)
@@ -221,13 +259,17 @@ void sgAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     c[idx1[j]] = a[idx2[j]] + b[idx3[j]];
 }
 
-/**************************************************
- * @brief Performs triad operation using scatter-gather.
- *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Performs triad operation using scatter-gather access pattern
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] idx1 Index array for gather
+ * @param[in] idx2 Index array for scatter
+ * @param[in] idx3 Second index array for gather
+ * @param[in] streamArraySize Size of arrays
+ * @param[in] scalar Scaling factor
+ */
 void sgTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
              ssize_t *idx2, ssize_t *idx3, ssize_t streamArraySize,
              STREAM_TYPE scalar) {
@@ -236,12 +278,13 @@ void sgTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *idx1,
     a[idx2[j]] = b[idx3[j]] + scalar * c[idx1[j]];
 }
 
-/**************************************************
- * @brief Copies data using a central location.
- *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Copies data using central access pattern (single element)
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] streamArraySize Size of arrays
+ */
 void centralCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                  ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c)
@@ -249,13 +292,14 @@ void centralCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     c[0] = a[0];
 }
 
-/**************************************************
- * @brief Scales data using a central location.
- *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Scales data using central access pattern (single element)
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] streamArraySize Size of arrays
+ * @param[in] scalar Scaling factor
+ */
 void centralScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                   ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c)
@@ -263,12 +307,13 @@ void centralScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     b[0] = scalar * c[0];
 }
 
-/**************************************************
- * @brief Adds data using a central location.
- *
- * @param streamArraySize Size of the stream array.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Adds data using central access pattern (single element)
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] streamArraySize Size of arrays
+ */
 void centralAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                 ssize_t streamArraySize) {
   LOOP_PRAGMA(a, b, c)
@@ -276,13 +321,14 @@ void centralAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
     c[0] = a[0] + b[0];
 }
 
-/**************************************************
- * @brief Performs triad operation using a central location.
- *
- * @param streamArraySize Size of the stream array.
- * @param scalar Scalar value for operations.
- * @return Internally measured benchmark runtime.
- **************************************************/
+/**
+ * @brief Performs triad operation using central access pattern (single element)
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] streamArraySize Size of arrays
+ * @param[in] scalar Scaling factor
+ */
 void centralTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
                   ssize_t streamArraySize, STREAM_TYPE scalar) {
   LOOP_PRAGMA(a, b, c)

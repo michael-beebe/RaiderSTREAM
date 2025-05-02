@@ -1,44 +1,47 @@
-//
-// _RS_OMP_TARGET_CPP_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RS_OMP_TARGET.cpp
+ * @brief Implementation of OpenMP target offload STREAM benchmark class
+ * @copyright Copyright (C) 2022-2024 Texas Tech University
+ * @author michael.beebe@ttu.edu
+ * @license See LICENSE in the top level directory for licensing details
+ */
 
 #include "RS_OMP_TARGET.h"
 #include <iostream>
 
 #ifdef _RS_OMP_TARGET_H_
 
-/**************************************************
+/**
  * @brief Constructor for the RS_OMP_TARGET class.
  *
  * Initializes the RS_OMP_TARGET object with the specified options.
  *
  * @param opts Options for the RS_OMP_TARGET object.
- **************************************************/
+ */
 RS_OMP_TARGET::RS_OMP_TARGET(const RSOpts &opts)
     : RSBaseImpl("RS_OMP_TARGET",
                  opts.getKernelTypeFromName(opts.getKernelName())),
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), numPEs(opts.getNumPEs()),
-      lArgc(0), lArgv(nullptr),
-      d_a(nullptr), d_b(nullptr), d_c(nullptr), d_idx1(nullptr),
-      d_idx2(nullptr), d_idx3(nullptr), scalar(3.0),
+      lArgc(0), lArgv(nullptr), d_a(nullptr), d_b(nullptr), d_c(nullptr),
+      d_idx1(nullptr), d_idx2(nullptr), d_idx3(nullptr), scalar(3.0),
       device(opts.getDeviceId()) {}
 
+/**
+ * @brief Destructor for the RS_OMP_TARGET class.
+ */
 RS_OMP_TARGET::~RS_OMP_TARGET() {}
 
-/**********************************************
- * @brief Allocates and initializes memory for
- *        data arrays and copies data to the device.
+/**
+ * @brief Allocates and initializes memory for data arrays and copies data to
+ * the device.
  *
- * @return True if allocation and copy are
- *         successful, false otherwise.
- **********************************************/
+ * This function allocates host memory, initializes arrays with random or
+ * predefined values, allocates device memory, and copies data from host to
+ * device.
+ *
+ * @return True if allocation and copy are successful, false otherwise.
+ */
 bool RS_OMP_TARGET::allocateData() {
   STREAM_TYPE *a = new STREAM_TYPE[streamArraySize];
   STREAM_TYPE *b = new STREAM_TYPE[streamArraySize];
@@ -64,7 +67,7 @@ bool RS_OMP_TARGET::allocateData() {
   d_a = (STREAM_TYPE *)omp_target_alloc(data_size, device);
   d_b = (STREAM_TYPE *)omp_target_alloc(data_size, device);
   d_c = (STREAM_TYPE *)omp_target_alloc(data_size, device);
-  
+
   d_idx1 = (ssize_t *)omp_target_alloc(idx_size, device);
   d_idx2 = (ssize_t *)omp_target_alloc(idx_size, device);
   d_idx3 = (ssize_t *)omp_target_alloc(idx_size, device);
@@ -75,7 +78,6 @@ bool RS_OMP_TARGET::allocateData() {
   omp_target_memcpy(d_idx1, idx1, idx_size, 0, 0, device, host);
   omp_target_memcpy(d_idx2, idx2, idx_size, 0, 0, device, host);
   omp_target_memcpy(d_idx3, idx3, idx_size, 0, 0, device, host);
-
 
 #ifdef _DEBUG_
   std::cout << "==============================================================="
@@ -113,15 +115,13 @@ bool RS_OMP_TARGET::allocateData() {
   return true;
 }
 
-/**************************************************
- * @brief Frees all allocated memory for the
- *        RS_OMP_TARGET object.
+/**
+ * @brief Frees all allocated memory for the RS_OMP_TARGET object.
  *
- * This function deallocates memory for both host
- * and device pointers.
+ * This function deallocates memory for both host and device pointers.
  *
  * @return true if all memory was successfully freed.
- **************************************************/
+ */
 bool RS_OMP_TARGET::freeData() {
   if (d_a) {
     omp_target_free(d_a, device);
@@ -144,24 +144,23 @@ bool RS_OMP_TARGET::freeData() {
   return true;
 }
 
-/**************************************************
- * @brief Executes the specified kernel using OpenMP
- *        offloading.
+/**
+ * @brief Executes the specified kernel using OpenMP offloading.
  *
- * @param TIMES Array to store the execution times
- *              for each kernel.
- * @param MBPS Array to store the memory bandwidths
- *             for each kernel.
- * @param FLOPS Array to store the floating-point
- *              operation counts for each kernel.
- * @param BYTES Array to store the byte sizes for
- *              each kernel.
- * @param FLOATOPS Array to store the floating-point
- *                 operation sizes for each kernel.
+ * This function executes the selected STREAM benchmark kernel on the target
+ * device. It measures execution time, calculates memory bandwidth and floating
+ * point operations, and stores results in the provided arrays.
  *
- * @return True if the execution was successful,
- *         false otherwise.
- **************************************************/
+ * @param[out] TIMES Array to store the execution times for each kernel
+ * @param[out] MBPS Array to store the memory bandwidths for each kernel
+ * @param[out] FLOPS Array to store the floating-point operation counts for each
+ * kernel
+ * @param[out] BYTES Array to store the byte sizes for each kernel
+ * @param[out] FLOATOPS Array to store the floating-point operation sizes for
+ * each kernel
+ *
+ * @return True if the execution was successful, false otherwise
+ */
 bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
                             double *BYTES, double *FLOATOPS) {
   double start, end;
@@ -181,7 +180,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
   // libgomp likes to be lazy when it comes to initializing
   // the device. run a kernel before benchmarks so we don't
   // initialize the device while keeping track of runtime.
-  //seqCopy(a, b, c, streamArraySize);
+  // seqCopy(a, b, c, streamArraySize);
   switch (kType) {
   /* SEQUENTIAL KERNELS */
   case RSBaseImpl::RS_SEQ_COPY:
@@ -247,8 +246,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_GATHER_SCALE:
     start = mySecond();
-    gatherScale(a, b, c, idx1, streamArraySize,
-                scalar);
+    gatherScale(a, b, c, idx1, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
@@ -272,8 +270,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_GATHER_TRIAD:
     start = mySecond();
-    gatherTriad(a, b, c, idx1, idx2, streamArraySize,
-                scalar);
+    gatherTriad(a, b, c, idx1, idx2, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
@@ -298,8 +295,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SCATTER_SCALE:
     start = mySecond();
-    scatterScale(a, b, c, idx1, streamArraySize,
-                 scalar);
+    scatterScale(a, b, c, idx1, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
@@ -323,8 +319,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SCATTER_TRIAD:
     start = mySecond();
-    scatterTriad(a, b, c, idx1, streamArraySize,
-                 scalar);
+    scatterTriad(a, b, c, idx1, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
@@ -349,8 +344,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SG_SCALE:
     start = mySecond();
-    sgScale(a, b, c, idx1, idx2, streamArraySize,
-            scalar);
+    sgScale(a, b, c, idx1, idx2, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
@@ -374,8 +368,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SG_TRIAD:
     start = mySecond();
-    sgTriad(a, b, c, idx1, idx2, idx3,
-            streamArraySize, scalar);
+    sgTriad(a, b, c, idx1, idx2, idx3, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
@@ -493,8 +486,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_GATHER_SCALE */
     start = mySecond();
-    gatherScale(a, b, c, idx1, streamArraySize,
-                scalar);
+    gatherScale(a, b, c, idx1, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
@@ -516,8 +508,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_GATHER_TRIAD */
     start = mySecond();
-    gatherTriad(a, b, c, idx1, idx2, streamArraySize,
-                scalar);
+    gatherTriad(a, b, c, idx1, idx2, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
@@ -539,8 +530,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SCATTER_SCALE */
     start = mySecond();
-    scatterScale(a, b, c, idx1, streamArraySize,
-                 scalar);
+    scatterScale(a, b, c, idx1, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
@@ -562,8 +552,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SCATTER_TRIAD */
     start = mySecond();
-    scatterTriad(a, b, c, idx1, streamArraySize,
-                 scalar);
+    scatterTriad(a, b, c, idx1, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
@@ -585,8 +574,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SG_SCALE */
     start = mySecond();
-    sgScale(a, b, c, idx1, idx2, streamArraySize,
-            scalar);
+    sgScale(a, b, c, idx1, idx2, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
@@ -608,8 +596,7 @@ bool RS_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
     /* RS_SG_TRIAD */
     start = mySecond();
-    sgTriad(a, b, c, idx1, idx2, idx3,
-            streamArraySize, scalar);
+    sgTriad(a, b, c, idx1, idx2, idx3, streamArraySize, scalar);
     end = mySecond();
     runTime = calculateRunTime(start, end);
     mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);

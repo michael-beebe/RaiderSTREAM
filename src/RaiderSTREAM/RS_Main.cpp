@@ -1,12 +1,11 @@
-//
-// _RS_MAIN_CPP_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RS_Main.cpp
+ * @brief Main entry point for RaiderSTREAM benchmark
+ * @copyright Copyright (C) 2022-2024 Texas Tech University. All Rights Reserved.
+ * @author michael.beebe@ttu.edu
+ * 
+ * See LICENSE in the top level directory for licensing details
+ */
 
 #include <float.h>
 #include <iomanip>
@@ -62,7 +61,16 @@
 #include "Impl/RS_SHMEM_CUDA/RS_SHMEM_CUDA.cuh"
 #endif
 
-/************************************************************************************/
+/**
+ * @brief Print timing results for a benchmark kernel
+ * @param kernelName Name of the kernel being timed
+ * @param totalRuntime Total runtime in seconds
+ * @param MBPS Array of memory bandwidth results in MB/s
+ * @param FLOPS Array of floating point operation rates in FLOP/s
+ * @param kernelType Type of kernel being run
+ * @param runKernelType Type of kernel requested to run
+ * @param headerPrinted Whether the results header has been printed
+ */
 void printTiming(const std::string &kernelName, double totalRuntime,
                  const double *MBPS, const double *FLOPS,
                  RSBaseImpl::RSKernelType kernelType,
@@ -103,8 +111,11 @@ void printTiming(const std::string &kernelName, double totalRuntime,
   }
 }
 
-/************************************************************************************/
 #ifdef _ENABLE_OMP_
+/**
+ * @brief Run OpenMP version of benchmark
+ * @param Opts Pointer to options object containing benchmark parameters
+ */
 void runBenchOMP(RSOpts *Opts) {
   /* Initialize OpenMP */
   omp_get_num_threads();
@@ -166,8 +177,11 @@ void runBenchOMP(RSOpts *Opts) {
 }
 #endif
 
-/***********************************************************************************/
 #ifdef _ENABLE_OACC_
+/**
+ * @brief Run OpenACC version of benchmark
+ * @param Opts Pointer to options object containing benchmark parameters
+ */
 void runBenchOACC(RSOpts *Opts) {
 
   /* Initialize the RS_OACC object */
@@ -228,8 +242,12 @@ void runBenchOACC(RSOpts *Opts) {
   delete RS;
 }
 #endif
-/************************************************************************************/
+
 #ifdef _ENABLE_OMP_TARGET_
+/**
+ * @brief Run OpenMP target offload version of benchmark
+ * @param Opts Pointer to options object containing benchmark parameters
+ */
 void runBenchOMPTarget(RSOpts *Opts) {
   /* Initialize OpenMP */
   omp_get_num_threads();
@@ -293,8 +311,12 @@ void runBenchOMPTarget(RSOpts *Opts) {
   delete RS;
 }
 #endif
-/************************************************************************************/
+
 #ifdef _ENABLE_MPI_OMP_
+/**
+ * @brief Run hybrid MPI+OpenMP version of benchmark
+ * @param Opts Pointer to options object containing benchmark parameters
+ */
 void runBenchMPIOMP(RSOpts *Opts) {
   /* Initialize MPI */
   MPI_Init(NULL, NULL);
@@ -366,8 +388,11 @@ void runBenchMPIOMP(RSOpts *Opts) {
 }
 #endif
 
-/************************************************************************************/
 #ifdef _ENABLE_SHMEM_OMP_
+/**
+ * @brief Run hybrid OpenSHMEM+OpenMP version of benchmark
+ * @param Opts Pointer to options object containing benchmark parameters
+ */
 void runBenchSHMEMOMP(RSOpts *Opts) {
   /* Initialize OpenSHMEM */
   shmem_init();
@@ -431,8 +456,6 @@ void runBenchSHMEMOMP(RSOpts *Opts) {
   if (myRank == 0) {
     Opts->printLogo();
     Opts->printOpts();
-// std::cout << "Symmetric heap size: " << shmem_info_get_heap_size() <<
-// std::endl;
 #pragma omp parallel
     {
 #pragma omp single
@@ -466,8 +489,11 @@ void runBenchSHMEMOMP(RSOpts *Opts) {
 }
 #endif
 
-/************************************************************************************/
 #ifdef _ENABLE_CUDA_
+/**
+ * @brief Run CUDA version of benchmark
+ * @param Opts Pointer to options object containing benchmark parameters
+ */
 void runBenchCUDA(RSOpts *Opts) {
   /* Initialize the RS_CUDA object */
   RS_CUDA *RS = new RS_CUDA(*Opts);
@@ -517,14 +543,22 @@ void runBenchCUDA(RSOpts *Opts) {
 }
 #endif
 
-/************************************************************************************/
 #ifdef _ENABLE_MPI_CUDA_
+/**
+ * @brief Run hybrid MPI+CUDA version of benchmark
+ * @param Opts Pointer to options object containing benchmark parameters
+ * @todo Implement MPI+CUDA version
+ */
 void runBenchMPICUDA(RSOpts *Opts) {
   // TODO: runBenchMPICUDA()
 }
 #endif
 
 #ifdef _ENABLE_SHMEM_OMP_TARGET_
+/**
+ * @brief Run hybrid OpenSHMEM+OpenMP target offload version of benchmark
+ * @param Opts Pointer to options object containing benchmark parameters
+ */
 void runBenchSHMEMOMPTARGET(RSOpts *Opts) {
   /* Initialize OpenSHMEM */
   shmem_init();
@@ -624,6 +658,10 @@ void runBenchSHMEMOMPTARGET(RSOpts *Opts) {
 #endif
 
 #ifdef _ENABLE_SHMEM_OACC_
+/**
+ * @brief Run hybrid OpenSHMEM+OpenACC version of benchmark
+ * @param Opts Pointer to options object containing benchmark parameters
+ */
 void runBenchSHMEMOACC(RSOpts *Opts) {
   /* Initialize OpenSHMEM */
   std::cout << _OPENACC <<std::endl;
@@ -683,8 +721,6 @@ void runBenchSHMEMOACC(RSOpts *Opts) {
   if (myRank == 0) {
     Opts->printLogo();
     Opts->printOpts();
-// std::cout << "Symmetric heap size: " << shmem_info_get_heap_size() <<
-// std::endl;
     RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
     bool headerPrinted = false;
     for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
@@ -711,6 +747,10 @@ void runBenchSHMEMOACC(RSOpts *Opts) {
 #endif
 
 #ifdef _ENABLE_SHMEM_CUDA_
+/**
+ * @brief Run hybrid OpenSHMEM+CUDA version of benchmark
+ * @param Opts Pointer to options object containing benchmark parameters
+ */
 void runBenchSHMEMCUDA(RSOpts *Opts) {
   /* Initialize SHMEM */
   shmem_init();
@@ -771,8 +811,6 @@ void runBenchSHMEMCUDA(RSOpts *Opts) {
   if (myRank == 0) {
     Opts->printLogo();
     Opts->printOpts();
-// std::cout << "Symmetric heap size: " << shmem_info_get_heap_size() <<
-// std::endl;
     RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
     bool headerPrinted = false;
     for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
@@ -797,7 +835,12 @@ void runBenchSHMEMCUDA(RSOpts *Opts) {
   delete RS;
 }
 #endif
-/************************************************************************************/
+
+/**
+ * @brief Main entry point for RaiderSTREAM benchmark
+ * @param argc Number of command line arguments
+ * @param argv Array of command line argument strings
+ */
 int main(int argc, char **argv) {
   RSOpts *Opts = new RSOpts();
 
@@ -848,6 +891,5 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-/************************************************************************************/
 
 /* EOF */

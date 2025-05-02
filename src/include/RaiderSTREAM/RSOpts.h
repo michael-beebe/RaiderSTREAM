@@ -1,72 +1,84 @@
-//
-// _RSOPTS_H_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RSOpts.h
+ * @brief Header file containing options and configuration for RaiderSTREAM
+ * benchmark
+ * @copyright Copyright (C) 2022-2024 Texas Tech University. All Rights
+ * Reserved.
+ * @author michael.beebe@ttu.edu
+ *
+ * See LICENSE in the top level directory for licensing details
+ */
 
 #ifndef _RSOPTS_H_
 #define _RSOPTS_H_
 
+#include <climits>
+#include <cstdlib>
+#include <getopt.h>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cstdlib>
-#include <getopt.h>
-#include <string>
-#include <iomanip>
-#include <climits>
-
 
 #include "RSBaseImpl.h"
 
+/**
+ * @brief Major version number of RaiderSTREAM
+ */
 #define RS_VERSION_MAJOR 1
+
+/**
+ * @brief Minor version number of RaiderSTREAM
+ */
 #define RS_VERSION_MINOR 0
 
 /**
  * @brief BenchType struct: defines an individual benchmark table entry
  *
- * This structure defines the attributes of a benchmark entry, including its name,
- * arguments, notes, kernel type, and whether it is enabled and has required arguments.
+ * This structure defines the attributes of a benchmark entry, including its
+ * name, arguments, notes, kernel type, and whether it is enabled and has
+ * required arguments.
  */
 typedef struct {
-  const std::string Name;         ///< Benchmark name
-  std::string Arg;                ///< Benchmark arguments
-  std::string Notes;              ///< Benchmark notes
-  RSBaseImpl::RSKernelType KType; ///< Benchmark kernel type
-  bool Enabled;                   ///< Flag indicating if the benchmark is enabled
-  bool ReqArq;                    ///< Flag indicating if the benchmark has required arguments
+  const std::string Name;         /* Benchmark name */
+  std::string Arg;                /* Benchmark arguments */
+  std::string Notes;              /* Benchmark notes */
+  RSBaseImpl::RSKernelType KType; /* Benchmark kernel type */
+  bool Enabled; /* Flag indicating if the benchmark is enabled */
+  bool ReqArq;  /* Flag indicating if the benchmark has required arguments */
 } BenchType;
 
+/**
+ * @brief Global table containing benchmark configurations
+ */
 extern BenchType BenchTypeTable[];
 
 /**
  * @brief RSOpts class: manages command-line options and benchmark settings
  *
- * This class provides functionality for parsing command-line options, managing benchmark
- * settings, and storing benchmark-related arrays.
+ * This class provides functionality for parsing command-line options, managing
+ * benchmark settings, and storing benchmark-related arrays.
  */
 class RSOpts {
 private:
-  RSBaseImpl::RSKernelType kernelType = RSBaseImpl::RS_ALL;
-  bool isHelp = false;
-  bool isList = false;
-  std::string kernelName;
-  ssize_t streamArraySize = 1000000;
-  int numPEs = 1;
-	int lArgc;
-  char **lArgv;
+  RSBaseImpl::RSKernelType kernelType =
+      RSBaseImpl::RS_ALL;            /* Type of kernel to run */
+  bool isHelp = false;               /* Flag for help request */
+  bool isList = false;               /* Flag for listing kernels */
+  std::string kernelName;            /* Name of kernel to run */
+  ssize_t streamArraySize = 1000000; /* Size of stream arrays */
+  int numPEs = 1;                    /* Number of processing elements */
+  int lArgc;                         /* Local copy of argc */
+  char **lArgv;                      /* Local copy of argv */
 
-	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
-		int threadBlocks;
-		int threadsPerBlock;
-	#endif
-	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
-		int deviceId = 0;
-	#endif
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
+  int threadBlocks;    /* Number of CUDA thread blocks */
+  int threadsPerBlock; /* Number of threads per block */
+#endif
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ ||             \
+    _ENABLE_SHMEM_OMP_TARGET_
+  int deviceId = 0; /* Device ID to use */
+#endif
 
   /**
    * @brief Output the help dialog.
@@ -91,7 +103,14 @@ private:
   bool enableBench(std::string BenchName);
 
 public:
+  /**
+   * @brief Default constructor
+   */
   RSOpts();
+
+  /**
+   * @brief Destructor
+   */
   ~RSOpts();
 
   /**
@@ -112,16 +131,16 @@ public:
   /**
    * @brief Print out the help dialog.
    */
-	void printOpts();
+  void printOpts();
 
   /**
    * @brief Print out the ASCII art logo.
    */
-	void printLogo();
+  void printLogo();
 
-/****************************************************
- * 									 Getters 
-****************************************************/
+  /*****************************************************
+   *                    Getters
+   ****************************************************/
   /**
    * @brief Get the stored arg count.
    * @returns The arg count.
@@ -147,7 +166,9 @@ public:
    * @brief Which kernel is being run this invocation.
    * @returns The kernel type the cli args have selected.
    */
-  RSBaseImpl::RSKernelType getKernelType() const { return getKernelTypeFromName(kernelName); }
+  RSBaseImpl::RSKernelType getKernelType() const {
+    return getKernelTypeFromName(kernelName);
+  }
 
   /**
    * @brief The name of the kernel being run this invocation.
@@ -160,7 +181,8 @@ public:
    * @param kernelName The name of the kernel.
    * @returns The kernel type if recognized, or RS_NB otherwise.
    */
-	RSBaseImpl::RSKernelType getKernelTypeFromName(const std::string& kernelName) const;
+  RSBaseImpl::RSKernelType
+  getKernelTypeFromName(const std::string &kernelName) const;
 
   /**
    * @brief The size of the data arrays for this invocation.
@@ -174,38 +196,39 @@ public:
    */
   int getNumPEs() const { return numPEs; }
 
-  // FIXME: do we need this for OpenACC? I think not
-	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA__
-    /**
-     * @brief Gets the number of work groups.
-     *
-     * Blocks in CUDA, Groups in OpenMP, Gangs in OpenACC.
-     *
-     * @returns The number of working groups.
-     */
-		int getThreadBlocks() const { return threadBlocks; }
-  
-    /**
-     * @brief Gets the number of workers per work group.
-     *
-     * Warps in CUDA, Workers in OpenMP and OpenACC.
-     *
-     * @returns The number of workers per working group.
-     */
-		int getThreadsPerBlocks() const { return threadsPerBlock; }
-	#endif
-	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
-    /**
-     *  @brief Gets the device ID the user specified.
-     *
-     *  @returns The specified device ID, or 0.
-     */
-    int getDeviceId() const { return deviceId; }
-  #endif
+/* FIXME: do we need this for OpenACC? I think not */
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA__
+  /**
+   * @brief Gets the number of work groups.
+   *
+   * Blocks in CUDA, Groups in OpenMP, Gangs in OpenACC.
+   *
+   * @returns The number of working groups.
+   */
+  int getThreadBlocks() const { return threadBlocks; }
 
-/****************************************************
- * 									 Setters
-****************************************************/
+  /**
+   * @brief Gets the number of workers per work group.
+   *
+   * Warps in CUDA, Workers in OpenMP and OpenACC.
+   *
+   * @returns The number of workers per working group.
+   */
+  int getThreadsPerBlocks() const { return threadsPerBlock; }
+#endif
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ ||             \
+    _ENABLE_SHMEM_OMP_TARGET_
+  /**
+   *  @brief Gets the device ID the user specified.
+   *
+   *  @returns The specified device ID, or 0.
+   */
+  int getDeviceId() const { return deviceId; }
+#endif
+
+  /*****************************************************
+   *                    Setters
+   ****************************************************/
   /**
    * @brief Sets the size of the data array.
    * @param size The new size of the array in elements.
@@ -228,69 +251,82 @@ public:
    * @brief Sets the name of the kernel to be run.
    * @param name The new name of the kernel.
    */
-	void setKernelName(std::string name) { kernelName = name; }
+  void setKernelName(std::string name) { kernelName = name; }
 
-	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
-    /**
-     * @brief Sets the number of work groups.
-     *
-     * Blocks in CUDA, Groups in OpenMP, Gangs in OpenACC.
-     *
-     * @param The new amount of work groups.
-     */
-		void setThreadBlocks(int blocks ) { threadBlocks = blocks; }
-    /**
-     * @brief Sets the number of workers per work group.
-     *
-     * Warps in CUDA, Workers in OpenMP and OpenACC.
-     *
-     * @param The new amount of workers per work group.
-     */
-		void setThreadsPerBlocks(int threads) { threadsPerBlock = threads; }
-	#endif
-	#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
-    /**
-     *  @brief Gets the device ID the user specified.
-     *
-     *  @returns The specified device ID, or INT_MAX if the id was not specified.
-     */
-    void setDeviceId(int id) { deviceId = id; }
-  #endif
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
+  /**
+   * @brief Sets the number of work groups.
+   *
+   * Blocks in CUDA, Groups in OpenMP, Gangs in OpenACC.
+   *
+   * @param blocks The new amount of work groups.
+   */
+  void setThreadBlocks(int blocks) { threadBlocks = blocks; }
+  /**
+   * @brief Sets the number of workers per work group.
+   *
+   * Warps in CUDA, Workers in OpenMP and OpenACC.
+   *
+   * @param threads The new amount of workers per work group.
+   */
+  void setThreadsPerBlocks(int threads) { threadsPerBlock = threads; }
+#endif
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ ||             \
+    _ENABLE_SHMEM_OMP_TARGET_
+  /**
+   *  @brief Sets the device ID to use.
+   *
+   *  @param id The device ID to use.
+   */
+  void setDeviceId(int id) { deviceId = id; }
+#endif
 
-/****************************************************
- * 						Arrays used in kernels
-****************************************************/
+  /*****************************************************
+   *              Arrays used in kernels
+   ****************************************************/
   /**
    * @brief Maps the RS_KERNEL_TYPE enum to the amount of bytes being moved.
    *
    * Initialized only after RSOpts::parseOpts.
    */
   double BYTES[NUM_KERNELS] = {
-		// Original Kernels
-		static_cast<double>(2 * sizeof(STREAM_TYPE)), // Copy
-		static_cast<double>(2 * sizeof(STREAM_TYPE)), // Scale
-		static_cast<double>(3 * sizeof(STREAM_TYPE)), // Add
-		static_cast<double>(3 * sizeof(STREAM_TYPE)), // Triad
-		// Gather Kernels
-		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // GATHER Copy
-		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // GATHER Scale
-		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t)))), // GATHER Add
-		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t)))), // GATHER Triad
-		// Scatter Kernels
-		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // SCATTER Copy
-		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // SCATTER Scale
-		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // SCATTER Add
-		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (1 * sizeof(ssize_t)))), // SCATTER Triad
-		// Scatter-Gather Kernels
-		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t)))), // SG Copy
-		static_cast<double>(((2 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t)))), // SG Scale
-		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t)))), // SG Add
-		static_cast<double>(((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t)))), // SG Triad
-		// Central Kernels
-		static_cast<double>(2 * sizeof(STREAM_TYPE)), // Central Copy
-		static_cast<double>(2 * sizeof(STREAM_TYPE)), // Central Scale
-		static_cast<double>(3 * sizeof(STREAM_TYPE)), // Central Add
-		static_cast<double>(3 * sizeof(STREAM_TYPE)), // Central Triad
+      /* Original Kernels */
+      static_cast<double>(2 * sizeof(STREAM_TYPE)), /* Copy */
+      static_cast<double>(2 * sizeof(STREAM_TYPE)), /* Scale */
+      static_cast<double>(3 * sizeof(STREAM_TYPE)), /* Add */
+      static_cast<double>(3 * sizeof(STREAM_TYPE)), /* Triad */
+      /* Gather Kernels */
+      static_cast<double>(((2 * sizeof(STREAM_TYPE)) +
+                           (1 * sizeof(ssize_t)))), /* GATHER Copy */
+      static_cast<double>(((2 * sizeof(STREAM_TYPE)) +
+                           (1 * sizeof(ssize_t)))), /* GATHER Scale */
+      static_cast<double>(
+          ((3 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t)))), /* GATHER Add */
+      static_cast<double>(((3 * sizeof(STREAM_TYPE)) +
+                           (2 * sizeof(ssize_t)))), /* GATHER Triad */
+      /* Scatter Kernels */
+      static_cast<double>(((2 * sizeof(STREAM_TYPE)) +
+                           (1 * sizeof(ssize_t)))), /* SCATTER Copy */
+      static_cast<double>(((2 * sizeof(STREAM_TYPE)) +
+                           (1 * sizeof(ssize_t)))), /* SCATTER Scale */
+      static_cast<double>(((3 * sizeof(STREAM_TYPE)) +
+                           (1 * sizeof(ssize_t)))), /* SCATTER Add */
+      static_cast<double>(((3 * sizeof(STREAM_TYPE)) +
+                           (1 * sizeof(ssize_t)))), /* SCATTER Triad */
+      /* Scatter-Gather Kernels */
+      static_cast<double>(
+          ((2 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t)))), /* SG Copy */
+      static_cast<double>(
+          ((2 * sizeof(STREAM_TYPE)) + (2 * sizeof(ssize_t)))), /* SG Scale */
+      static_cast<double>(
+          ((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t)))), /* SG Add */
+      static_cast<double>(
+          ((3 * sizeof(STREAM_TYPE)) + (3 * sizeof(ssize_t)))), /* SG Triad */
+      /* Central Kernels */
+      static_cast<double>(2 * sizeof(STREAM_TYPE)), /* Central Copy */
+      static_cast<double>(2 * sizeof(STREAM_TYPE)), /* Central Scale */
+      static_cast<double>(3 * sizeof(STREAM_TYPE)), /* Central Add */
+      static_cast<double>(3 * sizeof(STREAM_TYPE)), /* Central Triad */
   };
 
   /**
@@ -299,45 +335,47 @@ public:
    * Initialized only after RSOpts::parseOpts.
    */
   double FLOATOPS[NUM_KERNELS] = {
-		// Original Kernels
-		(double)0.0,                       // Copy
-		1.0,             // Scale
-		1.0,             // Add
-		2.0,             // Triad
-		// Gather Kernels
-		(double)0.0,                       // GATHER Copy
-		1.0,             // GATHER Scale
-		1.0,             // GATHER Add
-		2.0,             // GATHER Triad
-		// Scatter Kernels
-		(double)0.0,                       // SCATTER Copy
-		1.0,             // SCATTER Scale
-		1.0,             // SCATTER Add
-		2.0,             // SCATTER Triad
-		// Scatter-Gather Kernels
-		(double)0.0,                       // SG Copy
-		1.0,             // SG Scale
-		1.0,             // SG Add
-		2.0,             // SG Triad
-		// Central Kernels
-		(double)0.0,                       // CENTRAL Copy
-		1.0,             // CENTRAL Scale
-		1.0,             // CENTRAL Add
-		2.0,             // CENTRAL Triad
+      /* Original Kernels */
+      (double)0.0, /* Copy */
+      1.0,         /* Scale */
+      1.0,         /* Add */
+      2.0,         /* Triad */
+      /* Gather Kernels */
+      (double)0.0, /* GATHER Copy */
+      1.0,         /* GATHER Scale */
+      1.0,         /* GATHER Add */
+      2.0,         /* GATHER Triad */
+      /* Scatter Kernels */
+      (double)0.0, /* SCATTER Copy */
+      1.0,         /* SCATTER Scale */
+      1.0,         /* SCATTER Add */
+      2.0,         /* SCATTER Triad */
+      /* Scatter-Gather Kernels */
+      (double)0.0, /* SG Copy */
+      1.0,         /* SG Scale */
+      1.0,         /* SG Add */
+      2.0,         /* SG Triad */
+      /* Central Kernels */
+      (double)0.0, /* CENTRAL Copy */
+      1.0,         /* CENTRAL Scale */
+      1.0,         /* CENTRAL Add */
+      2.0,         /* CENTRAL Triad */
   };
 
   /**
-   * @brief Storage for the MBPS of benchmarks this invocation.
+   * @brief Storage for the memory bandwidth results in MB/s for each kernel
    */
-	double MBPS[NUM_KERNELS]  = {0};
+  double MBPS[NUM_KERNELS] = {0};
+
   /**
-   * @brief Storage for the FLOPS of benchmarks this invocation.
+   * @brief Storage for the floating point operations per second for each kernel
    */
-	double FLOPS[NUM_KERNELS] = {0};
+  double FLOPS[NUM_KERNELS] = {0};
+
   /**
-   * @brief Storage for the runtimes of benchmarks this invocation.
+   * @brief Storage for the execution time in seconds for each kernel
    */
-	double TIMES[NUM_KERNELS] = {0};
+  double TIMES[NUM_KERNELS] = {0};
 };
 
 #endif /* _RSOPTS_H_ */

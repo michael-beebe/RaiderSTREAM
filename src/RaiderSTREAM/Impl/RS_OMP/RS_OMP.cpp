@@ -1,12 +1,10 @@
-//
-// _RS_OMP_CPP_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RS_OMP.cpp
+ * @brief Implementation of the RS_OMP class for OpenMP STREAM benchmarks
+ * @copyright Copyright (C) 2022-2024 Texas Tech University
+ * @author michael.beebe@ttu.edu
+ * @license See LICENSE in the top level directory for licensing details
+ */
 
 #include "RS_OMP.h"
 
@@ -26,15 +24,20 @@ RS_OMP::RS_OMP(const RSOpts &opts)
       lArgc(0), lArgv(nullptr), a(nullptr), b(nullptr), c(nullptr),
       idx1(nullptr), idx2(nullptr), idx3(nullptr), scalar(3) {}
 
+/**************************************************
+ * @brief Destructor for the RS_OMP class.
+ **************************************************/
 RS_OMP::~RS_OMP() {}
 
-/**********************************************
- * @brief Allocates and initializes memory
- *        for data arrays.
+/**************************************************
+ * @brief Allocates and initializes memory for data arrays.
  *
- * @return True if allocation is
- *         successful, false otherwise.
- **********************************************/
+ * Allocates memory for arrays a, b, c and index arrays idx1, idx2, idx3.
+ * Initializes the index arrays either from files or randomly based on
+ * configuration.
+ *
+ * @return True if allocation is successful, false otherwise.
+ **************************************************/
 bool RS_OMP::allocateData() {
   a = new STREAM_TYPE[streamArraySize];
   b = new STREAM_TYPE[streamArraySize];
@@ -83,10 +86,12 @@ bool RS_OMP::allocateData() {
 }
 
 /**************************************************
- * @brief Frees all allocated memory for the
- *        RS_OMP object.
+ * @brief Frees allocated memory.
  *
- * @return true if all memory was successfully freed.
+ * Deallocates all arrays used by the RS_OMP object including stream arrays
+ * a, b, c and index arrays idx1, idx2, idx3.
+ *
+ * @return True if deallocation succeeds, false otherwise.
  **************************************************/
 bool RS_OMP::freeData() {
   if (a) {
@@ -111,21 +116,18 @@ bool RS_OMP::freeData() {
 }
 
 /**************************************************
- * @brief Executes the specified kernel using OpenMP.
+ * @brief Executes the selected benchmark kernel.
  *
- * @param TIMES Array to store the execution times
- *              for each kernel.
- * @param MBPS Array to store the memory bandwidths
- *             for each kernel.
- * @param FLOPS Array to store the floating-point
- *              operation counts for each kernel.
- * @param BYTES Array to store the byte sizes for
- *              each kernel.
- * @param FLOATOPS Array to store the floating-point
- *                 operation sizes for each kernel.
+ * Executes the specified OpenMP STREAM benchmark kernel and measures its
+ * performance metrics including execution time, memory bandwidth, and
+ * floating point operations.
  *
- * @return True if the execution was successful,
- *         false otherwise.
+ * @param[out] TIMES Array to store execution times
+ * @param[out] MBPS Array to store bandwidth measurements
+ * @param[out] FLOPS Array to store floating point operations per second
+ * @param[out] BYTES Array to store bytes transferred
+ * @param[out] FLOATOPS Array to store floating point operations performed
+ * @return True if execution succeeds, false otherwise
  **************************************************/
 bool RS_OMP::execute(double *TIMES, double *MBPS, double *FLOPS, double *BYTES,
                      double *FLOATOPS) {

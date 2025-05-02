@@ -1,165 +1,309 @@
-//
-// _RS_SHMEM_OMP_TARGET_H_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RS_SHMEM_OMP_TARGET.h
+ * @brief Header file for OpenSHMEM with OpenMP Target offloading implementation
+ * of RaiderSTREAM
+ * @copyright Copyright (C) 2022-2024 Texas Tech University. All Rights
+ * Reserved.
+ * @author michael.beebe@ttu.edu
+ * @see LICENSE in the top level directory for licensing details
+ */
 
 #ifdef _ENABLE_SHMEM_OMP_TARGET_
 #ifndef _RS_SHMEM_OMP_TARGET_H_
 #define _RS_SHMEM_OMP_TARGET_H_
 
-#include <shmem.h>
 #include <omp.h>
+#include <shmem.h>
 
 #include "RaiderSTREAM/RaiderSTREAM.h"
 
+/**
+ * @class RS_SHMEM_OMP_TARGET
+ * @brief Implementation of RaiderSTREAM benchmarks using OpenSHMEM with OpenMP
+ * Target offloading
+ */
 class RS_SHMEM_OMP_TARGET : public RSBaseImpl {
 private:
-  std::string kernelName;
-  ssize_t streamArraySize;
-  int lArgc;
-  char **lArgv;
-  int numPEs;
-  STREAM_TYPE *d_a;
-  STREAM_TYPE *d_b;
-  STREAM_TYPE *d_c;
-  ssize_t *d_idx1;
-  ssize_t *d_idx2;
-  ssize_t *d_idx3;
-  STREAM_TYPE scalar;
-  int deviceId;
+  std::string kernelName;  /**< Name of kernel to execute */
+  ssize_t streamArraySize; /**< Size of stream arrays */
+  int lArgc;               /**< Local copy of argc */
+  char **lArgv;            /**< Local copy of argv */
+  int numPEs;              /**< Number of processing elements */
+  STREAM_TYPE *d_a;        /**< Device array a */
+  STREAM_TYPE *d_b;        /**< Device array b */
+  STREAM_TYPE *d_c;        /**< Device array c */
+  ssize_t *d_idx1;         /**< Device index array 1 */
+  ssize_t *d_idx2;         /**< Device index array 2 */
+  ssize_t *d_idx3;         /**< Device index array 3 */
+  STREAM_TYPE scalar;      /**< Scalar value for operations */
+  int deviceId;            /**< Target device ID */
 
 public:
-  RS_SHMEM_OMP_TARGET(const RSOpts& opts);
+  /**
+   * @brief Constructor
+   * @param opts Options for configuring the implementation
+   */
+  RS_SHMEM_OMP_TARGET(const RSOpts &opts);
 
+  /**
+   * @brief Destructor
+   */
   ~RS_SHMEM_OMP_TARGET();
 
+  /**
+   * @brief Allocates data arrays on host and device
+   * @return True if allocation successful, false otherwise
+   */
   virtual bool allocateData() override;
-  
-  virtual bool execute(
-    double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS
-  ) override;
 
+  /**
+   * @brief Executes the selected benchmark kernel
+   * @param[out] TIMES Array to store timing results
+   * @param[out] MBPS Array to store bandwidth results
+   * @param[out] FLOPS Array to store FLOPS results
+   * @param[out] BYTES Array to store bytes transferred
+   * @param[out] FLOATOPS Array to store floating point operations
+   * @return True if execution successful, false otherwise
+   */
+  virtual bool execute(double *TIMES, double *MBPS, double *FLOPS,
+                       double *BYTES, double *FLOATOPS) override;
+
+  /**
+   * @brief Frees allocated memory
+   * @return True if deallocation successful, false otherwise
+   */
   virtual bool freeData() override;
 };
 
 extern "C" { // FIXME: these might need to take in a `int numPEs` argument
-  void seqCopy(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t chunkSize
-  );
+/**
+ * @brief Sequential copy kernel
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] chunkSize Size of arrays per rank
+ */
+void seqCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t chunkSize);
 
-  void seqScale(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t chunkSize, STREAM_TYPE scalar
-  );
+/**
+ * @brief Sequential scale kernel
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] chunkSize Size of arrays per rank
+ * @param[in] scalar Scaling factor
+ */
+void seqScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t chunkSize,
+              STREAM_TYPE scalar);
 
-  void seqAdd(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t chunkSize
-  );
+/**
+ * @brief Sequential add kernel
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] chunkSize Size of arrays per rank
+ */
+void seqAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t chunkSize);
 
-  void seqTriad(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t chunkSize, STREAM_TYPE scalar
-  );
+/**
+ * @brief Sequential triad kernel
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] chunkSize Size of arrays per rank
+ * @param[in] scalar Scaling factor
+ */
+void seqTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t chunkSize,
+              STREAM_TYPE scalar);
 
-  void gatherCopy(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1,
-    ssize_t chunkSize
-  );
+/**
+ * @brief Gather copy kernel
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] IDX1 Gather index array
+ * @param[in] chunkSize Size of arrays per rank
+ */
+void gatherCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+                ssize_t chunkSize);
 
-  void gatherScale(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1,
-    ssize_t chunkSize, STREAM_TYPE scalar
-  );
+/**
+ * @brief Gather scale kernel
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] IDX1 Gather index array
+ * @param[in] chunkSize Size of arrays per rank
+ * @param[in] scalar Scaling factor
+ */
+void gatherScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+                 ssize_t chunkSize, STREAM_TYPE scalar);
 
-  void gatherAdd(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize
-  );
+/**
+ * @brief Gather add kernel
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] IDX1 First gather index array
+ * @param[in] IDX2 Second gather index array
+ * @param[in] chunkSize Size of arrays per rank
+ */
+void gatherAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+               ssize_t *IDX2, ssize_t chunkSize);
 
-  void gatherTriad(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize, STREAM_TYPE scalar
-  );
+/**
+ * @brief Gather triad kernel
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] IDX1 First gather index array
+ * @param[in] IDX2 Second gather index array
+ * @param[in] chunkSize Size of arrays per rank
+ * @param[in] scalar Scaling factor
+ */
+void gatherTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+                 ssize_t *IDX2, ssize_t chunkSize, STREAM_TYPE scalar);
 
-  void scatterCopy(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1,
-    ssize_t chunkSize
-  );
+/**
+ * @brief Scatter copy kernel
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] IDX1 Scatter index array
+ * @param[in] chunkSize Size of arrays per rank
+ */
+void scatterCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+                 ssize_t chunkSize);
 
-  void scatterScale(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1,
-    ssize_t chunkSize, STREAM_TYPE scalar
-  );
+/**
+ * @brief Scatter scale kernel
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] IDX1 Scatter index array
+ * @param[in] chunkSize Size of arrays per rank
+ * @param[in] scalar Scaling factor
+ */
+void scatterScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+                  ssize_t chunkSize, STREAM_TYPE scalar);
 
-  void scatterAdd(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1,
-    ssize_t chunkSize
-  );
+/**
+ * @brief Scatter add kernel
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] IDX1 Scatter index array
+ * @param[in] chunkSize Size of arrays per rank
+ */
+void scatterAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+                ssize_t chunkSize);
 
-  void scatterTriad(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1,
-    ssize_t chunkSize, STREAM_TYPE scalar
-  );
+/**
+ * @brief Scatter triad kernel
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] IDX1 Scatter index array
+ * @param[in] chunkSize Size of arrays per rank
+ * @param[in] scalar Scaling factor
+ */
+void scatterTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+                  ssize_t chunkSize, STREAM_TYPE scalar);
 
-  void sgCopy(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize
-  );
+/**
+ * @brief Scatter-gather copy kernel
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] IDX1 First index array
+ * @param[in] IDX2 Second index array
+ * @param[in] chunkSize Size of arrays per rank
+ */
+void sgCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+            ssize_t *IDX2, ssize_t chunkSize);
 
-  void sgScale(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t chunkSize, STREAM_TYPE scalar
-  );
+/**
+ * @brief Scatter-gather scale kernel
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] IDX1 First index array
+ * @param[in] IDX2 Second index array
+ * @param[in] chunkSize Size of arrays per rank
+ * @param[in] scalar Scaling factor
+ */
+void sgScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+             ssize_t *IDX2, ssize_t chunkSize, STREAM_TYPE scalar);
 
-  void sgAdd(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
-    ssize_t chunkSize
-  );
+/**
+ * @brief Scatter-gather add kernel
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] IDX1 First index array
+ * @param[in] IDX2 Second index array
+ * @param[in] IDX3 Third index array
+ * @param[in] chunkSize Size of arrays per rank
+ */
+void sgAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+           ssize_t *IDX2, ssize_t *IDX3, ssize_t chunkSize);
 
-  void sgTriad(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
-    ssize_t chunkSize, STREAM_TYPE scalar
-  );
+/**
+ * @brief Scatter-gather triad kernel
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] IDX1 First index array
+ * @param[in] IDX2 Second index array
+ * @param[in] IDX3 Third index array
+ * @param[in] chunkSize Size of arrays per rank
+ * @param[in] scalar Scaling factor
+ */
+void sgTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c, ssize_t *IDX1,
+             ssize_t *IDX2, ssize_t *IDX3, ssize_t chunkSize,
+             STREAM_TYPE scalar);
 
-  void centralCopy(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t chunkSize
-  );
+/**
+ * @brief Central copy kernel
+ * @param[in] a Source array
+ * @param[in] b Unused array
+ * @param[out] c Destination array
+ * @param[in] chunkSize Size of arrays per rank
+ */
+void centralCopy(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                 ssize_t chunkSize);
 
-  void centralScale(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t chunkSize,
-    STREAM_TYPE scalar
-  );
+/**
+ * @brief Central scale kernel
+ * @param[in] a Unused array
+ * @param[out] b Destination array
+ * @param[in] c Source array
+ * @param[in] chunkSize Size of arrays per rank
+ * @param[in] scalar Scaling factor
+ */
+void centralScale(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                  ssize_t chunkSize, STREAM_TYPE scalar);
 
-  void centralAdd(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t chunkSize
-  );
+/**
+ * @brief Central add kernel
+ * @param[in] a First source array
+ * @param[in] b Second source array
+ * @param[out] c Destination array
+ * @param[in] chunkSize Size of arrays per rank
+ */
+void centralAdd(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                ssize_t chunkSize);
 
-  void centralTriad(
-    STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
-    ssize_t chunkSize, STREAM_TYPE scalar
-  );
+/**
+ * @brief Central triad kernel
+ * @param[out] a Destination array
+ * @param[in] b First source array
+ * @param[in] c Second source array
+ * @param[in] chunkSize Size of arrays per rank
+ * @param[in] scalar Scaling factor
+ */
+void centralTriad(STREAM_TYPE *a, STREAM_TYPE *b, STREAM_TYPE *c,
+                  ssize_t chunkSize, STREAM_TYPE scalar);
 }
 
 #endif /* _RS_SHMEM_OMP_TARGET_H_ */

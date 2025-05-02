@@ -1,22 +1,20 @@
-//
-// _RS_CUDA_CU_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RS_SHMEM_CUDA.cu
+ * @brief Implementation of SHMEM+CUDA STREAM benchmark class
+ * @copyright Copyright (C) 2022-2024 Texas Tech University
+ * @author michael.beebe@ttu.edu
+ * @license See LICENSE in the top level directory for licensing details
+ */
 
 #ifdef _ENABLE_SHMEM_CUDA_
 
 #include "RS_SHMEM_CUDA.cuh"
 
-/* This sanitycheck is used to prevent
- * the compiler from getting "too slick
- * with it" when it comes to reasoning
- * about our code. This copy is done
- * outside of benchmark time recording.
+/**
+ * @brief Sanity check macro to prevent compiler over-optimization
+ * @details This macro performs a memory copy from device to host and calculates
+ * a checksum outside of benchmark timing to prevent the compiler from optimizing
+ * away important operations. The checksum is printed to verify correctness.
  */
 #define CUDA_SANITYCHECK                                                       \
   do {                                                                         \
@@ -31,6 +29,13 @@
   } while (false)
 
 #ifdef _SHMEM_1_5_
+/**
+ * @brief Benchmark execution macro for OpenSHMEM 1.5
+ * @details Executes a benchmark kernel, synchronizes devices, measures timing,
+ * performs sanity check, and calculates performance metrics using OpenSHMEM 1.5 collectives
+ * @param k Benchmark index
+ * @param ... Kernel execution code
+ */
 #define SHMEM_BENCHMARK(k, ...)                                                \
   do {                                                                         \
     cudaDeviceSynchronize();                                                   \
@@ -56,6 +61,13 @@
   } while (false)
 #endif
 #ifdef _SHMEM_1_4_
+/**
+ * @brief Benchmark execution macro for OpenSHMEM 1.4
+ * @details Executes a benchmark kernel, synchronizes devices, measures timing,
+ * and calculates performance metrics using OpenSHMEM 1.4 collectives
+ * @param k Benchmark index
+ * @param f Kernel execution function
+ */
 #define SHMEM_BENCHMARK(k, f)                                                  \
   do {                                                                         \
     cudaDeviceSynchronize();                                                   \
@@ -99,6 +111,9 @@ RS_SHMEM_CUDA::RS_SHMEM_CUDA(const RSOpts &opts)
       threadBlocks(opts.getThreadBlocks()),
       threadsPerBlock(opts.getThreadsPerBlocks()), deviceId(opts.getDeviceId()) {}
 
+/**************************************************
+ * @brief Destructor for the RS_CUDA class.
+ **************************************************/
 RS_SHMEM_CUDA::~RS_SHMEM_CUDA() {}
 
 /********************************************
