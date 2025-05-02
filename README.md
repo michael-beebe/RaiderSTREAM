@@ -109,6 +109,112 @@ RadierSTREAM does not currently use any inter-process communication routines suc
 
 ![Multi-process Support](.github/readme_images/oshrun.png)
 
+## Usage
+
+### Prerequisites
+- CMake >= 3.10
+- A C/C++ compiler with OpenMP support
+- For MPI runs: an MPI implementation (e.g., OpenMPI or MPICH)
+- For OpenSHMEM runs: OpenSHMEM library (v1.4 or v1.5)
+- For CUDA runs: NVIDIA CUDA Toolkit
+- For OpenACC runs: a compiler with OpenACC support
+
+### Building
+```sh
+mkdir -p build
+cd build
+cmake -DENABLE_OMP=ON ..
+# Other backends:
+# cmake -DENABLE_MPI_OMP=ON ..
+# cmake -DENABLE_SHMEM_OMP=ON -DSHMEM_1_5=ON ..
+# cmake -DENABLE_CUDA=ON ..
+cmake -DENABLE_OMP_TARGET=ON ..
+cmake -DENABLE_OACC=ON ..
+cmake -DENABLE_SHMEM_CUDA=ON -DSHMEM_1_5=ON ..
+cmake -DENABLE_SHMEM_OPENACC=ON -DSHMEM_1_5=ON ..
+cmake -DENABLE_SHMEM_OMP_TARGET=ON -DSHMEM_1_5=ON ..
+make
+```
+
+### Running
+The `raiderstream` executable is located in `build/bin`.
+
+#### List available kernels
+```sh
+./raiderstream --list
+```
+
+#### Single-process (OpenMP)
+```sh
+export OMP_NUM_THREADS=24
+./raiderstream --kernel triad --size 10000000
+```
+
+#### Multi-process (MPI+OpenMP)
+```sh
+mpirun -np 4 ./raiderstream --kernel copy --size 5000000 --pes 4
+```
+
+#### OpenSHMEM
+```sh
+export SHMEM_SYMMETRIC_HEAP_SIZE=10G
+export SHMEM_MAX_SEGMENTS=128
+oshrun -np 2 ./raiderstream --kernel scatter --size 2000000 --pes 2
+```
+
+#### GPU (CUDA)
+```sh
+./raiderstream --kernel triad --size 20000000 --blocks 128 --threads 256 --device 0
+```
+
+#### GPU (OpenMP Target)
+```sh
+./raiderstream --kernel triad --size 20000000 --device 0
+```
+
+#### GPU (OpenACC)
+```sh
+./raiderstream --kernel all --size 5000000
+```
+
+#### Multi-process (SHMEM + CUDA)
+```sh
+export SHMEM_SYMMETRIC_HEAP_SIZE=10G
+export SHMEM_MAX_SEGMENTS=128
+oshrun -np 2 ./raiderstream --kernel triad --size 20000000 --blocks 128 --threads 256 --device 0 --pes 2
+```
+
+#### Multi-process (SHMEM + OpenACC)
+```sh
+export SHMEM_SYMMETRIC_HEAP_SIZE=10G
+export SHMEM_MAX_SEGMENTS=128
+oshrun -np 2 ./raiderstream --kernel all --size 10000000 --pes 2
+```
+
+#### Multi-process (SHMEM + OpenMP Target)
+```sh
+export SHMEM_SYMMETRIC_HEAP_SIZE=10G
+export SHMEM_MAX_SEGMENTS=128
+oshrun -np 2 ./raiderstream --kernel triad --size 20000000 --device 0 --pes 2
+```
+
+### Running via script
+Edit and run the sample script:
+```sh
+bash scripts/run.sh
+```
+
+### Troubleshooting
+- Verify the chosen backend is enabled.
+- Check library paths for MPI/SHMEM.
+- Adjust SHMEM heap size for large array sizes.
+
+### Capturing output
+Redirect output to a log file for analysis:
+```sh
+./raiderstream --kernel all --size 10000000 > results.log
+```
+
 ## Citing RaiderSTREAM<a id="citing"></a>
 To cite RaiderSTREAM, please use the following reference:
 * M. Beebe, B. Williams, S. Devaney, J. Leidel, Y. Chen and S. Poole, "RaiderSTREAM: Adapting the STREAM Benchmark to Modern HPC Systems," 2022 IEEE High Performance Extreme Computing Conference (HPEC), Waltham, MA, USA, 2022, pp. 1-7, doi: 10.1109/HPEC55821.2022.9926292.
