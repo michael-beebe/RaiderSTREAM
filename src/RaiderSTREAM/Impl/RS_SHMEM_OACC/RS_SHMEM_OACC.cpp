@@ -1,12 +1,10 @@
-//
-// _RS_SHMEM_OACC_CPP_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RS_SHMEM_OACC.cpp
+ * @brief Implementation file for the RS_SHMEM_OACC class
+ * @copyright Copyright (C) 2022-2024 Texas Tech University. All Rights Reserved.
+ * @author michael.beebe@ttu.edu
+ * @see LICENSE in the top level directory for licensing details
+ */
 
 #include "RS_SHMEM_OACC.h"
 
@@ -14,6 +12,11 @@
 #define _DEBUG_
 
 #ifdef _SHMEM_1_5_
+/**
+ * @brief Macro for benchmarking SHMEM operations using SHMEM 1.5 API
+ * @param k Index for storing results
+ * @param f Function/operation to benchmark
+ */
 #define SHMEM_BENCHMARK(k, f)                                                  \
   do {                                                                         \
     shmem_barrier_all();                                                       \
@@ -36,6 +39,11 @@
   } while (false)
 #endif
 #ifdef _SHMEM_1_4_
+/**
+ * @brief Macro for benchmarking SHMEM operations using SHMEM 1.4 API
+ * @param k Index for storing results  
+ * @param f Function/operation to benchmark
+ */
 #define SHMEM_BENCHMARK(k, f)                                                  \
   do {                                                                         \
     shmem_barrier_all();                                                       \
@@ -58,13 +66,15 @@
   } while (false)
 #endif
 
-/**************************************************
- * @brief Constructor for the RS_SHMEM class.
- *
- * Initializes the RS_SHMEM object with the specified options.
- *
- * @param opts Options for the RS_SHMEM object.
- **************************************************/
+/**
+ * @brief Constructor for the RS_SHMEM_OACC class
+ * @param opts Options for configuring the RS_SHMEM_OACC object
+ * @details Initializes a new RS_SHMEM_OACC object with the specified options including:
+ *          - Kernel name and type
+ *          - Stream array size
+ *          - Number of processing elements
+ *          - Device arrays and scalar value
+ */
 RS_SHMEM_OACC::RS_SHMEM_OACC(const RSOpts &opts)
     : RSBaseImpl("RS_SHMEM_OACC",
                  opts.getKernelTypeFromName(opts.getKernelName())),
@@ -73,15 +83,21 @@ RS_SHMEM_OACC::RS_SHMEM_OACC(const RSOpts &opts)
       numPEs(opts.getNumPEs()), d_a(nullptr), d_b(nullptr), d_idx1(nullptr),
       d_idx2(nullptr), d_idx3(nullptr), scalar(3) {}
 
+/**
+ * @brief Destructor for the RS_SHMEM_OACC class
+ */
 RS_SHMEM_OACC::~RS_SHMEM_OACC() {}
 
-/**********************************************
- * @brief Allocates and initializes memory
- *        for data arrays.
- *
- * @return True if allocation is
- *         successful, false otherwise.
- **********************************************/
+/**
+ * @brief Allocates and initializes memory for data arrays
+ * @return true if allocation successful, false otherwise
+ * @details Performs the following:
+ *          - Calculates chunk size for each rank
+ *          - Allocates symmetric heap memory for arrays
+ *          - Initializes arrays with data
+ *          - Copies data to device memory
+ *          - Performs debug validation if enabled
+ */
 bool RS_SHMEM_OACC::allocateData() {
   int myRank = shmem_my_pe(); /* Current rank */
   int size = shmem_n_pes();   /* Number of shmem ranks */
@@ -219,12 +235,11 @@ bool RS_SHMEM_OACC::allocateData() {
   return true;
 }
 
-/**************************************************
- * @brief Frees all allocated memory for the
- *        RS_SHMEM object.
- *
- * @return true if all memory was successfully freed.
- **************************************************/
+/**
+ * @brief Frees all allocated device memory
+ * @return true if all memory was successfully freed
+ * @details Frees device memory for arrays d_a, d_b, d_c, d_idx1, d_idx2, d_idx3
+ */
 bool RS_SHMEM_OACC::freeData() {
   if (d_a) {
     acc_free(d_a);
@@ -247,23 +262,22 @@ bool RS_SHMEM_OACC::freeData() {
   return true;
 }
 
-/**************************************************
- * @brief Executes the specified kernel using OpenSHMEM.
- *
- * @param TIMES Array to store the execution times
- *              for each kernel.
- * @param MBPS Array to store the memory bandwidths
- *             for each kernel.
- * @param FLOPS Array to store the floating-point
- *              operation counts for each kernel.
- * @param BYTES Array to store the byte sizes for
- *              each kernel.
- * @param FLOATOPS Array to store the floating-point
- *                 operation sizes for each kernel.
- *
- * @return True if the execution was successful,
- *         false otherwise.
- **************************************************/
+/**
+ * @brief Executes the specified kernel using OpenSHMEM
+ * @param TIMES Array to store execution times for each kernel
+ * @param MBPS Array to store memory bandwidths for each kernel
+ * @param FLOPS Array to store floating-point operation counts for each kernel
+ * @param BYTES Array to store byte sizes for each kernel
+ * @param FLOATOPS Array to store floating-point operation sizes for each kernel
+ * @return true if execution successful, false otherwise
+ * @details Executes the selected kernel type:
+ *          - Sequential kernels (copy, scale, add, triad)
+ *          - Gather kernels
+ *          - Scatter kernels  
+ *          - Scatter-gather kernels
+ *          - Central kernels
+ *          - Or all kernels if RS_ALL selected
+ */
 bool RS_SHMEM_OACC::execute(double *TIMES, double *MBPS, double *FLOPS,
                             double *BYTES, double *FLOATOPS) {
   double startTime = 0.0;
