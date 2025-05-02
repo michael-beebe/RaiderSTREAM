@@ -19,13 +19,24 @@ cd build
 #  ../
 
 # --- OpenACC ---
+# cmake \
+#   -DENABLE_OACC=ON \
+#   -DCMAKE_C_COMPILER=`which nvc` \
+#   -DCMAKE_CXX_COMPILER=`which nvc++` \
+#   -DCMAKE_C_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
+#   -DCMAKE_CXX_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
+#   ../
+# --- OpenSHMEM+OpenACC ---
  cmake \
-   -DENABLE_OACC=ON \
-   -DCMAKE_C_COMPILER=`which nvc` \
-   -DCMAKE_CXX_COMPILER=`which nvc++` \
-   -DCMAKE_C_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
-   -DCMAKE_CXX_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
+   -DENABLE_SHMEM_OACC=ON \
+   -DSTREAM_TYPE=int \
+   -DSHMEM_1_4=ON \
+   -DCMAKE_C_COMPILER=/home/and21829/SOS/install/bin/oshcc \
+   -DCMAKE_CXX_COMPILER=/home/and21829/SOS/install/bin/oshc++ \
+   -DCMAKE_C_FLAGS="-fopenacc -foffload=nvptx-none" \
+   -DCMAKE_CXX_FLAGS="-fopenacc -foffload=nvptx-none" \
    ../
+
 
 # --- OpenMP + Offload ---
 # cmake \
@@ -51,13 +62,19 @@ cd build
 #   -DCMAKE_CXX_FLAGS="-fopenmp"          \
 #   ../
 
+# --- OpenMP_OpenSHMEM + Offload ---
+# cmake \
+#   -DENABLE_SHMEM_OMP_TARGET=ON \
+#   -DSHMEM_1_5=ON \
+#   ../
+
 # --- CUDA ---
-#cmake  \
-#  -DENABLE_CUDA=ON \
-#  -DCMAKE_C_COMPILER=`which nvcc` \
-#  -DCMAKE_CXX_COMPILER=`which nvcc` \
-#  -DCMAKE_EXE_LINKER_FLAGS="-lcudart -lcudadevrt" \
-#  ../
+# cmake  \
+#   -DENABLE_CUDA=ON \
+#   -DCMAKE_C_COMPILER=`which nvcc` \
+#   -DCMAKE_CXX_COMPILER=`which nvcc` \
+#   -DCMAKE_EXE_LINKER_FLAGS="-lcudart -lcudadevrt" \
+#   ../
 
 # --- Build the project
 make

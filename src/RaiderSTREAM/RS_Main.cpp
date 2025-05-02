@@ -626,6 +626,7 @@ void runBenchSHMEMOMPTARGET(RSOpts *Opts) {
 #ifdef _ENABLE_SHMEM_OACC_
 void runBenchSHMEMOACC(RSOpts *Opts) {
   /* Initialize OpenSHMEM */
+  std::cout << _OPENACC <<std::endl;
   shmem_init();
   int myRank = shmem_my_pe();
   /* Initialize the RS_SHMEM_OMP object */
