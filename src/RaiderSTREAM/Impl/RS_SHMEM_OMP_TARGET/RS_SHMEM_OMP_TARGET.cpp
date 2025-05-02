@@ -1,24 +1,38 @@
 /**
- * @file RS_SHMEM_OMP.cpp
- * @brief Implementation of the RS_SHMEM_OMP class for RaiderSTREAM benchmarks
- * using OpenSHMEM with OpenMP
- * @copyright Copyright (C) 2022-2024 Texas Tech University
- * All Rights Reserved
- * Contact: michael.beebe@ttu.edu
- * @license See LICENSE in the top level directory for licensing details
+ * @file RS_SHMEM_OMP_TARGET.cpp
+ * @brief Implementation of the RS_SHMEM_OMP_TARGET class for RaiderSTREAM
+ * benchmarks
+ * @copyright Copyright (C) 2022-2024 Texas Tech University. All Rights
+ * Reserved.
+ * @author michael.beebe@ttu.edu
+ * @see LICENSE in the top level directory for licensing details
  */
 
-#include "RS_SHMEM_OMP.h"
+#include "RS_SHMEM_OMP_TARGET.h"
 
-#ifdef _RS_SHMEM_OMP_H_
+#ifdef _RS_SHMEM_OMP_TARGET_H_
 
 /**
- * @def SHMEM_BENCHMARK
- * @brief Macro for benchmarking OpenSHMEM operations using SHMEM 1.5 API
- * @param k Index for storing results
- * @param f Function/operation to benchmark
- * @details Measures execution time, calculates bandwidth and FLOPS, and reduces
- * results across all PEs
+ * @def DBG(x)
+ * @brief Debug macro for printing debug information when _DEBUG_ is defined
+ * @param x Value to print in debug output
+ */
+#ifdef _DEBUG_
+#define DBG(x)                                                                 \
+  if (myRank == 0)                                                             \
+    std::cout << "debug " #x " = " << x << std::endl;
+#endif
+#ifndef _DEBUG_
+#define DBG(x)
+#endif
+
+/**
+ * @def SHMEM_BENCHMARK(k, f)
+ * @brief Macro for running and timing SHMEM benchmarks
+ * @param k Kernel index for storing results
+ * @param f Function/kernel to benchmark
+ * @details Handles timing, barrier synchronization, and reduction of results
+ * across ranks
  */
 #ifdef _SHMEM_1_5_
 #define SHMEM_BENCHMARK(k, f)                                                  \
@@ -42,15 +56,6 @@
     }                                                                          \
   } while (false)
 #endif
-
-/**
- * @def SHMEM_BENCHMARK
- * @brief Macro for benchmarking OpenSHMEM operations using SHMEM 1.4 API
- * @param k Index for storing results
- * @param f Function/operation to benchmark
- * @details Measures execution time, calculates bandwidth and FLOPS, and reduces
- * results across all PEs
- */
 #ifdef _SHMEM_1_4_
 #define SHMEM_BENCHMARK(k, f)                                                  \
   do {                                                                         \
@@ -66,46 +71,55 @@
                             pSync);                                            \
     shmem_double_sum_to_all(totalMbps, &mbps, 1, 0, 0, size, pWrk, pSync);     \
     shmem_double_sum_to_all(totalFlops, &flops, 1, 0, 0, size, pWrk, pSync);   \
+    DBG(runTime);                                                              \
+    DBG(*totalRunTime);                                                        \
+    DBG(TIMES[k]);                                                             \
     if (myRank == 0) {                                                         \
       TIMES[k] = *totalRunTime / size;                                         \
       MBPS[k] = *totalMbps / size;                                             \
       FLOPS[k] = *totalFlops / size;                                           \
     }                                                                          \
+    DBG(TIMES[k]);                                                             \
   } while (false)
 #endif
 
-/**
- * @brief Constructor for the RS_SHMEM_OMP class
- * @param opts Options for configuring the RS_SHMEM_OMP instance
- * @details Initializes the RS_SHMEM_OMP object with the specified kernel type,
- * array size, and other parameters
- */
-RS_SHMEM_OMP::RS_SHMEM_OMP(const RSOpts &opts)
-    : RSBaseImpl("RS_SHMEM_OMP",
+/**************************************************
+ * @brief Constructor for the RS_SHMEM_OMP_TARGET class.
+ *
+ * Initializes the RS_SHMEM_OMP_TARGET object with the specified options.
+ *
+ * @param opts Options for the RS_SHMEM_OMP_TARGET object.
+ **************************************************/
+RS_SHMEM_OMP_TARGET::RS_SHMEM_OMP_TARGET(const RSOpts &opts)
+    : RSBaseImpl("RS_SHMEM_OMP_TARGET",
                  opts.getKernelTypeFromName(opts.getKernelName())),
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
-      numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
-      idx2(nullptr), idx3(nullptr), scalar(3) {}
+      numPEs(opts.getNumPEs()), d_a(nullptr), d_b(nullptr), d_idx1(nullptr),
+      d_idx2(nullptr), d_idx3(nullptr), scalar(3),
+      deviceId(opts.getDeviceId()) {}
 
 /**
- * @brief Destructor for the RS_SHMEM_OMP class
+ * @brief Destructor for the RS_SHMEM_OMP_TARGET class
  */
-RS_SHMEM_OMP::~RS_SHMEM_OMP() {}
+RS_SHMEM_OMP_TARGET::~RS_SHMEM_OMP_TARGET() {}
 
-/**
- * @brief Allocates and initializes memory for data arrays
- * @return true if allocation is successful, false otherwise
- * @details Allocates symmetric heap memory for arrays and initializes them with
- * data
- */
-bool RS_SHMEM_OMP::allocateData() {
+/**********************************************
+ * @brief Allocates and initializes memory for data arrays.
+ *
+ * @details Allocates memory for arrays on both host and device, initializes
+ *data, and copies data to device. Arrays are distributed across ranks.
+ *
+ * @return True if allocation is successful, false otherwise.
+ **********************************************/
+bool RS_SHMEM_OMP_TARGET::allocateData() {
   int myRank = shmem_my_pe(); /* Current rank */
   int size = shmem_n_pes();   /* Number of shmem ranks */
 
   if (numPEs == 0) {
-    std::cout << "RS_SHMEM_OMP::allocateData() - ERROR: 'pes' cannot be 0"
-              << std::endl;
+    std::cout
+        << "RS_SHMEM_OMP_TARGET::allocateData() - ERROR: 'pes' cannot be 0"
+        << std::endl;
     return false;
   }
 
@@ -122,18 +136,24 @@ bool RS_SHMEM_OMP::allocateData() {
     chunkSize += remainder;
   }
 
-  /* Allocate memory for the local chunks in symmetric heap space */
-  a = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
-  b = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
-  c = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
-  idx1 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
-  idx2 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
-  idx3 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
+  /* Allocate memory for the local chunks */
+  STREAM_TYPE *a =
+      static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  STREAM_TYPE *b =
+      static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  STREAM_TYPE *c =
+      static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  ssize_t *idx1 =
+      static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
+  ssize_t *idx2 =
+      static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
+  ssize_t *idx3 =
+      static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
 
   /* Initialize the local chunks */
-  initStreamArray(a, chunkSize, 1.0);
-  initStreamArray(b, chunkSize, 2.0);
-  initStreamArray(c, chunkSize, 0.0);
+  initStreamArray(a, chunkSize, 1);
+  initStreamArray(b, chunkSize, 2);
+  initStreamArray(c, chunkSize, 0);
 
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, chunkSize, "RaiderSTREAM/arraygen/IDX1.txt");
@@ -144,6 +164,26 @@ bool RS_SHMEM_OMP::allocateData() {
   initRandomIdxArray(idx2, chunkSize);
   initRandomIdxArray(idx3, chunkSize);
 #endif
+
+  size_t data_size = sizeof(STREAM_TYPE) * chunkSize;
+  size_t idx_size = sizeof(ssize_t) * chunkSize;
+  std::cout << "device: " << deviceId << std::endl;
+  int host = omp_get_initial_device();
+
+  omp_set_default_device(deviceId);
+  d_a = (STREAM_TYPE *)omp_target_alloc(data_size, deviceId);
+  d_b = (STREAM_TYPE *)omp_target_alloc(data_size, deviceId);
+  d_c = (STREAM_TYPE *)omp_target_alloc(data_size, deviceId);
+  d_idx1 = (ssize_t *)omp_target_alloc(idx_size, deviceId);
+  d_idx2 = (ssize_t *)omp_target_alloc(idx_size, deviceId);
+  d_idx3 = (ssize_t *)omp_target_alloc(idx_size, deviceId);
+
+  omp_target_memcpy(d_a, a, data_size, 0, 0, deviceId, host);
+  omp_target_memcpy(d_b, b, data_size, 0, 0, deviceId, host);
+  omp_target_memcpy(d_c, c, data_size, 0, 0, deviceId, host);
+  omp_target_memcpy(d_idx1, idx1, idx_size, 0, 0, deviceId, host);
+  omp_target_memcpy(d_idx2, idx2, idx_size, 0, 0, deviceId, host);
+  omp_target_memcpy(d_idx3, idx3, idx_size, 0, 0, deviceId, host);
 
 #ifdef _DEBUG_
   if (myRank == 0) {
@@ -175,15 +215,6 @@ bool RS_SHMEM_OMP::allocateData() {
 
   shmem_barrier_all();
 
-  return true;
-}
-
-/**
- * @brief Frees all allocated memory for the RS_SHMEM_OMP object
- * @return true if all memory was successfully freed
- * @details Deallocates symmetric heap memory for all arrays
- */
-bool RS_SHMEM_OMP::freeData() {
   if (a) {
     shmem_free(a);
   }
@@ -202,24 +233,63 @@ bool RS_SHMEM_OMP::freeData() {
   if (idx3) {
     shmem_free(idx3);
   }
+
   return true;
 }
 
-/**
- * @brief Executes the specified kernel using OpenSHMEM
- * @param[out] TIMES Array to store execution times for each kernel
- * @param[out] MBPS Array to store memory bandwidths for each kernel
- * @param[out] FLOPS Array to store floating-point operation counts for each
- * kernel
- * @param[in] BYTES Array containing byte sizes for each kernel
- * @param[in] FLOATOPS Array containing floating-point operation sizes for each
- * kernel
- * @return true if execution was successful, false otherwise
- * @details Executes the selected kernel type(s) and measures performance
- * metrics
- */
-bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
-                           double *BYTES, double *FLOATOPS) {
+/**************************************************
+ * @brief Frees all allocated device memory for the RS_SHMEM_OMP_TARGET object.
+ *
+ * @details Frees memory allocated on the device for arrays d_a, d_b, d_c,
+ *d_idx1, d_idx2, and d_idx3.
+ *
+ * @return true if all memory was successfully freed.
+ **************************************************/
+bool RS_SHMEM_OMP_TARGET::freeData() {
+  // TODO: it's unspecified whether this value can change
+  // throughout execution of a program. is this safe?
+  int device = omp_get_default_device();
+  if (d_a) {
+    omp_target_free(d_a, device);
+  }
+  if (d_b) {
+    omp_target_free(d_b, device);
+  }
+  if (d_c) {
+    omp_target_free(d_c, device);
+  }
+  if (d_idx1) {
+    omp_target_free(d_idx1, device);
+  }
+  if (d_idx2) {
+    omp_target_free(d_idx2, device);
+  }
+  if (d_idx3) {
+    omp_target_free(d_idx3, device);
+  }
+  return true;
+}
+
+/**************************************************
+ * @brief Executes the specified kernel using OpenSHMEM and OpenMP target
+ *offloading.
+ *
+ * @details Runs the selected benchmark kernel(s) on the device using OpenMP
+ *target offloading. Timing and performance metrics are collected and reduced
+ *across ranks using OpenSHMEM collectives.
+ *
+ * @param[out] TIMES Array to store the execution times for each kernel
+ * @param[out] MBPS Array to store the memory bandwidths for each kernel
+ * @param[out] FLOPS Array to store the floating-point operation counts for each
+ *kernel
+ * @param[in] BYTES Array containing the byte sizes for each kernel
+ * @param[in] FLOATOPS Array containing the floating-point operation sizes for
+ *each kernel
+ *
+ * @return True if the execution was successful, false otherwise.
+ **************************************************/
+bool RS_SHMEM_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
+                                  double *BYTES, double *FLOATOPS) {
   double startTime = 0.0;
   double endTime = 0.0;
   double runTime = 0.0;
@@ -259,191 +329,197 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   switch (kType) {
   /* SEQUENTIAL KERNELS */
   case RSBaseImpl::RS_SEQ_COPY:
-    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_COPY, seqCopy(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_COPY, seqCopy(d_a, d_b, d_c, chunkSize));
     break;
 
   case RSBaseImpl::RS_SEQ_SCALE:
     SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_SCALE,
-                    seqScale(a, b, c, chunkSize, scalar));
+                    seqScale(d_a, d_b, d_c, chunkSize, scalar));
     break;
 
   case RSBaseImpl::RS_SEQ_ADD:
-    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_ADD, seqAdd(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_ADD, seqAdd(d_a, d_b, d_c, chunkSize));
     break;
 
   case RSBaseImpl::RS_SEQ_TRIAD:
     SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_TRIAD,
-                    seqTriad(a, b, c, chunkSize, scalar));
+                    seqTriad(d_a, d_b, d_c, chunkSize, scalar));
     break;
 
   /* GATHER KERNELS */
   case RSBaseImpl::RS_GATHER_COPY:
     SHMEM_BENCHMARK(RSBaseImpl::RS_GATHER_COPY,
-                    gatherCopy(a, b, c, idx1, chunkSize));
+                    gatherCopy(d_a, d_b, d_c, d_idx1, chunkSize));
     break;
 
   case RSBaseImpl::RS_GATHER_SCALE:
     SHMEM_BENCHMARK(RSBaseImpl::RS_GATHER_SCALE,
-                    gatherScale(a, b, c, idx1, chunkSize, scalar));
+                    gatherScale(d_a, d_b, d_c, d_idx1, chunkSize, scalar));
     break;
 
   case RSBaseImpl::RS_GATHER_ADD:
     SHMEM_BENCHMARK(RSBaseImpl::RS_GATHER_ADD,
-                    gatherAdd(a, b, c, idx1, idx2, chunkSize));
+                    gatherAdd(d_a, d_b, d_c, d_idx1, d_idx2, chunkSize));
     break;
 
   case RSBaseImpl::RS_GATHER_TRIAD:
-    SHMEM_BENCHMARK(RSBaseImpl::RS_GATHER_TRIAD,
-                    gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar));
+    SHMEM_BENCHMARK(
+        RSBaseImpl::RS_GATHER_TRIAD,
+        gatherTriad(d_a, d_b, d_c, d_idx1, d_idx2, chunkSize, scalar));
     break;
 
   /* SCATTER KERNELS */
   case RSBaseImpl::RS_SCATTER_COPY:
     SHMEM_BENCHMARK(RSBaseImpl::RS_SCATTER_COPY,
-                    scatterCopy(a, b, c, idx1, chunkSize));
+                    scatterCopy(d_a, d_b, d_c, d_idx1, chunkSize));
     break;
 
   case RSBaseImpl::RS_SCATTER_SCALE:
     SHMEM_BENCHMARK(RSBaseImpl::RS_SCATTER_SCALE,
-                    scatterScale(a, b, c, idx1, chunkSize, scalar));
+                    scatterScale(d_a, d_b, d_c, d_idx1, chunkSize, scalar));
     break;
 
   case RSBaseImpl::RS_SCATTER_ADD:
     SHMEM_BENCHMARK(RSBaseImpl::RS_SCATTER_ADD,
-                    scatterAdd(a, b, c, idx1, chunkSize));
+                    scatterAdd(d_a, d_b, d_c, d_idx1, chunkSize));
     break;
 
   case RSBaseImpl::RS_SCATTER_TRIAD:
     SHMEM_BENCHMARK(RSBaseImpl::RS_SCATTER_TRIAD,
-                    scatterTriad(a, b, c, idx1, chunkSize, scalar));
+                    scatterTriad(d_a, d_b, d_c, d_idx1, chunkSize, scalar));
     break;
 
   /* SCATTER-GATHER KERNELS */
   case RSBaseImpl::RS_SG_COPY:
     SHMEM_BENCHMARK(RSBaseImpl::RS_SG_COPY,
-                    sgCopy(a, b, c, idx1, idx2, chunkSize));
+                    sgCopy(d_a, d_b, d_c, d_idx1, d_idx2, chunkSize));
     break;
 
   case RSBaseImpl::RS_SG_SCALE:
     SHMEM_BENCHMARK(RSBaseImpl::RS_SG_SCALE,
-                    sgScale(a, b, c, idx1, idx2, chunkSize, scalar));
+                    sgScale(d_a, d_b, d_c, d_idx1, d_idx2, chunkSize, scalar));
     break;
 
   case RSBaseImpl::RS_SG_ADD:
     SHMEM_BENCHMARK(RSBaseImpl::RS_SG_ADD,
-                    sgAdd(a, b, c, idx1, idx2, idx3, chunkSize));
+                    sgAdd(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, chunkSize));
     break;
 
   case RSBaseImpl::RS_SG_TRIAD:
-    SHMEM_BENCHMARK(RSBaseImpl::RS_SG_TRIAD,
-                    sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar));
+    SHMEM_BENCHMARK(
+        RSBaseImpl::RS_SG_TRIAD,
+        sgTriad(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, chunkSize, scalar));
     break;
 
   /* CENTRAL KERNELS */
   case RSBaseImpl::RS_CENTRAL_COPY:
     SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_COPY,
-                    centralCopy(a, b, c, chunkSize));
+                    centralCopy(d_a, d_b, d_c, chunkSize));
     break;
 
   case RSBaseImpl::RS_CENTRAL_SCALE:
     SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_SCALE,
-                    centralScale(a, b, c, chunkSize, scalar));
+                    centralScale(d_a, d_b, d_c, chunkSize, scalar));
     break;
 
   case RSBaseImpl::RS_CENTRAL_ADD:
-    SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_ADD,
+                    centralAdd(d_a, d_b, d_c, chunkSize));
     break;
 
   case RSBaseImpl::RS_CENTRAL_TRIAD:
     SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_TRIAD,
-                    centralTriad(a, b, c, chunkSize, scalar));
+                    centralTriad(d_a, d_b, d_c, chunkSize, scalar));
     break;
 
   /* ALL KERNELS */
   case RSBaseImpl::RS_ALL:
     /* RS_SEQ_COPY */
-    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_COPY, seqCopy(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_COPY, seqCopy(d_a, d_b, d_c, chunkSize));
 
     /* RS_SEQ_SCALE */
     SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_SCALE,
-                    seqScale(a, b, c, chunkSize, scalar));
+                    seqScale(d_a, d_b, d_c, chunkSize, scalar));
 
     /* RS_SEQ_ADD */
-    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_ADD, seqAdd(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_ADD, seqAdd(d_a, d_b, d_c, chunkSize));
 
     /* RS_SEQ_TRIAD */
     SHMEM_BENCHMARK(RSBaseImpl::RS_SEQ_TRIAD,
-                    seqTriad(a, b, c, chunkSize, scalar));
+                    seqTriad(d_a, d_b, d_c, chunkSize, scalar));
 
     /* RS_GATHER_COPY */
     SHMEM_BENCHMARK(RSBaseImpl::RS_GATHER_COPY,
-                    gatherCopy(a, b, c, idx1, chunkSize));
+                    gatherCopy(d_a, d_b, d_c, d_idx1, chunkSize));
 
     /* RS_GATHER_SCALE */
     SHMEM_BENCHMARK(RSBaseImpl::RS_GATHER_SCALE,
-                    gatherScale(a, b, c, idx1, chunkSize, scalar));
+                    gatherScale(d_a, d_b, d_c, d_idx1, chunkSize, scalar));
 
     /* RS_GATHER_ADD */
     SHMEM_BENCHMARK(RSBaseImpl::RS_GATHER_ADD,
-                    gatherAdd(a, b, c, idx1, idx2, chunkSize));
+                    gatherAdd(d_a, d_b, d_c, d_idx1, d_idx2, chunkSize));
 
     /* RS_GATHER_TRIAD */
-    SHMEM_BENCHMARK(RSBaseImpl::RS_GATHER_TRIAD,
-                    gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar));
+    SHMEM_BENCHMARK(
+        RSBaseImpl::RS_GATHER_TRIAD,
+        gatherTriad(d_a, d_b, d_c, d_idx1, d_idx2, chunkSize, scalar));
 
     /* RS_SCATTER_COPY */
     SHMEM_BENCHMARK(RSBaseImpl::RS_SCATTER_COPY,
-                    scatterCopy(a, b, c, idx1, chunkSize));
+                    scatterCopy(d_a, d_b, d_c, d_idx1, chunkSize));
 
     /* RS_SCATTER_SCALE */
     SHMEM_BENCHMARK(RSBaseImpl::RS_SCATTER_SCALE,
-                    scatterScale(a, b, c, idx1, chunkSize, scalar));
+                    scatterScale(d_a, d_b, d_c, d_idx1, chunkSize, scalar));
 
     /* RS_SCATTER_ADD */
     SHMEM_BENCHMARK(RSBaseImpl::RS_SCATTER_ADD,
-                    scatterAdd(a, b, c, idx1, chunkSize));
+                    scatterAdd(d_a, d_b, d_c, d_idx1, chunkSize));
 
     /* RS_SCATTER_TRIAD */
     SHMEM_BENCHMARK(RSBaseImpl::RS_SCATTER_TRIAD,
-                    scatterTriad(a, b, c, idx1, chunkSize, scalar));
+                    scatterTriad(d_a, d_b, d_c, d_idx1, chunkSize, scalar));
 
     /* RS_SG_COPY */
     SHMEM_BENCHMARK(RSBaseImpl::RS_SG_COPY,
-                    sgCopy(a, b, c, idx1, idx2, chunkSize));
+                    sgCopy(d_a, d_b, d_c, d_idx1, d_idx2, chunkSize));
 
     /* RS_SG_SCALE */
     SHMEM_BENCHMARK(RSBaseImpl::RS_SG_SCALE,
-                    sgScale(a, b, c, idx1, idx2, chunkSize, scalar));
+                    sgScale(d_a, d_b, d_c, d_idx1, d_idx2, chunkSize, scalar));
 
     /* RS_SG_ADD */
     SHMEM_BENCHMARK(RSBaseImpl::RS_SG_ADD,
-                    sgAdd(a, b, c, idx1, idx2, idx3, chunkSize));
+                    sgAdd(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, chunkSize));
 
     /* RS_SG_TRIAD */
-    SHMEM_BENCHMARK(RSBaseImpl::RS_SG_TRIAD,
-                    sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar));
+    SHMEM_BENCHMARK(
+        RSBaseImpl::RS_SG_TRIAD,
+        sgTriad(d_a, d_b, d_c, d_idx1, d_idx2, d_idx3, chunkSize, scalar));
 
     /* RS_CENTRAL_COPY */
     SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_COPY,
-                    centralCopy(a, b, c, chunkSize));
+                    centralCopy(d_a, d_b, d_c, chunkSize));
 
     /* RS_CENTRAL_SCALE */
     SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_SCALE,
-                    centralScale(a, b, c, chunkSize, scalar));
+                    centralScale(d_a, d_b, d_c, chunkSize, scalar));
 
     /* RS_CENTRAL_ADD */
-    SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize));
+    SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_ADD,
+                    centralAdd(d_a, d_b, d_c, chunkSize));
 
     /* RS_CENTRAL_TRIAD */
     SHMEM_BENCHMARK(RSBaseImpl::RS_CENTRAL_TRIAD,
-                    centralTriad(a, b, c, chunkSize, scalar));
+                    centralTriad(d_a, d_b, d_c, chunkSize, scalar));
 
     break;
 
   /* NO KERNELS, SOMETHING IS WRONG */
   default:
     if (myRank == 0) {
-      std::cout << "RS_SHMEM_OMP::execute() - ERROR: KERNEL NOT SET"
+      std::cout << "RS_SHMEM_OMP_TARGET::execute() - ERROR: KERNEL NOT SET"
                 << std::endl;
     }
 #ifdef _SHMEM_1_4_
@@ -460,6 +536,6 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   return true;
 }
 
-#endif /* _RS_SHMEM_OMP_H_ */
+#endif /* _RS_SHMEM_OMP_TARGET_H_ */
 
 /* EOF */

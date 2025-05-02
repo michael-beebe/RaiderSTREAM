@@ -1,16 +1,32 @@
-//
-// _RSOPTS_CPP_
-//
-// Copyright (C) 2022-2024 Texas Tech University
-// All Rights Reserved
-// michael.beebe@ttu.edu
-//
-// See LICENSE in the top level directory for licensing details
-//
+/**
+ * @file RSOpts.cpp
+ * @brief Implementation of RaiderSTREAM options handling
+ * @copyright Copyright (C) 2022-2024 Texas Tech University. All Rights Reserved.
+ * @author michael.beebe@ttu.edu
+ * 
+ * See LICENSE in the top level directory for licensing details
+ */
 
 #include "RaiderSTREAM/RSOpts.h"
 #include <algorithm>
 
+#ifdef _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
+#include <cuda.h>
+#endif
+#ifdef _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+#include <omp.h>
+#endif
+
+/** 
+ * @brief Macros used to get STREAM_TYPE as a string for options printout
+ * @todo Refactor these macros
+ */
+#define STRINGIFY(x) STRINGIFYP(x)
+#define STRINGIFYP(x) #x
+
+/**
+ * @brief Table defining the available benchmark types and their properties
+ */
 BenchType BenchTypeTable[] = {
   /* {  Name, Arg, Notes, KType, Enabled, ReqArq } */
   { "seq_copy", "", "Sequential Copy",      RSBaseImpl::RS_SEQ_COPY, false, false },
@@ -37,32 +53,58 @@ BenchType BenchTypeTable[] = {
   { ".", "", ".",                           RSBaseImpl::RS_NB, false, false }
 };
 
-/* RSOpts Constructor */
+/**
+ * @brief Default constructor for RSOpts
+ * 
+ * Initializes options to default values
+ */
 RSOpts::RSOpts()
-  : isHelp(false), isList(false), streamArraySize(1000000),
-    numPEs(1), lArgc(0), lArgv(nullptr) {}
+    : isHelp(false), isList(false), streamArraySize(1000000), numPEs(1),
+      lArgc(0), lArgv(nullptr)
+#ifdef _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
+      , deviceId(0)
+#endif
+#ifdef _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+      , deviceId(omp_get_default_device())
+#endif
+{}
 
-/* RSOpts Destructor */ 
+/**
+ * @brief Destructor for RSOpts
+ */
 RSOpts::~RSOpts() {}
 
-
-RSBaseImpl::RSKernelType RSOpts::getKernelTypeFromName(const std::string& kernelName) const {
+/**
+ * @brief Get kernel type enum from kernel name string
+ * @param kernelName Name of the kernel
+ * @return Corresponding RSKernelType enum value, or RS_NB if not found
+ */
+RSBaseImpl::RSKernelType
+RSOpts::getKernelTypeFromName(const std::string &kernelName) const {
   unsigned Idx = 0;
   while (BenchTypeTable[Idx].Name != ".") {
-      if (BenchTypeTable[Idx].Name == kernelName) {
-          return BenchTypeTable[Idx].KType;
-      }
-      Idx++;
+    if (BenchTypeTable[Idx].Name == kernelName) {
+      return BenchTypeTable[Idx].KType;
+    }
+    Idx++;
   }
   return RSBaseImpl::RS_NB; // Return RS_NB if kernel name not found
 }
 
+/**
+ * @brief Enable a benchmark by name
+ * @param benchName Name of benchmark to enable
+ * @return true if benchmark was found and enabled, false otherwise
+ */
 bool RSOpts::enableBenchmark(std::string benchName) {
   unsigned Idx = 0;
-  std::transform(benchName.begin(), benchName.end(), benchName.begin(), ::tolower); // Convert benchName to lowercase
+  std::transform(benchName.begin(), benchName.end(), benchName.begin(),
+                 ::tolower); // Convert benchName to lowercase
   while (BenchTypeTable[Idx].KType != RSBaseImpl::RS_NB) {
     std::string lowercaseName = BenchTypeTable[Idx].Name;
-    std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), ::tolower); // Convert BenchTypeTable[Idx].Name to lowercase
+    std::transform(lowercaseName.begin(), lowercaseName.end(),
+                   lowercaseName.begin(),
+                   ::tolower); // Convert BenchTypeTable[Idx].Name to lowercase
     if (lowercaseName == benchName) {
       BenchTypeTable[Idx].Enabled = true;
       return true;
@@ -73,9 +115,16 @@ bool RSOpts::enableBenchmark(std::string benchName) {
   return false;
 }
 
+/**
+ * @brief Parse command line options
+ * @param argc Number of command line arguments
+ * @param argv Array of command line argument strings
+ * @return true if options parsed successfully, false otherwise
+ */
 bool RSOpts::parseOpts(int argc, char **argv) {
   lArgc = argc;
   lArgv = argv;
+
   for (int i = 1; i < argc; i++) {
     std::string s(argv[i]);
 
@@ -84,8 +133,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
       isHelp = true;
       printHelp();
       return true;
-    }
-    else if ((s == "-l") || (s == "--list")) {
+    } else if ((s == "-l") || (s == "--list")) {
       isList = true;
       printBench();
       return true;
@@ -101,7 +149,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
         std::cout << "Error: invalid argument for --kernel" << std::endl;
         return false;
       }
-      setKernelName( P );
+      setKernelName(P);
       i++;
     }
     /* Get the stream array size */
@@ -118,21 +166,31 @@ bool RSOpts::parseOpts(int argc, char **argv) {
       setNumPEs(atoi(argv[i + 1]));
       i++;
     }
-#if _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_ || _ENABLE_OMP_TARGET_
+
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ 
     else if ((s == "-b") || (s == "--blocks")) {
-      if (i + 1 > (argc -1)) {
+      if (i + 1 > (argc - 1)) {
         std::cout << "Error: --blocks requires an argument" << std::endl;
         return false;
       }
       setThreadBlocks(atoi(argv[i + 1]));
       i++;
-    }
-    else if ((s == "-t") || (s == "--threads")) {
-      if (i + 1 > (argc -1)) {
+    } else if ((s == "-t") || (s == "--threads")) {
+      if (i + 1 > (argc - 1)) {
         std::cout << "Error: --threads requires an argument" << std::endl;
         return false;
       }
       setThreadsPerBlocks(atoi(argv[i + 1]));
+      i++;
+    }
+#endif
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+    else if ((s == "-d") || (s == "--device")) {
+      if (i + 1 > (argc - 1)) {
+        std::cout << "Error: --device requires an argument" << std::endl;
+        return false;
+      }
+      setDeviceId(atoi(argv[i + 1]));
       i++;
     }
 #endif
@@ -147,30 +205,53 @@ bool RSOpts::parseOpts(int argc, char **argv) {
     std::cout << "Error: STREAM Array Size cannot be 0" << std::endl;
     return false;
   }
-  #ifdef _ENABLE_OMP_
-  #else
-    if (numPEs < 1) {
-      std::cout << "Error: numPEs must be greater than or equal to 1" << std::endl;
-      return false;
-    }
-  #endif
+#ifdef _ENABLE_OMP_
+#else
+  if (numPEs < 1) {
+    std::cout << "Error: numPEs must be greater than or equal to 1"
+              << std::endl;
+    return false;
+  }
+#endif
+
+  /* Update BYTES, FLOATOPS arrays with given streamArraySize */
+  for(int i = 0; i < NUM_KERNELS; i++) {
+    BYTES[i] *= streamArraySize;
+    FLOATOPS[i] *= streamArraySize;
+  }
 
   return true; /* Options are valid */
 }
 
+/**
+ * @brief Print current options configuration
+ */
 void RSOpts::printOpts() {
   std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   std::cout << "RaiderSTREAM Options:" << std::endl;
   std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   std::cout << "Kernel Name: " << kernelName << std::endl;
-  std::cout << "Kernel Type: " << static_cast<int>(getKernelType()) << std::endl;
+  std::cout << "Kernel Type: " << static_cast<int>(getKernelType())
+            << std::endl;
   std::cout << "Stream Array Size: " << streamArraySize << std::endl;
+  std::cout << "Stream Data Type: " << STRINGIFY(STREAM_TYPE) << std::endl;
   std::cout << "Number of PEs: " << numPEs << std::endl;
-  char* ompNumThreads = getenv("OMP_NUM_THREADS");
-  if (ompNumThreads != nullptr) { std::cout << "OMP_NUM_THREADS: " << ompNumThreads << std::endl; }
-  else { std::cout << "OMP_NUM_THREADS: (not set)" << std::endl; }
+  char *ompNumThreads = getenv("OMP_NUM_THREADS");
+  if (ompNumThreads != nullptr) {
+    std::cout << "OMP_NUM_THREADS: " << ompNumThreads << std::endl;
+  } else {
+    std::cout << "OMP_NUM_THREADS: (not set)" << std::endl;
+  }
+
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ 
+  std::cout << "Blocks: " << threadBlocks << std::endl;
+  std::cout << "Threads/Block: " << threadsPerBlock << std::endl;
+#endif
 }
 
+/**
+ * @brief Print list of available benchmarks
+ */
 void RSOpts::printBench() {
   std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   std::cout << "BENCHMARK KERNEL | DESCRIPTION" << std::endl;
@@ -179,9 +260,8 @@ void RSOpts::printBench() {
   while (BenchTypeTable[Idx].Name != "") {
     std::cout << "  " << BenchTypeTable[Idx].Name;
     if (BenchTypeTable[Idx].Name == "all") {
-      std::cout << "\t\t| " << BenchTypeTable[Idx].Notes << std::endl; 
-    }
-    else {
+      std::cout << "\t\t| " << BenchTypeTable[Idx].Notes << std::endl;
+    } else {
       std::cout << "\t| " << BenchTypeTable[Idx].Notes << std::endl;
     }
     Idx++;
@@ -189,6 +269,9 @@ void RSOpts::printBench() {
   std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
 }
 
+/**
+ * @brief Print help message showing command line options
+ */
 void RSOpts::printHelp() {
   unsigned major = RS_VERSION_MAJOR;
   unsigned minor = RS_VERSION_MINOR;
@@ -196,18 +279,30 @@ void RSOpts::printHelp() {
   std::cout << " Usage: ./raiderstream [OPTIONS]" << std::endl;
   std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   std::cout << " Options:" << std::endl;
-  std::cout << "  -h, --help                Print this help message" << std::endl;
+  std::cout << "  -h, --help                Print this help message"
+            << std::endl;
   std::cout << "  -l, --list                List the benchmarks" << std::endl;
-  std::cout << "  -k, --kernel              Specify the kernel to run" << std::endl;
-  std::cout << "  -s, --size                Specify the size of the STREAM array" << std::endl;
-  std::cout << "  -np, --pes                Specify the number of PEs" << std::endl;
-#if _ENABLE_OMP_TARGET_ || _ENABLE_CUDA_ || _ENABLE_MPI_CUDA_
-  std::cout << "  -b, --blocks              Specify the number of CUDA blocks or OMP teams" << std::endl;
-  std::cout << "  -t, --threads             Specify the number of threads per block" << std::endl;
+  std::cout << "  -k, --kernel              Specify the kernel to run"
+            << std::endl;
+  std::cout
+      << "  -s, --size                Specify the size of the STREAM array"
+      << std::endl;
+  std::cout << "  -np, --pes                Specify the number of PEs"
+            << std::endl;
+
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OACC_
+  std::cout << "  -b, --blocks              Specify the number of CUDA blocks "
+            << std::endl;
+  std::cout
+      << "  -t, --threads             Specify the number of threads per block"
+      << std::endl;
 #endif
   std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
 }
 
+/**
+ * @brief Print RaiderSTREAM ASCII art logo
+ */
 void RSOpts::printLogo() {
   std::cout << std::endl;
   std::cout << R"(
@@ -225,34 +320,3 @@ void RSOpts::printLogo() {
   std::cout << std::endl;
   std::cout << std::endl;
 }
-
-// void RSOpts::printLogo() {
-//   std::cout << std::setfill('=') << std::setw(110) << "=" << std::endl;
-//   std::cout << R"(
-//          ___        _     _            ___  _____  ___  ___  ___  __  __ 
-//         | _ \ __ _ (_) __| | ___  _ _ / __||_   _|| _ \| __|/   \|  \/  |
-//         |   // _` || |/ _` |/ -_)| '_|\__ \  | |  |   /| _| | - || |\/| |
-//         |_|_\\__/_||_|\__/_|\___||_|  |___/  |_|  |_|_\|___||_|_||_|  |_|
-//   )";
-//   std::cout << std::endl;
-//   std::cout << std::endl;
-//   std::cout << std::setfill('=') << std::setw(110) << "=" << std::endl;
-// }
-
-// void RSOpts::printLogo() {
-//   std::cout << std::setfill('=') << std::setw(110) << "=" << std::endl;
-//   std::cout << R"(
-//               ╔═══╗         ╔╗       ╔═══╗╔════╗╔═══╗╔═══╗╔═══╗╔═╗╔═╗
-//               ║╔═╗║         ║║       ║╔═╗║║╔╗╔╗║║╔═╗║║╔══╝║╔═╗║║║╚╝║║
-//               ║╚═╝║╔══╗ ╔╗╔═╝║╔══╗╔═╗║╚══╗╚╝║║╚╝║╚═╝║║╚══╗║║ ║║║╔╗╔╗║
-//               ║╔╗╔╝╚ ╗║ ╠╣║╔╗║║╔╗║║╔╝╚══╗║  ║║  ║╔╗╔╝║╔══╝║╚═╝║║║║║║║
-//               ║║║╚╗║╚╝╚╗║║║╚╝║║║═╣║║ ║╚═╝║ ╔╝╚╗ ║║║╚╗║╚══╗║╔═╗║║║║║║║
-//               ╚╝╚═╝╚═══╝╚╝╚══╝╚══╝╚╝ ╚═══╝ ╚══╝ ╚╝╚═╝╚═══╝╚╝ ╚╝╚╝╚╝╚╝
-//   )";
-//   std::cout << std::endl;
-//   std::cout << std::endl;
-//   std::cout << std::setfill('=') << std::setw(110) << "=" << std::endl;
-// }
-                                                                                                          
-                                                                                                          
-                                                                                                          

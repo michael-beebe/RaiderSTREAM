@@ -19,7 +19,8 @@
 /**
  * @brief RaiderSTREAM OpenACC implementation class
  *
- * This class provides the implementation of the RaiderSTREAM benchmark using OpenMP.
+ * This class provides the implementation of the RaiderSTREAM benchmark using
+ * OpenMP.
  */
 class RS_OACC : public RSBaseImpl {
 private:
@@ -27,150 +28,104 @@ private:
   ssize_t streamArraySize;
   int numPEs;
   int lArgc;
-  int streamArrayMemSize;
-  int idxArrayMemSize;
   char **lArgv;
-  double *a;
-  double *b;
-  double *c;
-  double *d_a;
-  double *d_b;
-  double *d_c;
+  STREAM_TYPE *a;
+  STREAM_TYPE *b;
+  STREAM_TYPE *c;
+  STREAM_TYPE *d_a;
+  STREAM_TYPE *d_b;
+  STREAM_TYPE *d_c;
   ssize_t *idx1;
   ssize_t *idx2;
   ssize_t *idx3;
   ssize_t *d_idx1;
   ssize_t *d_idx2;
   ssize_t *d_idx3;
-  ssize_t scalar;
+  STREAM_TYPE scalar;
 
 public:
-  RS_OACC(const RSOpts& opts);
+  RS_OACC(const RSOpts &opts);
 
   ~RS_OACC();
 
+  virtual bool setDevice();
+
   virtual bool allocateData() override;
 
-  virtual bool execute(
-    double *TIMES, double *MBPS, double *FLOPS, double *BYTES, double *FLOATOPS
-  ) override;
+  virtual bool execute(double *TIMES, double *MBPS, double *FLOPS,
+                       double *BYTES, double *FLOATOPS) override;
 
   virtual bool freeData() override;
 };
 
 extern "C" {
-  void seqCopy(
-    double *a, double *b, double *c,
-    ssize_t streamArraySize
-  );
+double seqCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
+               ssize_t streamArraySize);
 
-  void seqScale(
-    double *a, double *b, double *c,
-    ssize_t streamArraySize, double scalar
-  );
+double seqScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
+                ssize_t streamArraySize, STREAM_TYPE scalar);
 
-  void seqAdd(
-    double *a, double *b, double *c,
-    ssize_t streamArraySize
-  );
+double seqAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
+              ssize_t streamArraySize);
 
-  void seqTriad(
-    double *a, double *b, double *c,
-    ssize_t streamArraySize, double scalar
-  );
+double seqTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
+                ssize_t streamArraySize, STREAM_TYPE scalar);
 
-  void gatherCopy(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
-    ssize_t streamArraySize
-  );
+double gatherCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                  STREAM_TYPE *d_c, ssize_t *d_IDX1, ssize_t streamArraySize);
 
-  void gatherScale(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
-    ssize_t streamArraySize, double scalar
-  );
+double gatherScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                   STREAM_TYPE *d_c, ssize_t *d_IDX1, ssize_t streamArraySize,
+                   STREAM_TYPE scalar);
 
-  void gatherAdd(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t streamArraySize
-  );
+double gatherAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                 STREAM_TYPE *d_c, ssize_t *d_IDX1, ssize_t *d_IDX2,
+                 ssize_t streamArraySize);
 
-  void gatherTriad(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t streamArraySize, double scalar
-  );
+double gatherTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                   STREAM_TYPE *d_c, ssize_t *d_IDX1, ssize_t *d_IDX2,
+                   ssize_t streamArraySize, STREAM_TYPE scalar);
 
-  void scatterCopy(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
-    ssize_t streamArraySize
-  );
+double scatterCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                   STREAM_TYPE *d_c, ssize_t *d_IDX1, ssize_t streamArraySize);
 
-  void scatterScale(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
-    ssize_t streamArraySize, double scalar
-  );
+double scatterScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                    STREAM_TYPE *d_c, ssize_t *d_IDX1, ssize_t streamArraySize,
+                    STREAM_TYPE scalar);
 
-  void scatterAdd(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
-    ssize_t streamArraySize
-  );
+double scatterAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                  STREAM_TYPE *d_c, ssize_t *d_IDX1, ssize_t streamArraySize);
 
-  void scatterTriad(
-    double *a, double *b, double *c,
-    ssize_t *IDX1,
-    ssize_t streamArraySize, double scalar
-  );
+double scatterTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                    STREAM_TYPE *d_c, ssize_t *d_IDX1, ssize_t streamArraySize,
+                    STREAM_TYPE scalar);
 
-  void sgCopy(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t streamArraySize
-  );
+double sgCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
+              ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t streamArraySize);
 
-  void sgScale(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2,
-    ssize_t streamArraySize, double scalar
-  );
+double sgScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
+               ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t streamArraySize,
+               STREAM_TYPE scalar);
 
-  void sgAdd(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
-    ssize_t streamArraySize
-  );
+double sgAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
+             ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t *d_IDX3,
+             ssize_t streamArraySize);
 
-  void sgTriad(
-    double *a, double *b, double *c,
-    ssize_t *IDX1, ssize_t *IDX2, ssize_t *IDX3,
-    ssize_t streamArraySize, double scalar
-  );
+double sgTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b, STREAM_TYPE *d_c,
+               ssize_t *d_IDX1, ssize_t *d_IDX2, ssize_t *d_IDX3,
+               ssize_t streamArraySize, STREAM_TYPE scalar);
 
-  void centralCopy(
-    double *a, double *b, double *c,
-    ssize_t streamArraySize
-  );
+double centralCopy(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                   STREAM_TYPE *d_c, ssize_t streamArraySize);
 
-  void centralScale(
-    double *a, double *b, double *c,
-    ssize_t streamArraySize,
-    double scalar
-  );
+double centralScale(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                    STREAM_TYPE *d_c, ssize_t streamArraySize, STREAM_TYPE scalar);
 
-  void centralAdd(
-    double *a, double *b, double *c,
-    ssize_t streamArraySize
-  );
+double centralAdd(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                  STREAM_TYPE *d_c, ssize_t streamArraySize);
 
-  void centralTriad(
-    double *a, double *b, double *c,
-    ssize_t streamArraySize, double scalar
-  );
+double centralTriad(STREAM_TYPE *d_a, STREAM_TYPE *d_b,
+                    STREAM_TYPE *d_c, ssize_t streamArraySize, STREAM_TYPE scalar);
 }
 
 #endif /* _RS_OACC_H_ */
