@@ -16,11 +16,6 @@ option(ENABLE_FHE_OMP
        "Enable the FHE-over-OpenMP backend (self-contained in RS_FHE_OMP/)"
        OFF)
 
-# standalone FHE core (so we can build the helper library even if we don't
-# enable the OMP backend)
-option(ENABLE_FHE
-       "Enable the standalone FHE helper library (in RS_FHE/)" OFF)
-
 function(use_shmem)
     if (SHMEM_1_5)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SHMEM_1_5_")
@@ -179,15 +174,14 @@ else()
   message(STATUS "DISABLING CUDA Implementation")
 endif()
 
-#
-# FHE+OMP backend
-#
 if(ENABLE_FHE_OMP)
+  find_package(OpenMP REQUIRED)
   find_package(OpenFHE CONFIG REQUIRED)
-  message(STATUS ">>> ENABLING OpenFHE + OpenMP FHE backend")
-
-  # so that `_ENABLE_FHE_OMP_` is defined everywhere
-  add_definitions(-D_ENABLE_FHE_OMP_)
+  # set(CMAKE_C_FLAGS         "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}   -D_ENABLE_FHE_OMP_")
+  set(CMAKE_CXX_FLAGS       "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -D_ENABLE_FHE_OMP_")
+  message(STATUS "ENABLING OpenFHE + OpenMP FHE Implementation")
+else()
+  message(STATUS "DISABLING OpenFHE + OpenMP FHE Implementation")
 endif()
 
 # -- hybrids

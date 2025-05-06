@@ -2,11 +2,33 @@
 #define RS_FHE_CONFIG_H
 
 // -----------------------------------------------------------------------------
+// OpenFHE includes
+// -----------------------------------------------------------------------------
+#include "openfhe.h"
+#include "ciphertext-ser.h"
+#include "cryptocontext-ser.h"
+#include "key/key-ser.h"
+
+#if defined(CKKS)
+  #include "scheme/ckksrns/ckksrns-ser.h"
+#elif defined(BFV)
+  #include "scheme/bfvrns/bfvrns-ser.h"
+#elif defined(BGV)
+  #include "scheme/bgvrns/bgvrns-ser.h"
+#endif
+
+#include <iostream>
+#include <cstdint>
+#include <cstddef>
+
+// -----------------------------------------------------------------------------
 // Scheme‑Dependent Type Definition
 // -----------------------------------------------------------------------------
 #if defined(CKKS)
   #define STREAM_TYPE double
-#elif defined(BFV) || defined(BGV)
+#elif defined(BFV)
+  #define STREAM_TYPE int64_t
+#elif defined(BGV)
   #define STREAM_TYPE int64_t
 #else
   #error "You must define one of CKKS, BFV, or BGV when compiling."
@@ -29,69 +51,53 @@ static const int      DEFAULT_SCALING_MOD_SIZE = 50;      // CKKS only
 // -----------------------------------------------------------------------------
 static const size_t   DEFAULT_CHUNK_SIZE    = DEFAULT_RING_DIM/2;
 
-// -----------------------------------------------------------------------------
-// OpenFHE includes
-// -----------------------------------------------------------------------------
-#include "openfhe.h"
-#include "ciphertext-ser.h"
-#include "cryptocontext-ser.h"
-#include "key/key-ser.h"
+using namespace lbcrypto;
 
 // -----------------------------------------------------------------------------
 // CryptoContext factory (inline, scheme‑selective)
 // -----------------------------------------------------------------------------
-#ifdef CKKS
- #include "scheme/ckksrns/ckksrns-ser.h"
- inline lbcrypto::CryptoContext<lbcrypto::DCRTPoly> CreateCryptoContext() {
-   lbcrypto::CCParams<lbcrypto::CryptoContextCKKSRNS> p;
-   p.SetMultiplicativeDepth(DEFAULT_DEPTH)
-    .SetScalingModSize(DEFAULT_SCALING_MOD_SIZE)
-    .SetRingDim(DEFAULT_RING_DIM);
-   auto cc = lbcrypto::GenCryptoContext(p);
-   cc->Enable(lbcrypto::ENCRYPTION)
-     ->Enable(lbcrypto::LEVELEDSHE)
-     ->Enable(lbcrypto::PKE);
-   std::cout << "[RS_FHE_Config] CKKS context created." << std::endl;
-   return cc;
- }
-#endif
+inline CryptoContext<DCRTPoly> CreateCryptoContext() {
+  CryptoContext<DCRTPoly> cc;
 
-#ifdef BFV
- #include "scheme/bfvrns/bfvrns-ser.h"
- inline lbcrypto::CryptoContext<lbcrypto::DCRTPoly> CreateCryptoContext() {
-   lbcrypto::CCParams<lbcrypto::CryptoContextBFVRNS> p;
-   p.SetPlaintextModulus(DEFAULT_PTM)
-    .SetMultiplicativeDepth(DEFAULT_DEPTH)
-    .SetRingDim(DEFAULT_RING_DIM);
-   auto cc = lbcrypto::GenCryptoContext(p);
-   cc->Enable(lbcrypto::ENCRYPTION)
-     ->Enable(lbcrypto::KEYSWITCH);
-   std::cout << "[RS_FHE_Config] BFV context created." << std::endl;
-   return cc;
- }
-#endif
+  #ifdef CKKS
+      CCParams<CryptoContextCKKSRNS> p;
+      p.SetMultiplicativeDepth(DEFAULT_DEPTH);
+      p.SetScalingModSize(DEFAULT_SCALING_MOD_SIZE);
+      p.SetRingDim(DEFAULT_RING_DIM);
+      cc = GenCryptoContext(p);
+      std::cout << "[RS_FHE_Config] CKKS context created." << std::endl;
+  #elif defined(BFV)
+      CCParams<CryptoContextBFVRNS> p;
+      p.SetPlaintextModulus(DEFAULT_PTM);
+      p.SetMultiplicativeDepth(DEFAULT_DEPTH);
+      p.SetRingDim(DEFAULT_RING_DIM);
+      cc = GenCryptoContext(p);
+      std::cout << "[RS_FHE_Config] BFV context created." << std::endl;
+  #elif defined(BGV)
+      CCParams<CryptoContextBGVRNS> p;
+      p.SetPlaintextModulus(DEFAULT_PTM);
+      p.SetMultiplicativeDepth(DEFAULT_DEPTH);
+      p.SetRingDim(DEFAULT_RING_DIM);
+      cc = GenCryptoContext(p);
+      std::cout << "[RS_FHE_Config] BGV context created." << std::endl;
+  #else
+      #error "You must define one of CKKS, BFV, or BGV when compiling."
+  #endif
 
-#ifdef BGV
- #include "scheme/bgvrns/bgvrns-ser.h"
- inline lbcrypto::CryptoContext<lbcrypto::DCRTPoly> CreateCryptoContext() {
-   lbcrypto::CCParams<lbcrypto::CryptoContextBGVRNS> p;
-   p.SetPlaintextModulus(DEFAULT_PTM)
-    .SetMultiplicativeDepth(DEFAULT_DEPTH)
-    .SetRingDim(DEFAULT_RING_DIM);
-   auto cc = lbcrypto::GenCryptoContext(p);
-   cc->Enable(lbcrypto::ENCRYPTION)
-     ->Enable(lbcrypto::KEYSWITCH);
-   std::cout << "[RS_FHE_Config] BGV context created." << std::endl;
-   return cc;
- }
-#endif
+  // Enable common features for all schemes
+  cc->Enable(PKE);
+  cc->Enable(KEYSWITCH);
+  cc->Enable(LEVELEDSHE);
+
+  return cc;
+}
 
 // -----------------------------------------------------------------------------
 // KeyGen helper
 // -----------------------------------------------------------------------------
-#include <iostream>
-inline lbcrypto::LPKeyPair<lbcrypto::DCRTPoly> GenerateKeyPair(
-    const lbcrypto::CryptoContext<lbcrypto::DCRTPoly>& cc) 
+
+inline KeyPair<DCRTPoly> GenerateKeyPair(
+    const CryptoContext<DCRTPoly>& cc) 
 {
   auto kp = cc->KeyGen();
   if (!kp.good()) {

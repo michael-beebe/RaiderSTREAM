@@ -69,7 +69,7 @@ return cc->EvalMult(ct, pt);
 /// Decrypt a ciphertext and return the resulting vector of numbers.
 /// For CKKS, returns real packed values; for BFV/BGV, returns the packed integer values.
 std::vector<double> DecryptCiphertext(const CryptoContext<DCRTPoly>& cc,
-                                        const SecretKey<DCRTPoly>& secretKey,
+                                        const PrivateKey<DCRTPoly>& secretKey,
                                         const Ciphertext<DCRTPoly>& ct) {
   #if defined(CKKS)
     Plaintext pt = cc->MakeCKKSPackedPlaintext(std::vector<double>());

@@ -9,6 +9,8 @@
 
 #include <vector>
 
+using namespace lbcrypto;
+
 namespace RSFHE {
 
 /**
@@ -21,7 +23,7 @@ namespace RSFHE {
  * @param values The vector of STREAM_TYPE values.
  * @return Plaintext representing the encoded values.
  */
-lbcrypto::Plaintext CreatePlaintextVector(const lbcrypto::CryptoContext<lbcrypto::DCRTPoly>& cc,
+Plaintext CreatePlaintextVector(const CryptoContext<DCRTPoly>& cc,
                                           const std::vector<STREAM_TYPE>& values);
 
 /**
@@ -33,7 +35,7 @@ lbcrypto::Plaintext CreatePlaintextVector(const lbcrypto::CryptoContext<lbcrypto
  * @param value A single STREAM_TYPE value.
  * @return Plaintext encoding the single value.
  */
-lbcrypto::Plaintext CreatePlaintextValue(const lbcrypto::CryptoContext<lbcrypto::DCRTPoly>& cc,
+Plaintext CreatePlaintextValue(const CryptoContext<DCRTPoly>& cc,
                                          STREAM_TYPE value);
 
 /**
@@ -46,8 +48,8 @@ lbcrypto::Plaintext CreatePlaintextValue(const lbcrypto::CryptoContext<lbcrypto:
  * @param values The vector of STREAM_TYPE values.
  * @return Ciphertext containing the encrypted vector.
  */
-lbcrypto::Ciphertext<lbcrypto::DCRTPoly> EncryptVector(const lbcrypto::CryptoContext<lbcrypto::DCRTPoly>& cc,
-                                                       const lbcrypto::PublicKey<lbcrypto::DCRTPoly>& publicKey,
+Ciphertext<DCRTPoly> EncryptVector(const CryptoContext<DCRTPoly>& cc,
+                                                       const PublicKey<DCRTPoly>& publicKey,
                                                        const std::vector<STREAM_TYPE>& values);
 
 /**
@@ -60,8 +62,8 @@ lbcrypto::Ciphertext<lbcrypto::DCRTPoly> EncryptVector(const lbcrypto::CryptoCon
  * @param value A single STREAM_TYPE value.
  * @return Ciphertext containing the encrypted value.
  */
-lbcrypto::Ciphertext<lbcrypto::DCRTPoly> EncryptValue(const lbcrypto::CryptoContext<lbcrypto::DCRTPoly>& cc,
-                                                      const lbcrypto::PublicKey<lbcrypto::DCRTPoly>& publicKey,
+Ciphertext<DCRTPoly> EncryptValue(const CryptoContext<DCRTPoly>& cc,
+                                                      const PublicKey<DCRTPoly>& publicKey,
                                                       STREAM_TYPE value);
 
 /**
@@ -74,9 +76,9 @@ lbcrypto::Ciphertext<lbcrypto::DCRTPoly> EncryptValue(const lbcrypto::CryptoCont
  * @param ct2 Second ciphertext operand.
  * @return Ciphertext containing the result of ct1 + ct2.
  */
-lbcrypto::Ciphertext<lbcrypto::DCRTPoly> EvalAddOperation(const lbcrypto::CryptoContext<lbcrypto::DCRTPoly>& cc,
-                                                          const lbcrypto::Ciphertext<lbcrypto::DCRTPoly>& ct1,
-                                                          const lbcrypto::Ciphertext<lbcrypto::DCRTPoly>& ct2);
+Ciphertext<DCRTPoly> EvalAddOperation(const CryptoContext<DCRTPoly>& cc,
+                                                          const Ciphertext<DCRTPoly>& ct1,
+                                                          const Ciphertext<DCRTPoly>& ct2);
 
 /**
  * @brief Perform homomorphic multiplication of a ciphertext by a plaintext multiplier.
@@ -89,8 +91,8 @@ lbcrypto::Ciphertext<lbcrypto::DCRTPoly> EvalAddOperation(const lbcrypto::Crypto
  * @param multiplier The multiplier vector.
  * @return Ciphertext containing the scaled result.
  */
-lbcrypto::Ciphertext<lbcrypto::DCRTPoly> EvalMultOperation(const lbcrypto::CryptoContext<lbcrypto::DCRTPoly>& cc,
-                                                           const lbcrypto::Ciphertext<lbcrypto::DCRTPoly>& ct,
+Ciphertext<DCRTPoly> EvalMultOperation(const CryptoContext<DCRTPoly>& cc,
+                                                           const Ciphertext<DCRTPoly>& ct,
                                                            const std::vector<STREAM_TYPE>& multiplier);
 
 /**
@@ -104,9 +106,9 @@ lbcrypto::Ciphertext<lbcrypto::DCRTPoly> EvalMultOperation(const lbcrypto::Crypt
  * @param ct The ciphertext to decrypt.
  * @return Vector of double containing the decrypted values.
  */
-std::vector<double> DecryptCiphertext(const lbcrypto::CryptoContext<lbcrypto::DCRTPoly>& cc,
-                                        const lbcrypto::SecretKey<lbcrypto::DCRTPoly>& secretKey,
-                                        const lbcrypto::Ciphertext<lbcrypto::DCRTPoly>& ct);
+std::vector<double> DecryptCiphertext(const CryptoContext<DCRTPoly>& cc,
+                                        const PrivateKey<DCRTPoly>& secretKey,
+                                        const Ciphertext<DCRTPoly>& ct);
 
 } // namespace RSFHE
 

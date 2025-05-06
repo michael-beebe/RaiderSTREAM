@@ -79,10 +79,9 @@ cd build
 
 # --- OpenMP + FHE ---
 cmake \
-  -DENABLE_OMP=ON \
   -DENABLE_FHE_OMP=ON \
-  -DCKKS=ON \
-  -DCMAKE_PREFIX_PATH=~/software/openfhe \
+  -DSCHEME=CKKS \
+  -DCMAKE_PREFIX_PATH=$HOME/software/openfhe \
   ../
 
 # --- Build the project

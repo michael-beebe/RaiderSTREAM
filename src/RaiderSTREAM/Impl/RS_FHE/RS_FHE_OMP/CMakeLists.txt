@@ -20,6 +20,8 @@ target_compile_features(RS_FHE_OMP_OBJS PUBLIC cxx_std_17)
 target_include_directories(RS_FHE_OMP_OBJS PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/..
+  ${CMAKE_SOURCE_DIR}/src/include/RaiderSTREAM
+  ${OpenFHE_INCLUDE}/..
 )
 
 # tell it to compile with OpenMP
