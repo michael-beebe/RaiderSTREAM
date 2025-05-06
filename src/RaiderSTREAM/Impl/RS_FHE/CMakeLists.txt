@@ -31,11 +31,11 @@ else()
 endif()
 
 # Include OpenFHE headers.
-# include_directories(${OpenFHE_INCLUDE})
-# include_directories(${OpenFHE_INCLUDE}/third-party/include)
-# include_directories(${OpenFHE_INCLUDE}/core)
-# include_directories(${OpenFHE_INCLUDE}/binfhe)
-# include_directories(${OpenFHE_INCLUDE}/pke)
+include_directories(${OpenFHE_INCLUDE})
+include_directories(${OpenFHE_INCLUDE}/third-party/include)
+include_directories(${OpenFHE_INCLUDE}/core)
+include_directories(${OpenFHE_INCLUDE}/binfhe)
+include_directories(${OpenFHE_INCLUDE}/pke)
 
 # List the source and header files for RS_FHE module.
 set(RS_FHE_SRCS
@@ -50,26 +50,13 @@ set(RS_FHE_HDRS
 # Create a library (static or shared) for the FHE module.
 if(BUILD_STATIC)
     add_library(RS_FHE STATIC ${RS_FHE_SRCS} ${RS_FHE_HDRS})
-    target_link_libraries(RS_FHE PUBLIC ${OpenFHE_STATIC_LIBRARIES})
+    target_link_libraries(RS_FHE ${OpenFHE_STATIC_LIBRARIES})
 else()
     add_library(RS_FHE SHARED ${RS_FHE_SRCS} ${RS_FHE_HDRS})
-    target_link_libraries(RS_FHE PUBLIC ${OpenFHE_SHARED_LIBRARIES})
+    target_link_libraries(RS_FHE ${OpenFHE_SHARED_LIBRARIES})
 endif()
 
-get_filename_component(OpenFHE_ROOT_INCLUDE ${OpenFHE_INCLUDE} DIRECTORY)
-
-# ——— Expose include dirs transitively ———
-target_include_directories(RS_FHE
-  PUBLIC
-    ${OpenFHE_ROOT_INCLUDE}          
-    ${OpenFHE_ROOT_INCLUDE}/openfhe   
-    ${OpenFHE_ROOT_INCLUDE}/openfhe/third-party/include
-    ${OpenFHE_ROOT_INCLUDE}/openfhe/core
-    ${OpenFHE_ROOT_INCLUDE}/openfhe/pke
-)
-
-
 # Make sure other modules know where to find RS_FHE headers
-# target_include_directories(RS_FHE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(RS_FHE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 message(STATUS "RS_FHE library built successfully.")
