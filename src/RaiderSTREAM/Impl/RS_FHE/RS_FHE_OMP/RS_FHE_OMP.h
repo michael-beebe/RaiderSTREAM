@@ -18,6 +18,8 @@
 #include "RS_FHE_Config.h"    // for STREAM_TYPE, CreateCryptoContext, GenerateKeyPair
 #include "openfhe.h"          // for CryptoContext, Ciphertext, DCRTPoly, PublicKey
 
+using namespace lbcrypto;
+
 /**
  * @brief RaiderSTREAM OpenMP + FHE implementation class
  *
@@ -71,9 +73,9 @@ private:
   int                             numPEs;          ///< number of OpenMP threads
   ssize_t                        *idx1, *idx2, *idx3; ///< plaintext index arrays
   STREAM_TYPE                    scalar;          ///< scale factor for scale/triad
-  lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc;  ///< FHE crypto context
-  lbcrypto::LPKeyPair<lbcrypto::DCRTPoly>       kp;  ///< FHE key pair
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>>
+  CryptoContext<DCRTPoly> cc;  ///< FHE crypto context
+  KeyPair<DCRTPoly>       kp;  ///< FHE key pair
+  std::vector<Ciphertext<DCRTPoly>>
                                   a_enc, b_enc, c_enc; ///< encrypted data arrays
 };
 

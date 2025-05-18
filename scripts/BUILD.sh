@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# set -e
 
 # --- Load required modules
 #module load cmake
@@ -80,7 +80,7 @@ cd build
 # --- OpenMP + FHE ---
 cmake \
   -DENABLE_FHE_OMP=ON \
-  -DSCHEME=CKKS \
+  -DSCHEME=BGV \
   -DCMAKE_PREFIX_PATH=$HOME/software/openfhe \
   ../
 

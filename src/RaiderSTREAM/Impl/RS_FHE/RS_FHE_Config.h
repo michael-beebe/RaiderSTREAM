@@ -22,19 +22,6 @@
 #include <cstddef>
 
 // -----------------------------------------------------------------------------
-// Scheme‑Dependent Type Definition
-// -----------------------------------------------------------------------------
-#if defined(CKKS)
-  #define STREAM_TYPE double
-#elif defined(BFV)
-  #define STREAM_TYPE int64_t
-#elif defined(BGV)
-  #define STREAM_TYPE int64_t
-#else
-  #error "You must define one of CKKS, BFV, or BGV when compiling."
-#endif
-
-// -----------------------------------------------------------------------------
 // Default FHE Parameters
 // -----------------------------------------------------------------------------
 static const uint64_t DEFAULT_PTM           = 786433;    // BFV/BGV only
