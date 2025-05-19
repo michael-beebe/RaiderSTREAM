@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 
 # Pull in OpenMP
 find_package(OpenMP REQUIRED)
+find_package(OpenFHE CONFIG REQUIRED)
 
 # Collect our sources
 set(RS_FHE_OMP_SRCS
@@ -25,8 +26,12 @@ target_include_directories(RS_FHE_OMP_OBJS PUBLIC
 
 # tell it to compile with OpenMP
 target_compile_definitions(RS_FHE_OMP_OBJS PUBLIC _ENABLE_FHE_OMP_)
+
 target_link_libraries(RS_FHE_OMP_OBJS
   PUBLIC
     RS_FHE
     OpenMP::OpenMP_CXX
+    OpenFHEpke
+    OpenFHEcore
+    OpenFHEbinfhe
 )

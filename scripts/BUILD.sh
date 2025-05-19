@@ -28,15 +28,15 @@ cd build
 #   -DCMAKE_CXX_FLAGS="-acc -ta=tesla:cc70 -Minfo=accel" \
 #   ../
 # --- OpenSHMEM+OpenACC ---
- cmake \
-   -DENABLE_SHMEM_OACC=ON \
-   -DSTREAM_TYPE=int \
-   -DSHMEM_1_4=ON \
-   -DCMAKE_C_COMPILER=/home/and21829/SOS/install/bin/oshcc \
-   -DCMAKE_CXX_COMPILER=/home/and21829/SOS/install/bin/oshc++ \
-   -DCMAKE_C_FLAGS="-fopenacc -foffload=nvptx-none" \
-   -DCMAKE_CXX_FLAGS="-fopenacc -foffload=nvptx-none" \
-   ../
+#  cmake \
+#    -DENABLE_SHMEM_OACC=ON \
+#    -DSTREAM_TYPE=int \
+#    -DSHMEM_1_4=ON \
+#    -DCMAKE_C_COMPILER=/home/and21829/SOS/install/bin/oshcc \
+#    -DCMAKE_CXX_COMPILER=/home/and21829/SOS/install/bin/oshc++ \
+#    -DCMAKE_C_FLAGS="-fopenacc -foffload=nvptx-none" \
+#    -DCMAKE_CXX_FLAGS="-fopenacc -foffload=nvptx-none" \
+#    ../
 
 
 # --- OpenMP + Offload ---

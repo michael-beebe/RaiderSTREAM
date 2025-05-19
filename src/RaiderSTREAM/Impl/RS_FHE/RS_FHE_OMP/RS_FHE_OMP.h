@@ -15,6 +15,7 @@
 
 #include "RSOpts.h"           // for RSOpts
 #include "RSBaseImpl.h"       // for RSBaseImpl
+#undef M
 #include "RS_FHE_Config.h"    // for STREAM_TYPE, CreateCryptoContext, GenerateKeyPair
 #include "openfhe.h"          // for CryptoContext, Ciphertext, DCRTPoly, PublicKey
 
@@ -103,6 +104,7 @@ void seqScaleFHE(
 
 /// @brief Homomorphic add: c_enc[j] = a_enc[j] + b_enc[j]
 void seqAddFHE(
+  lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
@@ -137,6 +139,7 @@ void gatherScaleFHE(
   STREAM_TYPE scalar);
 
 void gatherAddFHE(
+  lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
@@ -174,6 +177,7 @@ void scatterScaleFHE(
   STREAM_TYPE scalar);
 
 void scatterAddFHE(
+  lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
@@ -211,6 +215,7 @@ void sgScaleFHE(
   STREAM_TYPE scalar);
 
 void sgAddFHE(
+  lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
@@ -248,6 +253,7 @@ void centralScaleFHE(
   STREAM_TYPE scalar);
 
 void centralAddFHE(
+  lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,

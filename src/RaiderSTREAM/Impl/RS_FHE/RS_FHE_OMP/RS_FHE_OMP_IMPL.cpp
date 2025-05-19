@@ -14,6 +14,8 @@ using lbcrypto::CryptoContext;
 using lbcrypto::PublicKey;
 using lbcrypto::Ciphertext;
 using lbcrypto::DCRTPoly;
+using RSFHE::CreatePlaintextValue;
+using RSFHE::EvalAddOperation;
 
 // -----------------------------------------------------------------------------
 /**
@@ -66,12 +68,14 @@ void seqScaleFHE(
 // -----------------------------------------------------------------------------
 /**
  * @brief Homomorphic “add” kernel (sequential STREAM add).
+ * @param cc       Crypto context
  * @param a_enc    Encrypted input array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted output array c
  * @param streamArraySize Number of elements
  */
 void seqAddFHE(
+  CryptoContext<DCRTPoly> cc,
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
@@ -79,7 +83,7 @@ void seqAddFHE(
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[j] = EvalAddOperation(a_enc[j], b_enc[j]);
+    c_enc[j] = EvalAddOperation(cc, a_enc[j], b_enc[j]);
   }
 }
 
@@ -108,7 +112,7 @@ void seqTriadFHE(
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; ++j) {
     auto tmp      = cc->EvalMult(c_enc[j], scalar_pt);
-    a_enc[j]      = EvalAddOperation(b_enc[j], tmp);
+    a_enc[j]      = EvalAddOperation(cc, b_enc[j], tmp);
   }
 }
 
@@ -168,6 +172,7 @@ void gatherScaleFHE(
 // -----------------------------------------------------------------------------
 /**
  * @brief Homomorphic gather‑add kernel.
+ * @param cc       Crypto context
  * @param a_enc    Encrypted input array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted output array c
@@ -176,6 +181,7 @@ void gatherScaleFHE(
  * @param streamArraySize Number of elements
  */
 void gatherAddFHE(
+  CryptoContext<DCRTPoly> cc,
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
@@ -185,7 +191,7 @@ void gatherAddFHE(
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[j] = EvalAddOperation(a_enc[idx1[j]], b_enc[idx2[j]]);
+    c_enc[j] = EvalAddOperation(cc, a_enc[idx1[j]], b_enc[idx2[j]]);
   }
 }
 
@@ -217,7 +223,7 @@ void gatherTriadFHE(
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; ++j) {
     auto tmp      = cc->EvalMult(c_enc[idx2[j]], scalar_pt);
-    a_enc[j]      = EvalAddOperation(b_enc[idx1[j]], tmp);
+    a_enc[j]      = EvalAddOperation(cc, b_enc[idx1[j]], tmp);
   }
 }
 
@@ -277,6 +283,7 @@ void scatterScaleFHE(
 // -----------------------------------------------------------------------------
 /**
  * @brief Homomorphic scatter‑add kernel.
+ * @param cc       Crypto context
  * @param a_enc    Encrypted input array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted output array c
@@ -284,6 +291,7 @@ void scatterScaleFHE(
  * @param streamArraySize Number of elements
  */
 void scatterAddFHE(
+  CryptoContext<DCRTPoly> cc,
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
@@ -292,7 +300,7 @@ void scatterAddFHE(
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[idx1[j]] = EvalAddOperation(a_enc[j], b_enc[j]);
+    c_enc[idx1[j]] = EvalAddOperation(cc, a_enc[j], b_enc[j]);
   }
 }
 
@@ -322,7 +330,7 @@ void scatterTriadFHE(
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; ++j) {
     auto tmp = cc->EvalMult(c_enc[j], scalar_pt);
-    a_enc[idx1[j]] = EvalAddOperation(b_enc[j], tmp);
+    a_enc[idx1[j]] = EvalAddOperation(cc, b_enc[j], tmp);
   }
 }
 
@@ -386,6 +394,7 @@ void sgScaleFHE(
 // -----------------------------------------------------------------------------
 /**
  * @brief Homomorphic scatter‑gather‑add kernel.
+ * @param cc       Crypto context
  * @param a_enc    Encrypted input array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted output array c
@@ -395,6 +404,7 @@ void sgScaleFHE(
  * @param streamArraySize Number of elements
  */
 void sgAddFHE(
+  CryptoContext<DCRTPoly> cc,
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
@@ -405,7 +415,7 @@ void sgAddFHE(
 {
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[idx1[j]] = EvalAddOperation(a_enc[idx2[j]], b_enc[idx3[j]]);
+    c_enc[idx1[j]] = EvalAddOperation(cc, a_enc[idx2[j]], b_enc[idx3[j]]);
   }
 }
 
@@ -439,7 +449,7 @@ void sgTriadFHE(
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; ++j) {
     auto tmp      = cc->EvalMult(c_enc[idx1[j]], scalar_pt);
-    a_enc[idx2[j]] = EvalAddOperation(b_enc[idx3[j]], tmp);
+    a_enc[idx2[j]] = EvalAddOperation(cc, b_enc[idx3[j]], tmp);
   }
 }
 
@@ -497,18 +507,20 @@ void centralScaleFHE(
 // -----------------------------------------------------------------------------
 /**
  * @brief Homomorphic “central” add kernel.
+ * @param cc       Crypto context
  * @param a_enc    Encrypted input array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted output array c
  * @param streamArraySize Number of elements
  */
 void centralAddFHE(
+  CryptoContext<DCRTPoly> cc,
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
   ssize_t streamArraySize)
 {
-  auto sum = EvalAddOperation(a_enc[0], b_enc[0]);
+  auto sum = EvalAddOperation(cc, a_enc[0], b_enc[0]);
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; ++j) {
     c_enc[j] = sum;
@@ -537,7 +549,7 @@ void centralTriadFHE(
 {
   auto scalar_pt = CreatePlaintextValue(cc, scalar);
   auto tmp       = cc->EvalMult(c_enc[0], scalar_pt);
-  auto res       = EvalAddOperation(b_enc[0], tmp);
+  auto res       = EvalAddOperation(cc, b_enc[0], tmp);
   #pragma omp parallel for
   for (ssize_t j = 0; j < streamArraySize; ++j) {
     a_enc[j] = res;
