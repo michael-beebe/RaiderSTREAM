@@ -53,4 +53,8 @@ target_include_directories(RS_FHE
     ${OpenFHE_ROOT}/openfhe/binfhe
 )
 
+if (ENABLE_FHE_OMP)
+  add_subdirectory(RS_FHE_OMP)
+endif()
+
 message(STATUS "RS_FHE library built successfully.")

@@ -36,5 +36,5 @@ endif()
 
 if (ENABLE_FHE_OMP)
   add_subdirectory(RS_FHE)
-  add_subdirectory(RS_FHE/RS_FHE_OMP)
+  # add_subdirectory(RS_FHE/RS_FHE_OMP)
 endif()
