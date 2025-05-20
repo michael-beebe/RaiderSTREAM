@@ -21,6 +21,8 @@ else()
 endif ()
 
 set( CMAKE_CXX_FLAGS ${OpenFHE_CXX_FLAGS} )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=sign-compare -Wno-error=unused-variable")
+message(STATUS "OpenFHE compiler flags: '${OpenFHE_CXX_FLAGS}'")
 
 link_directories(${OpenFHE_LIBDIR})
 if(BUILD_STATIC)
@@ -77,7 +79,7 @@ target_link_libraries(RS_FHE_OMP
   PUBLIC
     RS_FHE
     OpenMP::OpenMP_CXX
-    OpenFHEpke
-    OpenFHEcore
-    OpenFHEbinfhe
+    ${OpenFHE_LIBDIR}/libOPENFHEpke.so
+    ${OpenFHE_LIBDIR}/libOPENFHEcore.so
+    ${OpenFHE_LIBDIR}/libOPENFHEbinfhe.so
 )

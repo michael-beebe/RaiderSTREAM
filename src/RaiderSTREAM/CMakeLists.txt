@@ -48,6 +48,7 @@ if (ENABLE_CUDA)
 endif()
 
 if (ENABLE_FHE_OMP)
+  link_directories(${OpenFHE_LIBDIR})
   add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_FHE_OMP_OBJS>)
   target_link_libraries(raiderstream PRIVATE RS_FHE_OMP)
 endif()
