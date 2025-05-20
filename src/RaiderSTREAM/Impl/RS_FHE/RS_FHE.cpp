@@ -14,6 +14,7 @@
 using namespace lbcrypto;
 using namespace std;
 
+namespace RSFHE {
 /// Create a plaintext from a vector of STREAM_TYPE values.
 /// For CKKS, this uses MakeCKKSPackedPlaintext; for BFV/BGV, it uses MakePackedPlaintext.
 Plaintext CreatePlaintextVector(const CryptoContext<DCRTPoly>& cc, const std::vector<STREAM_TYPE>& values) {
@@ -86,4 +87,6 @@ std::vector<STREAM_TYPE> DecryptCiphertext(const CryptoContext<DCRTPoly>& cc,
   #else
     return pt->GetPackedValue();
   #endif
+}
+
 }

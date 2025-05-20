@@ -106,7 +106,7 @@ Ciphertext<DCRTPoly> EvalMultOperation(const CryptoContext<DCRTPoly>& cc,
  * @param ct The ciphertext to decrypt.
  * @return Vector of double containing the decrypted values.
  */
-std::vector<double> DecryptCiphertext(const CryptoContext<DCRTPoly>& cc,
+std::vector<STREAM_TYPE> DecryptCiphertext(const CryptoContext<DCRTPoly>& cc,
                                         const PrivateKey<DCRTPoly>& secretKey,
                                         const Ciphertext<DCRTPoly>& ct);
 

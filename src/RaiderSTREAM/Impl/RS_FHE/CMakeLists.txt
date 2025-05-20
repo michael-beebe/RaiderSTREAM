@@ -20,7 +20,14 @@ else()
     message(FATAL_ERROR "OpenFHE package not found!")
 endif()
 
+# Add after the find_package(OpenFHE CONFIG REQUIRED) block
+message(STATUS "OpenFHE_STATIC_LIBRARIES: ${OpenFHE_STATIC_LIBRARIES}")
+message(STATUS "OpenFHE_SHARED_LIBRARIES: ${OpenFHE_SHARED_LIBRARIES}")
+
 get_filename_component(OpenFHE_ROOT ${OpenFHE_INCLUDE} DIRECTORY)
+
+# Add the OpenFHE lib directory to the linker search path
+link_directories(${OpenFHE_LIBDIR})
 
 # List the source and header files for RS_FHE module.
 set(RS_FHE_SRCS
@@ -45,13 +52,17 @@ endif()
 target_include_directories(RS_FHE
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${OpenFHE_ROOT}
-    ${OpenFHE_ROOT}/openfhe
-    ${OpenFHE_ROOT}/openfhe/third-party/include
-    ${OpenFHE_ROOT}/openfhe/core
-    ${OpenFHE_ROOT}/openfhe/pke
-    ${OpenFHE_ROOT}/openfhe/binfhe
+    ${OpenFHE_INCLUDE}
+    ${OpenFHE_INCLUDE}/pke
+    ${OpenFHE_INCLUDE}/core
+    ${OpenFHE_INCLUDE}/binfhe
+    ${OpenFHE_INCLUDE}/third-party/include
 )
+
+# Add this to propagate variables to RS_FHE_OMP
+set(OpenFHE_LIBDIR ${OpenFHE_LIBDIR} PARENT_SCOPE)
+set(OpenFHE_INCLUDE ${OpenFHE_INCLUDE} PARENT_SCOPE)
+set(OpenFHE_SHARED_LIBRARIES ${OpenFHE_SHARED_LIBRARIES} PARENT_SCOPE)
 
 if (ENABLE_FHE_OMP)
   add_subdirectory(RS_FHE_OMP)
