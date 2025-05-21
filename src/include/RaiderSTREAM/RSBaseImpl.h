@@ -11,6 +11,7 @@
 #ifndef _RSBASEIMPL_H_
 #define _RSBASEIMPL_H_
 
+#include <ctime>
 #include <iomanip>
 #include <iostream>
 #include <stdint.h>
@@ -268,14 +269,10 @@ public:
    *
    * @returns A number representing the time since some reference point.
    */
-  // Should this be remade to use the monotonic clock instead?
-  // (clock_get[res/time]) It would avoid the shenanigans occuring in checkTick
-  // below.
   double mySecond() {
-    struct timeval tp;
-    struct timezone tzp;
-    int i = gettimeofday(&tp, &tzp);
-    return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
+    struct timespec tp;
+    clock_gettime(CLOCK_MONOTONIC, &tp);
+    return ((double)tp.tv_sec + (double)tp.tv_nsec * 1.e-9);
   }
 
   /**
@@ -286,21 +283,10 @@ public:
    *
    * @returns The minimum time difference detectable
    */
-  int checkTick() {
-    int i, minDelta, delta;
-    double t1, t2, timesFound[M];
-    for (i = 0; i < M; i++) {
-      t1 = mySecond();
-      while (((t2 = mySecond()) - t1) < 1.0E-6)
-        ;
-      timesFound[i] = t1 = t2;
-    }
-    minDelta = 1000000;
-    for (i = 1; i < M; i++) {
-      delta = (int)(1.0E6 * (timesFound[i] - timesFound[i - 1]));
-      minDelta = MIN(minDelta, MAX(delta, 0));
-    }
-    return (minDelta);
+  double checkTick() {
+    struct timespec tp;
+    clock_getres(CLOCK_MONOTONIC, &tp);
+    return ((double)tp.tv_sec + (double)tp.tv_nsec * 1.e-9);
   }
 
   /**
