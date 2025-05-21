@@ -196,8 +196,7 @@ public:
    */
   int getNumPEs() const { return numPEs; }
 
-/* FIXME: do we need this for OpenACC? I think not */
-#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA__
+#if defined(_ENABLE_CUDA_) || defined(_ENABLE_SHMEM_CUDA_)
   /**
    * @brief Gets the number of work groups.
    *
@@ -216,8 +215,8 @@ public:
    */
   int getThreadsPerBlocks() const { return threadsPerBlock; }
 #endif
-#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ ||             \
-    _ENABLE_SHMEM_OMP_TARGET_
+#if defined(_ENABLE_CUDA_) || defined(_ENABLE_SHMEM_CUDA_) || defined(_ENABLE_OMP_TARGET_) || \
+    defined(_ENABLE_SHMEM_OMP_TARGET_)
   /**
    *  @brief Gets the device ID the user specified.
    *
@@ -253,7 +252,7 @@ public:
    */
   void setKernelName(std::string name) { kernelName = name; }
 
-#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
+#if defined(_ENABLE_CUDA_) || defined(_ENABLE_SHMEM_CUDA_)
   /**
    * @brief Sets the number of work groups.
    *
@@ -271,8 +270,8 @@ public:
    */
   void setThreadsPerBlocks(int threads) { threadsPerBlock = threads; }
 #endif
-#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ ||             \
-    _ENABLE_SHMEM_OMP_TARGET_
+#if defined(_ENABLE_CUDA_) || defined(_ENABLE_SHMEM_CUDA_) || defined(_ENABLE_OMP_TARGET_) || \
+    defined(_ENABLE_SHMEM_OMP_TARGET_)
   /**
    *  @brief Sets the device ID to use.
    *
