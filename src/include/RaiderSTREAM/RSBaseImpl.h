@@ -264,9 +264,6 @@ public:
   /**
    * @brief Produces a number repesenting the current time.
    *
-   * While fairly stable and reliable, the reference point (0 seconds)
-   * is only stable within the same program execution.
-   *
    * @returns A number representing the time since some reference point.
    */
   double mySecond() {
@@ -278,8 +275,8 @@ public:
   /**
    * @brief Calculate the minimum difference in time.
    *
-   * In other words: calculate the minimum x such that
-   * y = mySecond(), for(i = 0; i < x; i++) ;, mySecond() - y > 0
+   * In other words, let x, y be two distinct results of mySecond.
+   * |x - y| >= checkTick()
    *
    * @returns The minimum time difference detectable
    */
