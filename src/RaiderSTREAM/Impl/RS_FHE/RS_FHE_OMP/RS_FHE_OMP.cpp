@@ -39,7 +39,17 @@ RS_FHE_OMP::RS_FHE_OMP(const RSOpts &opts)
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), numPEs(opts.getNumPEs()),
       idx1(nullptr), idx2(nullptr), idx3(nullptr), scalar(3) {
-  std::cout << "[RS_FHE_OMP] scheme = " << kernelName
+  std::string scheme;
+#if defined(CKKS)
+    scheme = "CKKS";
+#elif defined(BFV)
+    scheme = "BFV";
+#elif defined(BGV)
+    scheme = "BGV";
+#else
+    scheme = "UNKNOWN";
+#endif
+  std::cout << "[RS_FHE_OMP] scheme = " << scheme
             << ", arraySize = " << streamArraySize << ", threads = " << numPEs
             << std::endl;
 }

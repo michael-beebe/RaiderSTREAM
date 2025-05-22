@@ -92,7 +92,7 @@ inline KeyPair<DCRTPoly> GenerateKeyPair(
     exit(1);
   }
   cc->EvalMultKeyGen(kp.secretKey);
-  cc->EvalSumKeyGen(kp.secretKey);
+  // cc->EvalSumKeyGen(kp.secretKey);
   std::cout << "[RS_FHE_Config] Key pair generated." << std::endl;
   return kp;
 }
