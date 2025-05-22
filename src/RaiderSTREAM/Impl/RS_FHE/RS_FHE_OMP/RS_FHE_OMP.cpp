@@ -9,7 +9,7 @@
 
 #include "RS_FHE_OMP.h"
 
-#ifdef _RS_FHE_OMP_H_
+// #ifdef _RS_FHE_OMP_H_
 
 #include <chrono>
 #include <iostream>
@@ -18,11 +18,13 @@
 
 #include "RSOpts.h"         // for streamArraySize, kernelName, etc.
 #include "RS_FHE_Config.h"  // STREAM_TYPE, CreateCryptoContext, GenerateKeyPair
+#include "RS_FHE.h"
 #include "ciphertext-ser.h" // for serialization headers
 #include "cryptocontext-ser.h"
 #include "key/key-ser.h"
 
 using namespace lbcrypto;
+using RSFHE::CreatePlaintextVector;
 
 /**************************************************
  * @brief Constructor for the RS_FHE_OMP class.
@@ -69,16 +71,7 @@ bool RS_FHE_OMP::allocateData() {
 #endif
 
   // 2) create FHE context & keys
-#if defined(CKKS)
-  cc = CreateCryptoContextCKKS(DEFAULT_DEPTH, DEFAULT_RING_DIM,
-                               DEFAULT_SCALING_MOD_SIZE);
-#elif defined(BFV)
-  cc = CreateCryptoContextBFV(DEFAULT_DEPTH, DEFAULT_RING_DIM, DEFAULT_PTM);
-#elif defined(BGV)
-  cc = CreateCryptoContextBGV(DEFAULT_DEPTH, DEFAULT_RING_DIM, DEFAULT_PTM);
-#else
-#error "No encryption scheme defined!"
-#endif
+  cc = CreateCryptoContext();
   kp = GenerateKeyPair(cc);
 
   // 3) allocate ciphertext buffers
@@ -139,7 +132,7 @@ bool RS_FHE_OMP::freeData() {
  *
  * @return True if success.
  **************************************************/
-bool RS_OMP_FHE::execute(double *TIMES, double *MBPS, double *FLOPS,
+bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
                          double *BYTES, double *FLOATOPS) {
   double startTime = 0.0, endTime = 0.0, runTime = 0.0;
   double mbps = 0.0, flops = 0.0;
@@ -178,7 +171,7 @@ bool RS_OMP_FHE::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SEQ_ADD: {
     startTime = mySecond();
-    seqAddFHE(a_enc, b_enc, c_enc, streamArraySize);
+    seqAddFHE(cc, a_enc, b_enc, c_enc, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -238,7 +231,7 @@ bool RS_OMP_FHE::execute(double *TIMES, double *MBPS, double *FLOPS,
   case RSBaseImpl::RS_GATHER_ADD: {
     startTime = mySecond();
     gatherAddFHE(
-        a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + streamArraySize),
+        cc, a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + streamArraySize),
         std::vector<ssize_t>(idx2, idx2 + streamArraySize), streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
@@ -301,7 +294,7 @@ bool RS_OMP_FHE::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SCATTER_ADD: {
     startTime = mySecond();
-    scatterAddFHE(a_enc, b_enc, c_enc,
+    scatterAddFHE(cc, a_enc, b_enc, c_enc,
                   std::vector<ssize_t>(idx1, idx1 + streamArraySize),
                   streamArraySize);
     endTime = mySecond();
@@ -366,7 +359,7 @@ bool RS_OMP_FHE::execute(double *TIMES, double *MBPS, double *FLOPS,
   case RSBaseImpl::RS_SG_ADD: {
     startTime = mySecond();
     sgAddFHE(
-        a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + streamArraySize),
+        cc, a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + streamArraySize),
         std::vector<ssize_t>(idx2, idx2 + streamArraySize),
         std::vector<ssize_t>(idx3, idx3 + streamArraySize), streamArraySize);
     endTime = mySecond();
@@ -428,7 +421,7 @@ bool RS_OMP_FHE::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_CENTRAL_ADD: {
     startTime = mySecond();
-    centralAddFHE(a_enc, b_enc, c_enc, streamArraySize);
+    centralAddFHE(cc, a_enc, b_enc, c_enc, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -455,11 +448,11 @@ bool RS_OMP_FHE::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   /* NO KERNELS, SOMETHING IS WRONG */
   default:
-    std::cerr << "RS_OMP_FHE::execute() - ERROR: unknown kernel type\n";
+    std::cerr << "RS_FHE_OMP::execute() - ERROR: unknown kernel type\n";
     return false;
   }
 
   return true;
 }
 
-#endif /* _RS_FHE_OMP_H_ */
+// #endif /* _RS_FHE_OMP_H_ */

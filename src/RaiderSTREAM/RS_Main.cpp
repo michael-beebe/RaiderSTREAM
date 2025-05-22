@@ -45,6 +45,10 @@
 #include "Impl/RS_CUDA/RS_CUDA.cuh"
 #endif
 
+#ifdef _ENABLE_FHE_OMP_
+#include "Impl/RS_FHE/RS_FHE_OMP/RS_FHE_OMP.h"
+#endif
+
 #ifdef _ENABLE_MPI_CUDA_
 #include "Impl/RS_MPI_CUDA/RS_MPI_CUDA.cuh"
 #endif
@@ -543,6 +547,48 @@ void runBenchCUDA(RSOpts *Opts) {
 }
 #endif
 
+#ifdef _ENABLE_FHE_OMP_
+void runBenchFHEOMP(RSOpts *Opts) {
+    std::cout << "[DEBUG] Entering runBenchFHEOMP" << std::endl;
+    RS_FHE_OMP *RS = new RS_FHE_OMP(*Opts);
+    if (!RS) {
+        std::cout << "[ERROR] COULD NOT ALLOCATE RS_FHE_OMP OBJECT" << std::endl;
+        return;
+    }
+    std::cout << "[DEBUG] Allocated RS_FHE_OMP object" << std::endl;
+    if (!RS->allocateData()) {
+        std::cout << "[ERROR] COULD NOT ALLOCATE MEMORY FOR RS_FHE_OMP" << std::endl;
+        delete RS;
+        return;
+    }
+    std::cout << "[DEBUG] Data allocated for RS_FHE_OMP" << std::endl;
+    if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+        std::cout << "[ERROR] COULD NOT EXECUTE BENCHMARK FOR RS_FHE_OMP" << std::endl;
+        RS->freeData();
+        delete RS;
+        return;
+    }
+    std::cout << "[DEBUG] Benchmark executed for RS_FHE_OMP" << std::endl;
+    if (!RS->freeData()) {
+        std::cout << "[ERROR] COULD NOT FREE THE MEMORY FOR RS_FHE_OMP" << std::endl;
+        delete RS;
+        return;
+    }
+    std::cout << "[DEBUG] Data freed for RS_FHE_OMP" << std::endl;
+    Opts->printLogo();
+    Opts->printOpts();
+    RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
+    bool headerPrinted = false;
+    for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
+        RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+        std::string kernelName = BenchTypeTable[i].Notes;
+        printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+    }
+    delete RS;
+    std::cout << "[DEBUG] Exiting runBenchFHEOMP" << std::endl;
+}
+#endif
+
 #ifdef _ENABLE_MPI_CUDA_
 /**
  * @brief Run hybrid MPI+CUDA version of benchmark
@@ -871,6 +917,10 @@ int main(int argc, char **argv) {
 
 #ifdef _ENABLE_CUDA_
   runBenchCUDA(Opts);
+#endif
+
+#ifdef _ENABLE_FHE_OMP_
+  runBenchFHEOMP(Opts);
 #endif
 
 #ifdef _ENABLE_MPI_CUDA_

@@ -15,7 +15,6 @@
 
 #include "RSOpts.h"           // for RSOpts
 #include "RSBaseImpl.h"       // for RSBaseImpl
-#undef M
 #include "RS_FHE_Config.h"    // for STREAM_TYPE, CreateCryptoContext, GenerateKeyPair
 #include "openfhe.h"          // for CryptoContext, Ciphertext, DCRTPoly, PublicKey
 
@@ -29,16 +28,16 @@ using namespace lbcrypto;
  * for encryption/operations.  It lives entirely under RS_FHE/ so it
  * does not touch the other backends.
  */
-class RS_OMP_FHE : public RSBaseImpl {
+class RS_FHE_OMP : public RSBaseImpl {
 public:
   /**
    * @brief Constructor
    * @param opts  Command-line options (kernel name, array size, etc.)
    */
-  RS_OMP_FHE(const RSOpts &opts);
+  RS_FHE_OMP(const RSOpts &opts);
 
   /** @brief Destructor */
-  ~RS_OMP_FHE();
+  ~RS_FHE_OMP();
 
   /**
    * @brief Allocate and initialize all data structures
@@ -87,8 +86,8 @@ private:
 
 /// @brief Homomorphic copy: c_enc[j] = a_enc[j]
 void seqCopyFHE(
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   ssize_t streamArraySize);
 
@@ -105,8 +104,8 @@ void seqScaleFHE(
 /// @brief Homomorphic add: c_enc[j] = a_enc[j] + b_enc[j]
 void seqAddFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   ssize_t streamArraySize);
 
@@ -115,15 +114,15 @@ void seqTriadFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
   const lbcrypto::PublicKey<lbcrypto::DCRTPoly> &pk,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   ssize_t streamArraySize,
   STREAM_TYPE scalar);
 
 // Gather kernels
 void gatherCopyFHE(
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
   ssize_t streamArraySize);
@@ -140,8 +139,8 @@ void gatherScaleFHE(
 
 void gatherAddFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx1,
   const std::vector<ssize_t> &idx2,
@@ -151,8 +150,8 @@ void gatherTriadFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
   const lbcrypto::PublicKey<lbcrypto::DCRTPoly> &pk,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx1,
   const std::vector<ssize_t> &idx2,
   ssize_t streamArraySize,
@@ -160,8 +159,8 @@ void gatherTriadFHE(
 
 // Scatter kernels
 void scatterCopyFHE(
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
   ssize_t streamArraySize);
@@ -178,8 +177,8 @@ void scatterScaleFHE(
 
 void scatterAddFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
   ssize_t streamArraySize);
@@ -188,16 +187,16 @@ void scatterTriadFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
   const lbcrypto::PublicKey<lbcrypto::DCRTPoly> &pk,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
   ssize_t streamArraySize,
   STREAM_TYPE scalar);
 
 // Scatter-gather kernels
 void sgCopyFHE(
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx1,
   const std::vector<ssize_t> &idx2,
@@ -216,8 +215,8 @@ void sgScaleFHE(
 
 void sgAddFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx1,
   const std::vector<ssize_t> &idx2,
@@ -228,8 +227,8 @@ void sgTriadFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
   const lbcrypto::PublicKey<lbcrypto::DCRTPoly> &pk,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx1,
   const std::vector<ssize_t> &idx2,
   const std::vector<ssize_t> &idx3,
@@ -238,8 +237,8 @@ void sgTriadFHE(
 
 // Central kernels
 void centralCopyFHE(
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   ssize_t streamArraySize);
 
@@ -254,8 +253,8 @@ void centralScaleFHE(
 
 void centralAddFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   ssize_t streamArraySize);
 
@@ -263,8 +262,8 @@ void centralTriadFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
   const lbcrypto::PublicKey<lbcrypto::DCRTPoly> &pk,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   ssize_t streamArraySize,
   STREAM_TYPE scalar);
 

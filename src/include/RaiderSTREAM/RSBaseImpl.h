@@ -67,10 +67,10 @@
 #define ABS(a) ((a) >= 0 ? (a) : -(a))
 #endif
 
-/**
- * @brief Number of timing samples to collect
- */
-#define M 20
+// /**
+//  * @brief Number of timing samples to collect
+//  */
+// #define M 20
 
 /**
  * @brief RSBaseImpl class: Base class for RaiderSTREAM implementations
