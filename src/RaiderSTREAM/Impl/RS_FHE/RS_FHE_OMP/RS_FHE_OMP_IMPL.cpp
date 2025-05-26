@@ -23,18 +23,21 @@ using RSFHE::EvalAddOperation;
  * @param a_enc    Encrypted input array a
  * @param b_enc    Encrypted input array b (unused)
  * @param c_enc    Encrypted output array c
+ * @param chunkSize Size of each chunk
  * @param streamArraySize Number of elements in the arrays
  */
 void seqCopyFHE(
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
-  const std::vector<Ciphertext<DCRTPoly>>& /*b_enc*/,
+  const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  ssize_t streamArraySize)
+  size_t chunkSize, ssize_t streamArraySize)
 {
-  #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[j] = a_enc[j];
-  }
+    (void)b_enc;  // unused
+    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+    #pragma omp parallel for
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        c_enc[chunk_idx] = a_enc[chunk_idx];
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -45,6 +48,7 @@ void seqCopyFHE(
  * @param a_enc Encrypted input array a (unused)
  * @param b_enc    Encrypted output array b
  * @param c_enc    Encrypted input array c
+ * @param chunkSize Size of each chunk
  * @param streamArraySize Number of elements
  * @param scalar   Plaintext scalar to multiply
  */
@@ -54,15 +58,16 @@ void seqScaleFHE(
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar)
 {
-  (void)a_enc;  // unused
-  auto scalar_pt = CreatePlaintextValue(cc, scalar);
-  #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    b_enc[j] = cc->EvalMult(c_enc[j], scalar_pt);
-  }
+    (void)a_enc;  // unused
+    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+    auto scalar_pt = CreatePlaintextValue(cc, scalar);
+    #pragma omp parallel for
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        b_enc[chunk_idx] = cc->EvalMult(c_enc[chunk_idx], scalar_pt);
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -72,6 +77,7 @@ void seqScaleFHE(
  * @param a_enc    Encrypted input array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted output array c
+ * @param chunkSize Size of each chunk
  * @param streamArraySize Number of elements
  */
 void seqAddFHE(
@@ -79,12 +85,13 @@ void seqAddFHE(
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  ssize_t streamArraySize)
+  size_t chunkSize, ssize_t streamArraySize)
 {
-  #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[j] = EvalAddOperation(cc, a_enc[j], b_enc[j]);
-  }
+    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+    #pragma omp parallel for
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        c_enc[chunk_idx] = EvalAddOperation(cc, a_enc[chunk_idx], b_enc[chunk_idx]);
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -96,6 +103,7 @@ void seqAddFHE(
  * @param a_enc    Encrypted output array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted input array c
+ * @param chunkSize Size of each chunk
  * @param streamArraySize Number of elements
  * @param scalar   Plaintext scalar to multiply
  */
@@ -105,15 +113,16 @@ void seqTriadFHE(
   std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar)
 {
-  auto scalar_pt = CreatePlaintextValue(cc, scalar);
-  #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    auto tmp      = cc->EvalMult(c_enc[j], scalar_pt);
-    a_enc[j]      = EvalAddOperation(cc, b_enc[j], tmp);
-  }
+    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+    auto scalar_pt = CreatePlaintextValue(cc, scalar);
+    #pragma omp parallel for
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        auto tmp = cc->EvalMult(c_enc[chunk_idx], scalar_pt);
+        a_enc[chunk_idx] = EvalAddOperation(cc, b_enc[chunk_idx], tmp);
+    }
 }
 
 // -----------------------------------------------------------------------------

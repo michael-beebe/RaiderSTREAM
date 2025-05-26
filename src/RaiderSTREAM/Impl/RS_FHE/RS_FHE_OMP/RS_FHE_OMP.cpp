@@ -66,47 +66,76 @@ RS_FHE_OMP::~RS_FHE_OMP() {}
  * @return True if allocation was successful.
  **************************************************/
 bool RS_FHE_OMP::allocateData() {
+  std::cout << "[DEBUG] Entering allocateData()" << std::endl;
   // 1) allocate and fill index arrays
   idx1 = new ssize_t[streamArraySize];
+    if (!idx1) {
+    std::cerr << "[ERROR] Memory allocation for idx1 failed!" << std::endl;
+    return false;
+  }
   idx2 = new ssize_t[streamArraySize];
+    if (!idx2) {
+    std::cerr << "[ERROR] Memory allocation for idx2 failed!" << std::endl;
+    return false;
+  }
   idx3 = new ssize_t[streamArraySize];
+  if (!idx3) {
+    std::cerr << "[ERROR] Memory allocation for idx3 failed!" << std::endl;
+    return false;
+  }
+  std::cout << "[DEBUG] Allocated index arrays" << std::endl;
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
   initReadIdxArray(idx2, streamArraySize, "RaiderSTREAM/arraygen/IDX2.txt");
   initReadIdxArray(idx3, streamArraySize, "RaiderSTREAM/arraygen/IDX3.txt");
+  std::cout << "[DEBUG] Filled index arrays from files" << std::endl;
 #else
   initRandomIdxArray(idx1, streamArraySize);
   initRandomIdxArray(idx2, streamArraySize);
   initRandomIdxArray(idx3, streamArraySize);
+  std::cout << "[DEBUG] Filled index arrays with random values" << std::endl;
 #endif
 
   // 2) create FHE context & keys
+  std::cout << "[DEBUG] Creating FHE context..." << std::endl;
   cc = CreateCryptoContext();
+  std::cout << "[DEBUG] FHE context created" << std::endl;
   kp = GenerateKeyPair(cc);
+  std::cout << "[DEBUG] FHE key pair generated" << std::endl;
 
-  // 3) allocate ciphertext buffers
-  a_enc.resize(streamArraySize);
-  b_enc.resize(streamArraySize);
-  c_enc.resize(streamArraySize);
+ // 3) allocate ciphertext buffers for number of chunks
+size_t chunkSize = DEFAULT_CHUNK_SIZE;
+size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+a_enc.resize(numChunks);
+b_enc.resize(numChunks);
+c_enc.resize(numChunks);
+std::cout << "[DEBUG] Resized ciphertext buffers to numChunks = " << numChunks << std::endl;
 
-  // 4) chunked initialization (all-1s, all-2s, ...)
-  size_t chunk = DEFAULT_CHUNK_SIZE;
-  for (size_t off = 0; off < streamArraySize; off += chunk) {
-    size_t n = std::min(chunk, streamArraySize - off);
-    std::vector<STREAM_TYPE> A(n, STREAM_TYPE(1)), B(n, STREAM_TYPE(2)),
-        C(n, STREAM_TYPE(1));
+std::cout << "[DEBUG] Starting chunked batch encryption with chunk size " << chunkSize << std::endl;
+for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+    size_t chunk_start = chunk_idx * chunkSize;
+    size_t chunk_end = std::min(chunk_start + chunkSize, static_cast<size_t>(streamArraySize));
+    size_t currentChunkSize = chunk_end - chunk_start;
+
+    // Fill chunk vectors with intended values
+    std::vector<STREAM_TYPE> A(currentChunkSize, STREAM_TYPE(1));
+    std::vector<STREAM_TYPE> B(currentChunkSize, STREAM_TYPE(2));
+    std::vector<STREAM_TYPE> C(currentChunkSize, STREAM_TYPE(1));
+
+    // Create packed plaintexts for the chunk
     Plaintext ptA = CreatePlaintextVector(cc, A);
     Plaintext ptB = CreatePlaintextVector(cc, B);
     Plaintext ptC = CreatePlaintextVector(cc, C);
 
-    // encrypt each slot
-    for (size_t i = 0; i < n; ++i) {
-      a_enc[off + i] = cc->Encrypt(kp.publicKey, ptA);
-      b_enc[off + i] = cc->Encrypt(kp.publicKey, ptB);
-      c_enc[off + i] = cc->Encrypt(kp.publicKey, ptC);
-    }
-  }
+    // Encrypt the packed plaintexts
+    a_enc[chunk_idx] = cc->Encrypt(kp.publicKey, ptA);
+    b_enc[chunk_idx] = cc->Encrypt(kp.publicKey, ptB);
+    c_enc[chunk_idx] = cc->Encrypt(kp.publicKey, ptC);
 
+    std::cout << "[DEBUG] Encrypted chunk " << (chunk_idx + 1)
+              << " (" << currentChunkSize << " elements)" << std::endl;
+}
+  std::cout << "[DEBUG] Finished allocateData()" << std::endl;
   return true;
 }
 
@@ -155,7 +184,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   // ------------------------------
   case RSBaseImpl::RS_SEQ_COPY: {
     startTime = mySecond();
-    seqCopyFHE(a_enc, b_enc, c_enc, streamArraySize);
+    seqCopyFHE(a_enc, b_enc, c_enc, chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -168,7 +197,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SEQ_SCALE: {
     startTime = mySecond();
-    seqScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, streamArraySize, scalar);
+    seqScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -181,7 +210,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SEQ_ADD: {
     startTime = mySecond();
-    seqAddFHE(cc, a_enc, b_enc, c_enc, streamArraySize);
+    seqAddFHE(cc, a_enc, b_enc, c_enc, chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -194,7 +223,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_SEQ_TRIAD: {
     startTime = mySecond();
-    seqTriadFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, streamArraySize, scalar);
+    seqTriadFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);

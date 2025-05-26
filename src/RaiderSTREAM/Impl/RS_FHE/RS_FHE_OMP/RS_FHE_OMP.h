@@ -73,6 +73,7 @@ private:
   int                             numPEs;          ///< number of OpenMP threads
   ssize_t                        *idx1, *idx2, *idx3; ///< plaintext index arrays
   STREAM_TYPE                    scalar;          ///< scale factor for scale/triad
+  ssize_t                        chunkSize;       ///< chunk size for kernels
   CryptoContext<DCRTPoly> cc;  ///< FHE crypto context
   KeyPair<DCRTPoly>       kp;  ///< FHE key pair
   std::vector<Ciphertext<DCRTPoly>>
@@ -89,7 +90,7 @@ void seqCopyFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  ssize_t streamArraySize);
+  size_t chunkSize, ssize_t streamArraySize);
 
 /// @brief Homomorphic scale: b_enc[j] = scalar * c_enc[j]
 void seqScaleFHE(
@@ -98,7 +99,7 @@ void seqScaleFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar);
 
 /// @brief Homomorphic add: c_enc[j] = a_enc[j] + b_enc[j]
@@ -107,7 +108,7 @@ void seqAddFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  ssize_t streamArraySize);
+  size_t chunkSize, ssize_t streamArraySize);
 
 /// @brief Homomorphic triad: a_enc[j] = b_enc[j] + scalar * c_enc[j]
 void seqTriadFHE(
@@ -116,7 +117,7 @@ void seqTriadFHE(
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar);
 
 // Gather kernels
