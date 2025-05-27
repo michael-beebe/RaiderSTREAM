@@ -266,6 +266,7 @@ void gatherTriadFHE(
  * @param a_enc    Encrypted input array a
  * @param b_enc Unused
  * @param c_enc    Encrypted output array c
+ * @param chunkSize Size of each chunk
  * @param idx1     Index array for scatter
  * @param streamArraySize Number of elements
  */
@@ -274,12 +275,17 @@ void scatterCopyFHE(
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
-  ssize_t streamArraySize)
+  size_t chunkSize, ssize_t streamArraySize)
 {
   (void)b_enc;  // unused
+  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
   #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[idx1[j]] = a_enc[j];
+  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+    size_t start = chunk_idx * chunkSize;
+    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
+    for (size_t j = start; j < end; ++j) {
+      c_enc[idx1[j]] = a_enc[j];
+    }
   }
 }
 
@@ -291,6 +297,7 @@ void scatterCopyFHE(
  * @param a_enc Unused
  * @param b_enc    Encrypted output array b
  * @param c_enc    Encrypted input array c
+ * @param chunkSize Size of each chunk
  * @param idx1     Index array for scatter
  * @param streamArraySize Number of elements
  * @param scalar   Plaintext scalar
@@ -302,14 +309,19 @@ void scatterScaleFHE(
   std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar)
 {
   (void)a_enc;  // unused
   auto scalar_pt = CreatePlaintextValue(cc, scalar);
+  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
   #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    b_enc[idx1[j]] = cc->EvalMult(c_enc[j], scalar_pt);
+  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+    size_t start = chunk_idx * chunkSize;
+    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
+    for (size_t j = start; j < end; ++j) {
+      b_enc[idx1[j]] = cc->EvalMult(c_enc[j], scalar_pt);
+    }
   }
 }
 
@@ -320,6 +332,7 @@ void scatterScaleFHE(
  * @param a_enc    Encrypted input array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted output array c
+ * @param chunkSize Size of each chunk
  * @param idx1     Index array for scatter
  * @param streamArraySize Number of elements
  */
@@ -329,11 +342,16 @@ void scatterAddFHE(
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
-  ssize_t streamArraySize)
+  size_t chunkSize, ssize_t streamArraySize)
 {
+  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
   #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[idx1[j]] = EvalAddOperation(cc, a_enc[j], b_enc[j]);
+  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+    size_t start = chunk_idx * chunkSize;
+    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
+    for (size_t j = start; j < end; ++j) {
+      c_enc[idx1[j]] = EvalAddOperation(cc, a_enc[j], b_enc[j]);
+    }
   }
 }
 
@@ -345,6 +363,7 @@ void scatterAddFHE(
  * @param a_enc    Encrypted output array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted input array c
+ * @param chunkSize Size of each chunk
  * @param idx1     Index array for scatter
  * @param streamArraySize Number of elements
  * @param scalar   Plaintext scalar
@@ -356,14 +375,19 @@ void scatterTriadFHE(
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar)
 {
   auto scalar_pt = CreatePlaintextValue(cc, scalar);
+  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
   #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    auto tmp = cc->EvalMult(c_enc[j], scalar_pt);
-    a_enc[idx1[j]] = EvalAddOperation(cc, b_enc[j], tmp);
+  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+    size_t start = chunk_idx * chunkSize;
+    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
+    for (size_t j = start; j < end; ++j) {
+      auto tmp = cc->EvalMult(c_enc[j], scalar_pt);
+      a_enc[idx1[j]] = EvalAddOperation(cc, b_enc[j], tmp);
+    }
   }
 }
 
@@ -373,6 +397,7 @@ void scatterTriadFHE(
  * @param a_enc    Encrypted input array a
  * @param b_enc Unused
  * @param c_enc    Encrypted output array c
+ * @param chunkSize Size of each chunk
  * @param idx1     First index array
  * @param idx2     Second index array
  * @param streamArraySize Number of elements
@@ -383,12 +408,17 @@ void sgCopyFHE(
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
   const std::vector<ssize_t>& idx2,
-  ssize_t streamArraySize)
+  size_t chunkSize, ssize_t streamArraySize)
 {
   (void)b_enc;  // unused
+  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
   #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[idx1[j]] = a_enc[idx2[j]];
+  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+    size_t start = chunk_idx * chunkSize;
+    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
+    for (size_t j = start; j < end; ++j) {
+      c_enc[idx1[j]] = a_enc[idx2[j]];
+    }
   }
 }
 
@@ -400,6 +430,7 @@ void sgCopyFHE(
  * @param a_enc Unused
  * @param b_enc    Encrypted output array b
  * @param c_enc    Encrypted input array c
+ * @param chunkSize Size of each chunk
  * @param idx1     First index array
  * @param idx2     Second index array
  * @param streamArraySize Number of elements
@@ -413,14 +444,19 @@ void sgScaleFHE(
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
   const std::vector<ssize_t>& idx2,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar)
 {
   (void)a_enc;  // unused
   auto scalar_pt = CreatePlaintextValue(cc, scalar);
+  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
   #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    b_enc[idx2[j]] = cc->EvalMult(c_enc[idx1[j]], scalar_pt);
+  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+    size_t start = chunk_idx * chunkSize;
+    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
+    for (size_t j = start; j < end; ++j) {
+      b_enc[idx2[j]] = cc->EvalMult(c_enc[idx1[j]], scalar_pt);
+    }
   }
 }
 
@@ -431,6 +467,7 @@ void sgScaleFHE(
  * @param a_enc    Encrypted input array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted output array c
+ * @param chunkSize Size of each chunk
  * @param idx1     First index array
  * @param idx2     Second index array
  * @param idx3     Third index array
@@ -444,11 +481,16 @@ void sgAddFHE(
   const std::vector<ssize_t>& idx1,
   const std::vector<ssize_t>& idx2,
   const std::vector<ssize_t>& idx3,
-  ssize_t streamArraySize)
+  size_t chunkSize, ssize_t streamArraySize)
 {
+  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
   #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[idx1[j]] = EvalAddOperation(cc, a_enc[idx2[j]], b_enc[idx3[j]]);
+  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+    size_t start = chunk_idx * chunkSize;
+    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
+    for (size_t j = start; j < end; ++j) {
+      c_enc[idx1[j]] = EvalAddOperation(cc, a_enc[idx2[j]], b_enc[idx3[j]]);
+    }
   }
 }
 
@@ -460,6 +502,7 @@ void sgAddFHE(
  * @param a_enc    Encrypted output array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted input array c
+ * @param chunkSize Size of each chunk
  * @param idx1     First index array
  * @param idx2     Second index array
  * @param idx3     Third index array
@@ -475,14 +518,19 @@ void sgTriadFHE(
   const std::vector<ssize_t>& idx1,
   const std::vector<ssize_t>& idx2,
   const std::vector<ssize_t>& idx3,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar)
 {
   auto scalar_pt = CreatePlaintextValue(cc, scalar);
+  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
   #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    auto tmp      = cc->EvalMult(c_enc[idx1[j]], scalar_pt);
-    a_enc[idx2[j]] = EvalAddOperation(cc, b_enc[idx3[j]], tmp);
+  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+    size_t start = chunk_idx * chunkSize;
+    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
+    for (size_t j = start; j < end; ++j) {
+      auto tmp = cc->EvalMult(c_enc[idx1[j]], scalar_pt);
+      a_enc[idx2[j]] = EvalAddOperation(cc, b_enc[idx3[j]], tmp);
+    }
   }
 }
 

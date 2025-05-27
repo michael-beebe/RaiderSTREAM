@@ -164,7 +164,7 @@ void scatterCopyFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
-  ssize_t streamArraySize);
+  size_t chunkSize, ssize_t streamArraySize);
 
 void scatterScaleFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
@@ -173,7 +173,7 @@ void scatterScaleFHE(
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar);
 
 void scatterAddFHE(
@@ -182,7 +182,7 @@ void scatterAddFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
-  ssize_t streamArraySize);
+  size_t chunkSize, ssize_t streamArraySize);
 
 void scatterTriadFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
@@ -191,7 +191,7 @@ void scatterTriadFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar);
 
 // Scatter-gather kernels
@@ -201,7 +201,7 @@ void sgCopyFHE(
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx1,
   const std::vector<ssize_t> &idx2,
-  ssize_t streamArraySize);
+  size_t chunkSize, ssize_t streamArraySize);
 
 void sgScaleFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
@@ -211,7 +211,7 @@ void sgScaleFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx1,
   const std::vector<ssize_t> &idx2,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar);
 
 void sgAddFHE(
@@ -222,7 +222,7 @@ void sgAddFHE(
   const std::vector<ssize_t> &idx1,
   const std::vector<ssize_t> &idx2,
   const std::vector<ssize_t> &idx3,
-  ssize_t streamArraySize);
+  size_t chunkSize, ssize_t streamArraySize);
 
 void sgTriadFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
@@ -233,7 +233,7 @@ void sgTriadFHE(
   const std::vector<ssize_t> &idx1,
   const std::vector<ssize_t> &idx2,
   const std::vector<ssize_t> &idx3,
-  ssize_t streamArraySize,
+  size_t chunkSize, ssize_t streamArraySize,
   STREAM_TYPE scalar);
 
 // Central kernels

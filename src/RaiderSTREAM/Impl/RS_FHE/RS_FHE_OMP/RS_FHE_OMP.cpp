@@ -305,7 +305,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
     startTime = mySecond();
     scatterCopyFHE(a_enc, b_enc, c_enc,
                    std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-                   streamArraySize);
+                   chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -320,7 +320,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
     startTime = mySecond();
     scatterScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc,
                     std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-                    streamArraySize, scalar);
+                    chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -335,7 +335,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
     startTime = mySecond();
     scatterAddFHE(cc, a_enc, b_enc, c_enc,
                   std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-                  streamArraySize);
+                  chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -350,7 +350,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
     startTime = mySecond();
     scatterTriadFHE(cc, kp.publicKey, a_enc, b_enc, c_enc,
                     std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-                    streamArraySize, scalar);
+                    chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -368,7 +368,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
     startTime = mySecond();
     sgCopyFHE(
         a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-        std::vector<ssize_t>(idx2, idx2 + streamArraySize), streamArraySize);
+        std::vector<ssize_t>(idx2, idx2 + streamArraySize), chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -384,7 +384,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
     sgScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc,
                std::vector<ssize_t>(idx1, idx1 + streamArraySize),
                std::vector<ssize_t>(idx2, idx2 + streamArraySize),
-               streamArraySize, scalar);
+               chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -400,7 +400,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
     sgAddFHE(
         cc, a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + streamArraySize),
         std::vector<ssize_t>(idx2, idx2 + streamArraySize),
-        std::vector<ssize_t>(idx3, idx3 + streamArraySize), streamArraySize);
+        std::vector<ssize_t>(idx3, idx3 + streamArraySize), chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -417,7 +417,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
                std::vector<ssize_t>(idx1, idx1 + streamArraySize),
                std::vector<ssize_t>(idx2, idx2 + streamArraySize),
                std::vector<ssize_t>(idx3, idx3 + streamArraySize),
-               streamArraySize, scalar);
+               chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
