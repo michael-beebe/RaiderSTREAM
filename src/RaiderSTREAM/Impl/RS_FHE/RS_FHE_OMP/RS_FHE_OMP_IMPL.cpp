@@ -149,7 +149,10 @@ void gatherCopyFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      c_enc[j] = a_enc[idx1[j]];
+      if (j < idx1.size() && idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < a_enc.size() && j < c_enc.size()) {
+        c_enc[j] = a_enc[idx1[j]];
+      }
+      // else: skip or handle error as needed
     }
   }
 }
@@ -217,7 +220,13 @@ void gatherAddFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      c_enc[j] = EvalAddOperation(cc, a_enc[idx1[j]], b_enc[idx2[j]]);
+      if (j < idx1.size() && j < idx2.size() &&
+          idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < a_enc.size() &&
+          idx2[j] >= 0 && static_cast<size_t>(idx2[j]) < b_enc.size() &&
+          j < c_enc.size()) {
+        c_enc[j] = EvalAddOperation(cc, a_enc[idx1[j]], b_enc[idx2[j]]);
+      }
+      // else: skip or handle error as needed
     }
   }
 }
