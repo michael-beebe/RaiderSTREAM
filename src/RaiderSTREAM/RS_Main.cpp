@@ -562,6 +562,20 @@ void runBenchFHEOMP(RSOpts *Opts) {
         return;
     }
     std::cout << "[DEBUG] Data allocated for RS_FHE_OMP" << std::endl;
+    std::cout << "[DEBUG] Opts->TIMES: " << Opts->TIMES << std::endl;
+    std::cout << "[DEBUG] Opts->MBPS: " << Opts->MBPS << std::endl;
+    std::cout << "[DEBUG] Opts->FLOPS: " << Opts->FLOPS << std::endl;
+    std::cout << "[DEBUG] Opts->BYTES: " << Opts->BYTES << std::endl;
+    std::cout << "[DEBUG] Opts->FLOATOPS: " << Opts->FLOATOPS << std::endl;
+
+// Print the first few values to check for zeros or bad pointers
+    for (int i = 0; i < 4; ++i) {
+        std::cout << "[DEBUG] Opts->BYTES[" << i << "]: " << Opts->BYTES[i] << std::endl;
+        std::cout << "[DEBUG] Opts->FLOATOPS[" << i << "]: " << Opts->FLOATOPS[i] << std::endl;
+    }
+
+    std::cout << "[DEBUG] About to call RS->execute()" << std::endl;
+
     if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
         std::cout << "[ERROR] COULD NOT EXECUTE BENCHMARK FOR RS_FHE_OMP" << std::endl;
         RS->freeData();

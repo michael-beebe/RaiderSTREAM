@@ -241,7 +241,7 @@ void centralCopyFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  ssize_t streamArraySize);
+  size_t chunkSize, ssize_t streamArraySize);
 
 void centralScaleFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
@@ -249,15 +249,14 @@ void centralScaleFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  ssize_t streamArraySize,
-  STREAM_TYPE scalar);
+  size_t chunkSize, ssize_t streamArraySize, STREAM_TYPE scalar);
 
 void centralAddFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  ssize_t streamArraySize);
+  size_t chunkSize, ssize_t streamArraySize);
 
 void centralTriadFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
@@ -265,7 +264,6 @@ void centralTriadFHE(
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  ssize_t streamArraySize,
-  STREAM_TYPE scalar);
+  size_t chunkSize, ssize_t streamArraySize, STREAM_TYPE scalar);
 
 #endif // RS_FHE_OMP_H

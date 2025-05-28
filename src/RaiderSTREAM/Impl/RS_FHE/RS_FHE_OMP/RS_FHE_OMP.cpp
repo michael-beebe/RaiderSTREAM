@@ -175,8 +175,10 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
                          double *BYTES, double *FLOATOPS) {
   double startTime = 0.0, endTime = 0.0, runTime = 0.0;
   double mbps = 0.0, flops = 0.0;
+  size_t chunkSize = DEFAULT_CHUNK_SIZE;
 
   auto kType = getKernelType();
+  std::cout << "[DEBUG] Entering execute(). Kernel type: " << kType << " (" << kernelName << ")" << std::endl;
 
   switch (kType) {
   // ------------------------------
@@ -184,11 +186,17 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   // ------------------------------
   case RSBaseImpl::RS_SEQ_COPY: {
     startTime = mySecond();
+    std::cout << "[DEBUG] Calling seqCopyFHE(a_enc, b_enc, c_enc, " << chunkSize << ", " << streamArraySize << ")" << std::endl;
     seqCopyFHE(a_enc, b_enc, c_enc, chunkSize, streamArraySize);
+    std::cout << "[DEBUG] Finished seqCopyFHE" << std::endl;
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
+    std::cout << "[DEBUG] calculateMBPS(" << BYTES[kType] << ", " << runTime << ") = " << calculateMBPS(BYTES[kType], runTime) << std::endl;
+    std::cout << "[DEBUG] calculateFLOPS(" << FLOATOPS[kType] << ", " << runTime << ") = " << calculateFLOPS(FLOATOPS[kType], runTime) << std::endl;
     mbps = calculateMBPS(BYTES[kType], runTime);
+    std::cout << "[DEBUG] MBPS: " << mbps << std::endl;
     flops = calculateFLOPS(FLOATOPS[kType], runTime);
+    std::cout << "[DEBUG] FLOPS: " << flops << std::endl;
     TIMES[kType] = runTime;
     MBPS[kType] = mbps;
     FLOPS[kType] = flops;
@@ -433,7 +441,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   // ------------------------------
   case RSBaseImpl::RS_CENTRAL_COPY: {
     startTime = mySecond();
-    centralCopyFHE(a_enc, b_enc, c_enc, streamArraySize);
+    centralCopyFHE(a_enc, b_enc, c_enc, chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -446,8 +454,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_CENTRAL_SCALE: {
     startTime = mySecond();
-    centralScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, streamArraySize,
-                    scalar);
+    centralScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -460,7 +467,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_CENTRAL_ADD: {
     startTime = mySecond();
-    centralAddFHE(cc, a_enc, b_enc, c_enc, streamArraySize);
+    centralAddFHE(cc, a_enc, b_enc, c_enc, chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -473,8 +480,7 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   case RSBaseImpl::RS_CENTRAL_TRIAD: {
     startTime = mySecond();
-    centralTriadFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, streamArraySize,
-                    scalar);
+    centralTriadFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);

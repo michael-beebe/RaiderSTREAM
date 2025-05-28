@@ -545,15 +545,15 @@ void sgTriadFHE(
  */
 void centralCopyFHE(
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
-  const std::vector<Ciphertext<DCRTPoly>>& b_enc,
+  const std::vector<Ciphertext<DCRTPoly>>& /*b_enc*/,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  ssize_t streamArraySize)
+  size_t chunkSize, ssize_t streamArraySize)
 {
-  (void)b_enc;  // unused
-  #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[j] = a_enc[0];
-  }
+    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+    #pragma omp parallel for
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        c_enc[chunk_idx] = a_enc[0]; // Central: use only the first chunk
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -569,20 +569,18 @@ void centralCopyFHE(
  */
 void centralScaleFHE(
   CryptoContext<DCRTPoly> cc,
-  const PublicKey<DCRTPoly>& pk,
-  const std::vector<Ciphertext<DCRTPoly>>& a_enc,
+  const PublicKey<DCRTPoly>& /*pk*/,
+  const std::vector<Ciphertext<DCRTPoly>>& /*a_enc*/,
   std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  ssize_t streamArraySize,
-  STREAM_TYPE scalar)
+  size_t chunkSize, ssize_t streamArraySize, STREAM_TYPE scalar)
 {
-  (void)a_enc;  // unused
-  auto scalar_pt = CreatePlaintextValue(cc, scalar);
-  auto base      = cc->EvalMult(c_enc[0], scalar_pt);
-  #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    b_enc[j] = base;
-  }
+    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+    auto scalar_pt = CreatePlaintextValue(cc, scalar);
+    #pragma omp parallel for
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        b_enc[chunk_idx] = cc->EvalMult(c_enc[0], scalar_pt); // Central: use only the first chunk
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -599,13 +597,13 @@ void centralAddFHE(
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  ssize_t streamArraySize)
+  size_t chunkSize, ssize_t streamArraySize)
 {
-  auto sum = EvalAddOperation(cc, a_enc[0], b_enc[0]);
-  #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    c_enc[j] = sum;
-  }
+    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+    #pragma omp parallel for
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        c_enc[chunk_idx] = EvalAddOperation(cc, a_enc[0], b_enc[0]); // Central: use only the first chunk
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -621,18 +619,17 @@ void centralAddFHE(
  */
 void centralTriadFHE(
   CryptoContext<DCRTPoly> cc,
-  const PublicKey<DCRTPoly>& pk,
+  const PublicKey<DCRTPoly>& /*pk*/,
   std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  ssize_t streamArraySize,
-  STREAM_TYPE scalar)
+  size_t chunkSize, ssize_t streamArraySize, STREAM_TYPE scalar)
 {
-  auto scalar_pt = CreatePlaintextValue(cc, scalar);
-  auto tmp       = cc->EvalMult(c_enc[0], scalar_pt);
-  auto res       = EvalAddOperation(cc, b_enc[0], tmp);
-  #pragma omp parallel for
-  for (ssize_t j = 0; j < streamArraySize; ++j) {
-    a_enc[j] = res;
-  }
+    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+    auto scalar_pt = CreatePlaintextValue(cc, scalar);
+    #pragma omp parallel for
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        auto tmp = cc->EvalMult(c_enc[0], scalar_pt); // Central: use only the first chunk
+        a_enc[chunk_idx] = EvalAddOperation(cc, b_enc[0], tmp);
+    }
 }
