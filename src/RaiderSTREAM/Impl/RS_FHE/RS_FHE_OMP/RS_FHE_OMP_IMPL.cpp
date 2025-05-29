@@ -188,7 +188,10 @@ void gatherScaleFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      b_enc[j] = cc->EvalMult(c_enc[idx1[j]], scalar_pt);
+      if (j < idx1.size() && idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < c_enc.size() && j < b_enc.size()) {
+        b_enc[j] = cc->EvalMult(c_enc[idx1[j]], scalar_pt);
+      }
+      // else: skip or handle error as needed
     }
   }
 }
@@ -220,11 +223,14 @@ void gatherAddFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      if (j < idx1.size() && j < idx2.size() &&
-          idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < a_enc.size() &&
-          idx2[j] >= 0 && static_cast<size_t>(idx2[j]) < b_enc.size() &&
-          j < c_enc.size()) {
-        c_enc[j] = EvalAddOperation(cc, a_enc[idx1[j]], b_enc[idx2[j]]);
+      if (j < idx1.size() && j < idx2.size() && j < c_enc.size()) {
+        ssize_t idx_a = idx1[j];
+        ssize_t idx_b = idx2[j];
+        if (idx_a >= 0 && static_cast<size_t>(idx_a) < a_enc.size() &&
+            idx_b >= 0 && static_cast<size_t>(idx_b) < b_enc.size()) {
+          c_enc[j] = EvalAddOperation(cc, a_enc[idx_a], b_enc[idx_b]);
+        }
+        // else: skip or handle error as needed
       }
       // else: skip or handle error as needed
     }
@@ -263,8 +269,17 @@ void gatherTriadFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      auto tmp = cc->EvalMult(c_enc[idx2[j]], scalar_pt);
-      a_enc[j] = EvalAddOperation(cc, b_enc[idx1[j]], tmp);
+      if (j < idx1.size() && j < idx2.size() && j < a_enc.size()) {
+        ssize_t idx_b = idx1[j];
+        ssize_t idx_c = idx2[j];
+        if (idx_b >= 0 && static_cast<size_t>(idx_b) < b_enc.size() &&
+            idx_c >= 0 && static_cast<size_t>(idx_c) < c_enc.size()) {
+          auto tmp = cc->EvalMult(c_enc[idx_c], scalar_pt);
+          a_enc[j] = EvalAddOperation(cc, b_enc[idx_b], tmp);
+        }
+        // else: skip or handle error as needed
+      }
+      // else: skip or handle error as needed
     }
   }
 }

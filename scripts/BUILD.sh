@@ -94,7 +94,7 @@ export RS=bin/raiderstream
 cd ../
 
 # --- Run the executable
-if [ -x $RS ] ; then
-  echo ; ./run.sh ; echo ; echo
-fi
+# if [ -x $RS ] ; then
+#   echo ; ./run.sh ; echo ; echo
+# fi
 
