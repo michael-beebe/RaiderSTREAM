@@ -39,6 +39,9 @@ RS_FHE_OMP::RS_FHE_OMP(const RSOpts &opts)
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), numPEs(opts.getNumPEs()),
       idx1(nullptr), idx2(nullptr), idx3(nullptr), scalar(3) {
+
+    // Set OpenMP thread count from numPEs
+    omp_set_num_threads(numPEs);
   std::string scheme;
 #if defined(CKKS)
     scheme = "CKKS";
@@ -51,7 +54,13 @@ RS_FHE_OMP::RS_FHE_OMP(const RSOpts &opts)
 #endif
   std::cout << "[RS_FHE_OMP] scheme = " << scheme
             << ", arraySize = " << streamArraySize << ", threads = " << numPEs
-            << std::endl;
+            << ", OMP threads = " << omp_get_max_threads()
+            << ", actual threads in parallel region = ";
+  #pragma omp parallel
+  {
+    #pragma omp master
+    std::cout << omp_get_num_threads() << std::endl;
+  }
 }
 
 /**************************************************
@@ -179,6 +188,31 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   auto kType = getKernelType();
   std::cout << "[DEBUG] Entering execute(). Kernel type: " << kType << " (" << kernelName << ")" << std::endl;
+
+  // Handle RS_ALL case by running all kernels
+  if (kType == RSBaseImpl::RS_ALL) {
+    for (int k = static_cast<int>(RSBaseImpl::RS_SEQ_COPY); k < static_cast<int>(RSBaseImpl::RS_ALL); ++k) {
+      RSBaseImpl::RSKernelType currentKernel = static_cast<RSBaseImpl::RSKernelType>(k);
+      std::cout << "[DEBUG] Running kernel: " << BenchTypeTable[k].Notes << std::endl;
+      
+      // Run the specific kernel
+      if (!executeKernel(currentKernel, TIMES, MBPS, FLOPS, BYTES, FLOATOPS, chunkSize)) {
+        std::cerr << "RS_FHE_OMP::execute() - ERROR: failed to execute kernel " << k << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Single kernel execution
+  return executeKernel(kType, TIMES, MBPS, FLOPS, BYTES, FLOATOPS, chunkSize);
+}
+
+bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
+                               double *MBPS, double *FLOPS, double *BYTES,
+                               double *FLOATOPS, size_t chunkSize) {
+  double startTime = 0.0, endTime = 0.0, runTime = 0.0;
+  double mbps = 0.0, flops = 0.0;
 
   switch (kType) {
   // ------------------------------

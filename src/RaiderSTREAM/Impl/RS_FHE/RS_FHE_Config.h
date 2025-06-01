@@ -25,7 +25,7 @@
 // Default FHE Parameters
 // -----------------------------------------------------------------------------
 static const uint64_t DEFAULT_PTM           = 786433;    // BFV/BGV only
-static const int      DEFAULT_DEPTH         = 1;         // multiplicative depth
+static const int      DEFAULT_DEPTH         = 5;         // multiplicative depth
 static const size_t   DEFAULT_RING_DIM      = 65536;     // polynomial ring dimension
 
 #if defined(CKKS)

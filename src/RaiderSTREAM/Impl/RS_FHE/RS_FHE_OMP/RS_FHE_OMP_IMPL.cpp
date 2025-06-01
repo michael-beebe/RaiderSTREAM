@@ -308,7 +308,10 @@ void scatterCopyFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      c_enc[idx1[j]] = a_enc[j];
+      if (j < idx1.size() && j < a_enc.size() && idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < c_enc.size()) {
+        c_enc[static_cast<size_t>(idx1[j])] = a_enc[j];
+      }
+      // else: skip or handle error as needed
     }
   }
 }
@@ -344,7 +347,10 @@ void scatterScaleFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      b_enc[idx1[j]] = cc->EvalMult(c_enc[j], scalar_pt);
+      if (j < idx1.size() && j < c_enc.size() && idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < b_enc.size()) {
+        b_enc[static_cast<size_t>(idx1[j])] = cc->EvalMult(c_enc[j], scalar_pt);
+      }
+      // else: skip or handle error as needed
     }
   }
 }
@@ -374,7 +380,11 @@ void scatterAddFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      c_enc[idx1[j]] = EvalAddOperation(cc, a_enc[j], b_enc[j]);
+      if (j < idx1.size() && j < a_enc.size() && j < b_enc.size() &&
+          idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < c_enc.size()) {
+        c_enc[static_cast<size_t>(idx1[j])] = EvalAddOperation(cc, a_enc[j], b_enc[j]);
+      }
+      // else: skip or handle error as needed
     }
   }
 }
@@ -409,8 +419,12 @@ void scatterTriadFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      auto tmp = cc->EvalMult(c_enc[j], scalar_pt);
-      a_enc[idx1[j]] = EvalAddOperation(cc, b_enc[j], tmp);
+      if (j < idx1.size() && j < b_enc.size() && j < c_enc.size() &&
+          idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < a_enc.size()) {
+        auto tmp = cc->EvalMult(c_enc[j], scalar_pt);
+        a_enc[static_cast<size_t>(idx1[j])] = EvalAddOperation(cc, b_enc[j], tmp);
+      }
+      // else: skip or handle error as needed
     }
   }
 }
@@ -441,7 +455,12 @@ void sgCopyFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      c_enc[idx1[j]] = a_enc[idx2[j]];
+      if (j < idx1.size() && j < idx2.size() &&
+          idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < c_enc.size() &&
+          idx2[j] >= 0 && static_cast<size_t>(idx2[j]) < a_enc.size()) {
+        c_enc[static_cast<size_t>(idx1[j])] = a_enc[static_cast<size_t>(idx2[j])];
+      }
+      // else: skip or handle error as needed
     }
   }
 }
@@ -479,7 +498,12 @@ void sgScaleFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      b_enc[idx2[j]] = cc->EvalMult(c_enc[idx1[j]], scalar_pt);
+      if (j < idx1.size() && j < idx2.size() &&
+          idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < c_enc.size() &&
+          idx2[j] >= 0 && static_cast<size_t>(idx2[j]) < b_enc.size()) {
+        b_enc[static_cast<size_t>(idx2[j])] = cc->EvalMult(c_enc[static_cast<size_t>(idx1[j])], scalar_pt);
+      }
+      // else: skip or handle error as needed
     }
   }
 }
@@ -513,7 +537,18 @@ void sgAddFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      c_enc[idx1[j]] = EvalAddOperation(cc, a_enc[idx2[j]], b_enc[idx3[j]]);
+      if (j < idx1.size() && j < idx2.size() && j < idx3.size()) {
+        ssize_t out_idx = idx1[j];
+        ssize_t a_idx = idx2[j];
+        ssize_t b_idx = idx3[j];
+        if (out_idx >= 0 && static_cast<size_t>(out_idx) < c_enc.size() &&
+            a_idx >= 0 && static_cast<size_t>(a_idx) < a_enc.size() &&
+            b_idx >= 0 && static_cast<size_t>(b_idx) < b_enc.size()) {
+          c_enc[static_cast<size_t>(out_idx)] = EvalAddOperation(cc, a_enc[static_cast<size_t>(a_idx)], b_enc[static_cast<size_t>(b_idx)]);
+        }
+        // else: skip or handle error as needed
+      }
+      // else: skip or handle error as needed
     }
   }
 }
@@ -552,8 +587,14 @@ void sgTriadFHE(
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      auto tmp = cc->EvalMult(c_enc[idx1[j]], scalar_pt);
-      a_enc[idx2[j]] = EvalAddOperation(cc, b_enc[idx3[j]], tmp);
+      if (j < idx1.size() && j < idx2.size() && j < idx3.size() &&
+          idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < c_enc.size() &&
+          idx2[j] >= 0 && static_cast<size_t>(idx2[j]) < a_enc.size() &&
+          idx3[j] >= 0 && static_cast<size_t>(idx3[j]) < b_enc.size()) {
+        auto tmp = cc->EvalMult(c_enc[static_cast<size_t>(idx1[j])], scalar_pt);
+        a_enc[static_cast<size_t>(idx2[j])] = EvalAddOperation(cc, b_enc[static_cast<size_t>(idx3[j])], tmp);
+      }
+      // else: skip or handle error as needed
     }
   }
 }

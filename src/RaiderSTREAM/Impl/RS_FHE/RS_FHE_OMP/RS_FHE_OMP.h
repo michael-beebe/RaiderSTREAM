@@ -68,6 +68,26 @@ public:
   bool freeData() override;
 
 private:
+  /**
+   * @brief Executes the specified kernel and collects performance metrics.
+   *
+   * This function runs the kernel of the given type and measures its execution time,
+   * throughput, and computational performance. The results are stored in the provided
+   * output parameters.
+   *
+   * @param kType      The type of kernel to execute.
+   * @param TIMES      Pointer to a variable where the execution time(s) will be stored.
+   * @param MBPS       Pointer to a variable where the throughput in MB/s will be stored.
+   * @param FLOPS      Pointer to a variable where the FLOPS (floating point operations per second) will be stored.
+   * @param BYTES      Pointer to a variable where the number of bytes processed will be stored.
+   * @param FLOATOPS   Pointer to a variable where the number of floating point operations will be stored.
+   * @param chunkSize  The size of the data chunk to process in each kernel execution.
+   * @return true if the kernel executed successfully, false otherwise.
+   */
+  bool executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES, double *MBPS, double *FLOPS,
+                     double *BYTES, double *FLOATOPS, size_t chunkSize);
+
+private:
   std::string                     kernelName;      ///< name of kernel to run
   ssize_t                         streamArraySize; ///< total array length
   int                             numPEs;          ///< number of OpenMP threads

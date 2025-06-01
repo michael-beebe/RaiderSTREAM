@@ -550,47 +550,43 @@ void runBenchCUDA(RSOpts *Opts) {
 #ifdef _ENABLE_FHE_OMP_
 void runBenchFHEOMP(RSOpts *Opts) {
     std::cout << "[DEBUG] Entering runBenchFHEOMP" << std::endl;
+    
+    /* Initialize the RS_FHE_OMP object */
     RS_FHE_OMP *RS = new RS_FHE_OMP(*Opts);
     if (!RS) {
         std::cout << "[ERROR] COULD NOT ALLOCATE RS_FHE_OMP OBJECT" << std::endl;
         return;
     }
     std::cout << "[DEBUG] Allocated RS_FHE_OMP object" << std::endl;
+
+    /* Allocate Data */
     if (!RS->allocateData()) {
         std::cout << "[ERROR] COULD NOT ALLOCATE MEMORY FOR RS_FHE_OMP" << std::endl;
         delete RS;
         return;
     }
     std::cout << "[DEBUG] Data allocated for RS_FHE_OMP" << std::endl;
-    std::cout << "[DEBUG] Opts->TIMES: " << Opts->TIMES << std::endl;
-    std::cout << "[DEBUG] Opts->MBPS: " << Opts->MBPS << std::endl;
-    std::cout << "[DEBUG] Opts->FLOPS: " << Opts->FLOPS << std::endl;
-    std::cout << "[DEBUG] Opts->BYTES: " << Opts->BYTES << std::endl;
-    std::cout << "[DEBUG] Opts->FLOATOPS: " << Opts->FLOATOPS << std::endl;
 
-// Print the first few values to check for zeros or bad pointers
-    for (int i = 0; i < 4; ++i) {
-        std::cout << "[DEBUG] Opts->BYTES[" << i << "]: " << Opts->BYTES[i] << std::endl;
-        std::cout << "[DEBUG] Opts->FLOATOPS[" << i << "]: " << Opts->FLOATOPS[i] << std::endl;
-    }
-
-    std::cout << "[DEBUG] About to call RS->execute()" << std::endl;
-
+    /* Execute the benchmark */
     if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
         std::cout << "[ERROR] COULD NOT EXECUTE BENCHMARK FOR RS_FHE_OMP" << std::endl;
         RS->freeData();
         delete RS;
         return;
     }
-    std::cout << "[DEBUG] Benchmark executed for RS_FHE_OMP" << std::endl;
+
+    /* Free the data */
     if (!RS->freeData()) {
         std::cout << "[ERROR] COULD NOT FREE THE MEMORY FOR RS_FHE_OMP" << std::endl;
         delete RS;
         return;
     }
     std::cout << "[DEBUG] Data freed for RS_FHE_OMP" << std::endl;
+
+    /* Print the timing */
     Opts->printLogo();
     Opts->printOpts();
+    
     RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
     bool headerPrinted = false;
     for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
@@ -598,6 +594,8 @@ void runBenchFHEOMP(RSOpts *Opts) {
         std::string kernelName = BenchTypeTable[i].Notes;
         printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
     }
+
+    /* Free the RS_FHE_OMP object */
     delete RS;
     std::cout << "[DEBUG] Exiting runBenchFHEOMP" << std::endl;
 }
