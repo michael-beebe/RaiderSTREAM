@@ -126,10 +126,15 @@ for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
     size_t chunk_end = std::min(chunk_start + chunkSize, static_cast<size_t>(streamArraySize));
     size_t currentChunkSize = chunk_end - chunk_start;
 
-    // Fill chunk vectors with intended values
-    std::vector<STREAM_TYPE> A(currentChunkSize, STREAM_TYPE(1));
-    std::vector<STREAM_TYPE> B(currentChunkSize, STREAM_TYPE(2));
-    std::vector<STREAM_TYPE> C(currentChunkSize, STREAM_TYPE(1));
+    // Sequential initialization (like other backends)
+    std::vector<STREAM_TYPE> A(currentChunkSize), B(currentChunkSize), C(currentChunkSize);
+    for (size_t i = 0; i < currentChunkSize; ++i) {
+        size_t global_idx = chunk_start + i;
+        // If using BGV/BFV, values will be reduced mod plaintext modulus automatically
+        A[i] = static_cast<STREAM_TYPE>(global_idx % DEFAULT_PTM);
+        B[i] = static_cast<STREAM_TYPE>(global_idx % DEFAULT_PTM);
+        C[i] = static_cast<STREAM_TYPE>(global_idx % DEFAULT_PTM); 
+    }
 
     // Create packed plaintexts for the chunk
     Plaintext ptA = CreatePlaintextVector(cc, A);
