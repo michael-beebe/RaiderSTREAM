@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "RSBaseImpl.h"
+#include "../../RaiderSTREAM/Impl/RS_FHE/RS_FHE_Config.h"
 
 /**
  * @brief Major version number of RaiderSTREAM
@@ -78,6 +79,14 @@ private:
 #if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ || _ENABLE_OMP_TARGET_ ||             \
     _ENABLE_SHMEM_OMP_TARGET_
   int deviceId = 0; /* Device ID to use */
+#endif
+#if defined(_ENABLE_FHE_OMP_)
+    uint64_t ptm = DEFAULT_PTM;         /* Plaintext modulus (BFV/BGV) */
+    int depth = DEFAULT_DEPTH;          /* Multiplicative depth */
+    size_t ringDim = DEFAULT_RING_DIM;  /* Ring dimension */
+  #if defined(CKKS)
+    int scalingModSize = DEFAULT_SCALING_MOD_SIZE; /* CKKS only */
+  #endif
 #endif
 
   /**
@@ -223,6 +232,19 @@ public:
    *  @returns The specified device ID, or 0.
    */
   int getDeviceId() const { return deviceId; }
+#endif
+
+#if defined(_ENABLE_FHE_OMP_)
+    /**
+     * @brief Gets the plaintext modulus for FHE schemes.
+     * @returns The plaintext modulus.
+     */
+    uint64_t getPTM() const { return ptm; }
+    int getDepth() const { return depth; }
+    size_t getRingDim() const { return ringDim; }
+  #if defined(CKKS)
+    int getScalingModSize() const { return scalingModSize; }
+  #endif
 #endif
 
   /*****************************************************

@@ -167,6 +167,39 @@ bool RSOpts::parseOpts(int argc, char **argv) {
       i++;
     }
 
+#ifdef _ENABLE_FHE_OMP_
+    else if (s == "--ptm" || s == "--plaintext_modulus") {
+      if (i + 1 > argc - 1) {
+        std::cout << "Error: --ptm requires an argument" << std::endl;
+        return false;
+      }
+      ptm = std::stoull(argv[++i]);
+    }
+    else if (s == "--depth") {
+      if (i + 1 > argc - 1) {
+        std::cout << "Error: --depth requires an argument" << std::endl;
+        return false;
+      }
+      depth = std::stoi(argv[++i]);
+    }
+    else if (s == "--ring_dim") {
+      if (i + 1 > argc - 1) {
+        std::cout << "Error: --ring_dim requires an argument" << std::endl;
+        return false;
+      }
+      ringDim = std::stoull(argv[++i]);
+    }
+  #if defined(CKKS)
+    else if (s == "--scaling_mod_size") {
+      if (i + 1 > argc - 1) {
+        std::cout << "Error: --scaling_mod_size requires an argument" << std::endl;
+        return false;
+      }
+      scalingModSize = std::stoi(argv[++i]);
+    }
+  #endif
+#endif
+
 #if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_ 
     else if ((s == "-b") || (s == "--blocks")) {
       if (i + 1 > (argc - 1)) {
