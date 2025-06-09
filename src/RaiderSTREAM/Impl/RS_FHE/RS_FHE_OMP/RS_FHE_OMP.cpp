@@ -245,11 +245,11 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   // SEQUENTIAL KERNELS
   // ------------------------------
   case RSBaseImpl::RS_SEQ_COPY: {
-    startTime = mySecond();
     std::cout << "[DEBUG] Calling seqCopyFHE(a_enc, b_enc, c_enc, " << chunkSize << ", " << streamArraySize << ")" << std::endl;
+    startTime = mySecond();
     seqCopyFHE(a_enc, b_enc, c_enc, chunkSize, streamArraySize);
-    std::cout << "[DEBUG] Finished seqCopyFHE" << std::endl;
     endTime = mySecond();
+    std::cout << "[DEBUG] Finished seqCopyFHE" << std::endl;
     runTime = calculateRunTime(startTime, endTime);
     std::cout << "[DEBUG] calculateMBPS(" << BYTES[kType] << ", " << runTime << ") = " << calculateMBPS(BYTES[kType], runTime) << std::endl;
     std::cout << "[DEBUG] calculateFLOPS(" << FLOATOPS[kType] << ", " << runTime << ") = " << calculateFLOPS(FLOATOPS[kType], runTime) << std::endl;
