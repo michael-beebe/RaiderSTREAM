@@ -12,6 +12,7 @@
 // #ifdef _RS_FHE_OMP_H_
 
 #include <chrono>
+#include <algorithm>
 #include <iostream>
 #include <omp.h>
 #include <string>
@@ -148,6 +149,26 @@ for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
 
     std::cout << "[DEBUG] Encrypted chunk " << (chunk_idx + 1)
               << " (" << currentChunkSize << " elements)" << std::endl;
+
+    // DEBUG: decrypt and print first 100 elements of A vs. decrypted A
+    if (chunk_idx == 0) {
+      Plaintext ptA_dec;
+      cc->Decrypt(kp.secretKey, a_enc[chunk_idx], &ptA_dec);
+      ptA_dec->SetLength(ptA->GetLength());
+      #if defined(CKKS)
+      auto decA = ptA_dec->GetCKKSPackedValue();
+      #else
+      auto decA = ptA_dec->GetPackedValue();
+      #endif
+
+      std::cout << "[DEBUG] Chunk 0  Plain A[0..99]: ";
+      for (size_t i = 0; i < std::min<size_t>(100, A.size()); ++i)
+        std::cout << A[i] << ' ';
+      std::cout << "\n[DEBUG] Chunk 0 Decr A[0..99]: ";
+      for (size_t i = 0; i < std::min<size_t>(100, decA.size()); ++i)
+        std::cout << decA[i] << ' ';
+      std::cout << std::endl;
+    }
 }
   std::cout << "[DEBUG] Finished allocateData()" << std::endl;
   return true;
