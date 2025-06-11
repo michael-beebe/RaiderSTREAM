@@ -24,16 +24,16 @@ using RSFHE::EvalAddOperation;
  * @param b_enc    Encrypted input array b (unused)
  * @param c_enc    Encrypted output array c
  * @param chunkSize Size of each chunk
+ * @param numChunks Number of chunks (calculated from streamArraySize)
  * @param streamArraySize Number of elements in the arrays
  */
 void seqCopyFHE(
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  size_t chunkSize, ssize_t streamArraySize)
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize)
 {
     (void)b_enc;  // unused
-    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
     #pragma omp parallel for
     for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
         c_enc[chunk_idx] = a_enc[chunk_idx];
@@ -49,6 +49,7 @@ void seqCopyFHE(
  * @param b_enc    Encrypted output array b
  * @param c_enc    Encrypted input array c
  * @param chunkSize Size of each chunk
+ * @param numChunks Number of chunks (calculated from streamArraySize)
  * @param streamArraySize Number of elements
  * @param scalar   Plaintext scalar to multiply
  */
@@ -58,11 +59,10 @@ void seqScaleFHE(
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  size_t chunkSize, ssize_t streamArraySize,
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize,
   STREAM_TYPE scalar)
 {
     (void)a_enc;  // unused
-    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
     auto scalar_pt = CreatePlaintextValue(cc, scalar);
     #pragma omp parallel for
     for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {

@@ -240,6 +240,8 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   double startTime = 0.0, endTime = 0.0, runTime = 0.0;
   double mbps = 0.0, flops = 0.0;
 
+  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+
   switch (kType) {
   // ------------------------------
   // SEQUENTIAL KERNELS
@@ -247,7 +249,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_SEQ_COPY: {
     std::cout << "[DEBUG] Calling seqCopyFHE(a_enc, b_enc, c_enc, " << chunkSize << ", " << streamArraySize << ")" << std::endl;
     startTime = mySecond();
-    seqCopyFHE(a_enc, b_enc, c_enc, chunkSize, streamArraySize);
+    seqCopyFHE(a_enc, b_enc, c_enc, chunkSize, numChunks, streamArraySize);
     endTime = mySecond();
     std::cout << "[DEBUG] Finished seqCopyFHE" << std::endl;
     runTime = calculateRunTime(startTime, endTime);
@@ -265,7 +267,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
 
   case RSBaseImpl::RS_SEQ_SCALE: {
     startTime = mySecond();
-    seqScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, streamArraySize, scalar);
+    seqScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, numChunks, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);

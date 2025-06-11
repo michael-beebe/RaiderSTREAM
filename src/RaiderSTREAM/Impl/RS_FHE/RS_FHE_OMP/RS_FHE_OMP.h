@@ -110,7 +110,7 @@ void seqCopyFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  size_t chunkSize, ssize_t streamArraySize);
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize);
 
 /// @brief Homomorphic scale: b_enc[j] = scalar * c_enc[j]
 void seqScaleFHE(
@@ -119,7 +119,7 @@ void seqScaleFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  size_t chunkSize, ssize_t streamArraySize,
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize,
   STREAM_TYPE scalar);
 
 /// @brief Homomorphic add: c_enc[j] = a_enc[j] + b_enc[j]
