@@ -13,6 +13,7 @@
 using lbcrypto::CryptoContext;
 using lbcrypto::PublicKey;
 using lbcrypto::Ciphertext;
+using lbcrypto::Plaintext;
 using lbcrypto::DCRTPoly;
 using RSFHE::CreatePlaintextValue;
 using RSFHE::EvalAddOperation;
@@ -51,7 +52,7 @@ void seqCopyFHE(
  * @param chunkSize Size of each chunk
  * @param numChunks Number of chunks (calculated from streamArraySize)
  * @param streamArraySize Number of elements
- * @param scalar   Plaintext scalar to multiply
+ * @param scalar_pt Precomputed plaintext scalar
  */
 void seqScaleFHE(
   CryptoContext<DCRTPoly> cc,
@@ -59,11 +60,9 @@ void seqScaleFHE(
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  size_t chunkSize, size_t numChunks, ssize_t streamArraySize,
-  STREAM_TYPE scalar)
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize, const lbcrypto::Plaintext& scalar_pt)
 {
     (void)a_enc;  // unused
-    auto scalar_pt = CreatePlaintextValue(cc, scalar);
     #pragma omp parallel for
     for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
         b_enc[chunk_idx] = cc->EvalMult(c_enc[chunk_idx], scalar_pt);
@@ -78,6 +77,7 @@ void seqScaleFHE(
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted output array c
  * @param chunkSize Size of each chunk
+ * @param numChunks Number of chunks (calculated from streamArraySize)
  * @param streamArraySize Number of elements
  */
 void seqAddFHE(
@@ -85,9 +85,8 @@ void seqAddFHE(
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  size_t chunkSize, ssize_t streamArraySize)
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize)
 {
-    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
     #pragma omp parallel for
     for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
         c_enc[chunk_idx] = EvalAddOperation(cc, a_enc[chunk_idx], b_enc[chunk_idx]);
@@ -104,8 +103,10 @@ void seqAddFHE(
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted input array c
  * @param chunkSize Size of each chunk
+ * @param numChunks Number of chunks (calculated from streamArraySize)
  * @param streamArraySize Number of elements
  * @param scalar   Plaintext scalar to multiply
+ * @param scalar_pt Precomputed plaintext scalar
  */
 void seqTriadFHE(
   CryptoContext<DCRTPoly> cc,
@@ -113,11 +114,8 @@ void seqTriadFHE(
   std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  size_t chunkSize, ssize_t streamArraySize,
-  STREAM_TYPE scalar)
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize, const lbcrypto::Plaintext& scalar_pt)
 {
-    size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
-    auto scalar_pt = CreatePlaintextValue(cc, scalar);
     #pragma omp parallel for
     for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
         auto tmp = cc->EvalMult(c_enc[chunk_idx], scalar_pt);
@@ -132,6 +130,7 @@ void seqTriadFHE(
  * @param b_enc Unused
  * @param c_enc    Encrypted output array c
  * @param chunkSize Size of each chunk
+ * @param numChunks Number of chunks (calculated from streamArraySize)
  * @param idx1     Index array for gather
  * @param streamArraySize Number of elements
  */
@@ -140,10 +139,9 @@ void gatherCopyFHE(
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
-  size_t chunkSize, ssize_t streamArraySize)
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize)
 {
   (void)b_enc;  // unused
-  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
   #pragma omp parallel for
   for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
     size_t start = chunk_idx * chunkSize;
@@ -166,6 +164,7 @@ void gatherCopyFHE(
  * @param b_enc    Encrypted output array b
  * @param c_enc    Encrypted input array c
  * @param chunkSize Size of each chunk
+ * @param numChunks Number of chunks (calculated from streamArraySize)
  * @param idx1     Index array for gather
  * @param streamArraySize Number of elements
  * @param scalar   Plaintext scalar
@@ -177,12 +176,11 @@ void gatherScaleFHE(
   std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
-  size_t chunkSize, ssize_t streamArraySize,
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize,
   STREAM_TYPE scalar)
 {
   (void)a_enc;  // unused
   auto scalar_pt = CreatePlaintextValue(cc, scalar);
-  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
   #pragma omp parallel for
   for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
     size_t start = chunk_idx * chunkSize;

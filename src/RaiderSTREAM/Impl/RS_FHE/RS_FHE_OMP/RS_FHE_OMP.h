@@ -119,8 +119,7 @@ void seqScaleFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  size_t chunkSize, size_t numChunks, ssize_t streamArraySize,
-  STREAM_TYPE scalar);
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize, const lbcrypto::Plaintext& scalar_pt);
 
 /// @brief Homomorphic add: c_enc[j] = a_enc[j] + b_enc[j]
 void seqAddFHE(
@@ -128,7 +127,7 @@ void seqAddFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  size_t chunkSize, ssize_t streamArraySize);
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize);
 
 /// @brief Homomorphic triad: a_enc[j] = b_enc[j] + scalar * c_enc[j]
 void seqTriadFHE(
@@ -137,8 +136,7 @@ void seqTriadFHE(
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  size_t chunkSize, ssize_t streamArraySize,
-  STREAM_TYPE scalar);
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize, const lbcrypto::Plaintext& scalar_pt);
 
 // Gather kernels
 void gatherCopyFHE(
@@ -146,7 +144,7 @@ void gatherCopyFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
-  size_t chunkSize, ssize_t streamArraySize);
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize);
 
 void gatherScaleFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
@@ -155,7 +153,7 @@ void gatherScaleFHE(
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
-  size_t chunkSize, ssize_t streamArraySize,
+  size_t chunkSize, size_t numChunks, ssize_t streamArraySize,
   STREAM_TYPE scalar);
 
 void gatherAddFHE(

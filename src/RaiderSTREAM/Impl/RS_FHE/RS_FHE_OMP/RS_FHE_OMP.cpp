@@ -26,6 +26,7 @@
 
 using namespace lbcrypto;
 using RSFHE::CreatePlaintextVector;
+using RSFHE::CreatePlaintextValue;
 
 /**************************************************
  * @brief Constructor for the RS_FHE_OMP class.
@@ -241,6 +242,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   double mbps = 0.0, flops = 0.0;
 
   size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+  auto scalar_pt = CreatePlaintextValue(cc, scalar);
 
   switch (kType) {
   // ------------------------------
@@ -267,7 +269,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
 
   case RSBaseImpl::RS_SEQ_SCALE: {
     startTime = mySecond();
-    seqScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, numChunks, streamArraySize, scalar);
+    seqScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, numChunks, streamArraySize, scalar_pt);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -280,7 +282,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
 
   case RSBaseImpl::RS_SEQ_ADD: {
     startTime = mySecond();
-    seqAddFHE(cc, a_enc, b_enc, c_enc, chunkSize, streamArraySize);
+    seqAddFHE(cc, a_enc, b_enc, c_enc, chunkSize, numChunks, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -293,7 +295,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
 
   case RSBaseImpl::RS_SEQ_TRIAD: {
     startTime = mySecond();
-    seqTriadFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, streamArraySize, scalar);
+    seqTriadFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, numChunks, streamArraySize, scalar_pt);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -311,7 +313,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
     startTime = mySecond();
     gatherCopyFHE(a_enc, b_enc, c_enc,
                   std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-                  chunkSize, streamArraySize);
+                  chunkSize, numChunks, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -326,7 +328,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
     startTime = mySecond();
     gatherScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc,
                    std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-                   chunkSize, streamArraySize, scalar);
+                   chunkSize, numChunks, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
