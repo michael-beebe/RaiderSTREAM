@@ -101,6 +101,14 @@ private:
 };
 
 // -----------------------------------------------------------------------------
+// Function to create a CryptoContext for FHE operations
+void initializeZeroCiphertexts(
+  lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
+  const lbcrypto::PublicKey<lbcrypto::DCRTPoly>& pk,
+  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>>& output_enc,
+  size_t numChunks, size_t chunkSize);
+
+// -----------------------------------------------------------------------------
 // Declarations of the 20 FHE‐enabled RaiderSTREAM kernels.
 // Each one operates on vectors of Ciphertext<DCRTPoly> with OpenMP.
 // -----------------------------------------------------------------------------
@@ -108,18 +116,14 @@ private:
 /// @brief Homomorphic copy: c_enc[j] = a_enc[j]
 void seqCopyFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
-  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  size_t chunkSize, size_t numChunks, ssize_t streamArraySize);
+  std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc, size_t numChunks);
 
 /// @brief Homomorphic scale: b_enc[j] = scalar * c_enc[j]
 void seqScaleFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
-  const lbcrypto::PublicKey<lbcrypto::DCRTPoly> &pk,
-  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  size_t chunkSize, size_t numChunks, ssize_t streamArraySize, const lbcrypto::Plaintext& scalar_pt);
+  size_t numChunks, const lbcrypto::Plaintext& scalar_pt);
 
 /// @brief Homomorphic add: c_enc[j] = a_enc[j] + b_enc[j]
 void seqAddFHE(
@@ -127,16 +131,15 @@ void seqAddFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  size_t chunkSize, size_t numChunks, ssize_t streamArraySize);
+  size_t numChunks);
 
 /// @brief Homomorphic triad: a_enc[j] = b_enc[j] + scalar * c_enc[j]
 void seqTriadFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
-  const lbcrypto::PublicKey<lbcrypto::DCRTPoly> &pk,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
-  size_t chunkSize, size_t numChunks, ssize_t streamArraySize, const lbcrypto::Plaintext& scalar_pt);
+  size_t numChunks, const lbcrypto::Plaintext& scalar_pt);
 
 // Gather kernels
 void gatherCopyFHE(
@@ -151,10 +154,9 @@ void gatherScaleFHE(
   const lbcrypto::PublicKey<lbcrypto::DCRTPoly> &pk,
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
-  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
   size_t chunkSize, size_t numChunks, ssize_t streamArraySize,
-  STREAM_TYPE scalar);
+  const lbcrypto::Plaintext& scalar_pt);
 
 void gatherAddFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,

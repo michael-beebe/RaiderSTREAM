@@ -92,6 +92,9 @@ inline KeyPair<DCRTPoly> GenerateKeyPair(
     exit(1);
   }
   cc->EvalMultKeyGen(kp.secretKey);
+  // Generate automorphism keys for all possible rotations up to chunk size
+  std::vector<unsigned int> rotations = {1, 2, 4, 8, 16};
+  cc->EvalAutomorphismKeyGen(kp.secretKey, rotations);
   // cc->EvalSumKeyGen(kp.secretKey);
   std::cout << "[RS_FHE_Config] Key pair generated." << std::endl;
   return kp;

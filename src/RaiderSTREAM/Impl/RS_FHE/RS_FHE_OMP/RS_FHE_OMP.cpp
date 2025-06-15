@@ -251,7 +251,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_SEQ_COPY: {
     std::cout << "[DEBUG] Calling seqCopyFHE(a_enc, b_enc, c_enc, " << chunkSize << ", " << streamArraySize << ")" << std::endl;
     startTime = mySecond();
-    seqCopyFHE(a_enc, b_enc, c_enc, chunkSize, numChunks, streamArraySize);
+    seqCopyFHE(a_enc, c_enc, numChunks);
     endTime = mySecond();
     std::cout << "[DEBUG] Finished seqCopyFHE" << std::endl;
     runTime = calculateRunTime(startTime, endTime);
@@ -269,7 +269,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
 
   case RSBaseImpl::RS_SEQ_SCALE: {
     startTime = mySecond();
-    seqScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, numChunks, streamArraySize, scalar_pt);
+    seqScaleFHE(cc, b_enc, c_enc, numChunks, scalar_pt);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -282,7 +282,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
 
   case RSBaseImpl::RS_SEQ_ADD: {
     startTime = mySecond();
-    seqAddFHE(cc, a_enc, b_enc, c_enc, chunkSize, numChunks, streamArraySize);
+    seqAddFHE(cc, a_enc, b_enc, c_enc, numChunks);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -295,7 +295,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
 
   case RSBaseImpl::RS_SEQ_TRIAD: {
     startTime = mySecond();
-    seqTriadFHE(cc, kp.publicKey, a_enc, b_enc, c_enc, chunkSize, numChunks, streamArraySize, scalar_pt);
+    seqTriadFHE(cc, a_enc, b_enc, c_enc, numChunks, scalar_pt);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -325,10 +325,12 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   }
 
   case RSBaseImpl::RS_GATHER_SCALE: {
+    auto idx_vector = std::vector<ssize_t>(idx1, idx1 + streamArraySize);
+    initializeZeroCiphertexts(cc, kp.publicKey, b_enc, numChunks, chunkSize);
+
     startTime = mySecond();
-    gatherScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc,
-                   std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-                   chunkSize, numChunks, streamArraySize, scalar);
+    gatherScaleFHE(cc, kp.publicKey, a_enc, b_enc,
+                   idx_vector, chunkSize, numChunks, streamArraySize, scalar_pt);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
