@@ -20,6 +20,8 @@
 
 using namespace lbcrypto;
 
+size_t estimateCiphertextSize(const Ciphertext<DCRTPoly>& ct);
+
 /**
  * @brief RaiderSTREAM OpenMP + FHE implementation class
  *
@@ -144,16 +146,14 @@ void seqTriadFHE(
 // Gather kernels
 void gatherCopyFHE(
   const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
-  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
   size_t chunkSize, size_t numChunks, ssize_t streamArraySize);
 
 void gatherScaleFHE(
   lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc,
-  const lbcrypto::PublicKey<lbcrypto::DCRTPoly> &pk,
-  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &a_enc,
   std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &b_enc,
+  const std::vector<lbcrypto::Ciphertext<lbcrypto::DCRTPoly>> &c_enc,
   const std::vector<ssize_t> &idx,
   size_t chunkSize, size_t numChunks, ssize_t streamArraySize,
   const lbcrypto::Plaintext& scalar_pt);

@@ -80,7 +80,7 @@ cd build
 # --- OpenMP + FHE ---
 cmake \
   -DENABLE_FHE_OMP=ON \
-  -DSCHEME=BGV \
+  -DSCHEME=BFV \
   -DCMAKE_PREFIX_PATH=$HOME/software/openfhe \
   ../
 

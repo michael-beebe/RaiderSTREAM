@@ -932,7 +932,7 @@ int main(int argc, char **argv) {
 #endif
 
 #ifdef _ENABLE_FHE_OMP_
-  runBenchFHEOMP(Opts);
+    runBenchFHEOMP(Opts);
 #endif
 
 #ifdef _ENABLE_MPI_CUDA_

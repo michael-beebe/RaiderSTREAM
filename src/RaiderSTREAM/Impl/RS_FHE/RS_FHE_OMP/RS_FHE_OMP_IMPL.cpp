@@ -18,97 +18,113 @@ using lbcrypto::DCRTPoly;
 using RSFHE::CreatePlaintextValue;
 using RSFHE::EvalAddOperation;
 
-// -----------------------------------------------------------------------------
-// SLOT MANIPULATION HELPER FUNCTIONS
-// -----------------------------------------------------------------------------
+// // -----------------------------------------------------------------------------
+// // SLOT MANIPULATION HELPER FUNCTIONS
+// // -----------------------------------------------------------------------------
 
-// Helper function to create a mask plaintext for slot extraction
-Plaintext createSlotMask(CryptoContext<DCRTPoly> cc, size_t slot, size_t chunkSize) {
-    std::vector<double> mask(chunkSize, 0.0);
-    if (slot < chunkSize) {
-        mask[slot] = 1.0;
-    }
-#if defined(CKKS)
-    return cc->MakeCKKSPackedPlaintext(mask);
-#else
-    std::vector<int64_t> intMask(chunkSize, 0);
-    if (slot < chunkSize) {
-        intMask[slot] = 1;
-    }
-    return cc->MakePackedPlaintext(intMask);
-#endif
-}
+// // Helper function to create a mask plaintext for slot extraction
+// Plaintext createSlotMask(CryptoContext<DCRTPoly> cc, size_t slot, size_t chunkSize) {
+//     std::vector<double> mask(chunkSize, 0.0);
+//     if (slot < chunkSize) {
+//         mask[slot] = 1.0;
+//     }
+// #if defined(CKKS)
+//     return cc->MakeCKKSPackedPlaintext(mask);
+// #else
+//     std::vector<int64_t> intMask(chunkSize, 0);
+//     if (slot < chunkSize) {
+//         intMask[slot] = 1;
+//     }
+//     return cc->MakePackedPlaintext(intMask);
+// #endif
+// }
 
-// Extract a specific slot from a ciphertext (brings slot to position 0)
-Ciphertext<DCRTPoly> extractSlot(CryptoContext<DCRTPoly> cc, 
-                                 const Ciphertext<DCRTPoly>& ct, 
-                                 size_t slot, size_t chunkSize) {
-    if (slot == 0) {
-        // No rotation needed, just mask
-        auto mask = createSlotMask(cc, 0, chunkSize);
-        return cc->EvalMult(ct, mask);
-    }
-    
-    // Rotate so desired slot is at position 0
-    auto rotated = cc->EvalAtIndex(ct, -static_cast<int>(slot));
-    auto mask = createSlotMask(cc, 0, chunkSize);
-    return cc->EvalMult(rotated, mask);
-}
+// // Extract a specific slot from a ciphertext (brings slot to position 0)
+// Ciphertext<DCRTPoly> extractSlot(CryptoContext<DCRTPoly> cc, 
+//                                  const Ciphertext<DCRTPoly>& ct, 
+//                                  size_t slot, size_t chunkSize) {
+//     if (slot == 0) {
+//         auto mask = createSlotMask(cc, 0, chunkSize);
+//         return cc->EvalMult(ct, mask);
+//     }
+//     int rot = -static_cast<int>(slot); // Correct: negative rotation brings slot to 0
+//     {
+//         std::lock_guard<std::mutex> lock(g_rot_mutex);
+//         g_used_rotations.insert(rot);
+//     }
+//     try {
+//         auto rotated = cc->EvalAtIndex(ct, rot);
+//         auto mask = createSlotMask(cc, 0, chunkSize);
+//         return cc->EvalMult(rotated, mask);
+//     } catch (const lbcrypto::OpenFHEException& e) {
+//         std::cerr << "[extractSlot][EXCEPTION] No rotation key for " << rot << " (slot " << slot << "): " << e.what() << std::endl;
+//         return nullptr;
+//     }
+// }
 
-// Insert a value (at slot 0) into a specific slot position
-Ciphertext<DCRTPoly> insertSlotAtPosition(CryptoContext<DCRTPoly> cc, 
-                                          const Ciphertext<DCRTPoly>& slot_ct, 
-                                          size_t target_slot) {
-    if (target_slot == 0) {
-        return slot_ct;
-    }
-    // Rotate so slot 0 goes to target position
-    return cc->EvalAtIndex(slot_ct, static_cast<int>(target_slot));
-}
+// // Insert a value (at slot 0) into a specific slot position
+// Ciphertext<DCRTPoly> insertSlotAtPosition(CryptoContext<DCRTPoly> cc, 
+//                                           const Ciphertext<DCRTPoly>& slot_ct, 
+//                                           size_t target_slot) {
+//     if (target_slot == 0) {
+//         return slot_ct;
+//     }
+//     int rot = static_cast<int>(target_slot);
+//     {
+//         std::lock_guard<std::mutex> lock(g_rot_mutex);
+//         g_used_rotations.insert(rot);
+//     }
+//     try {
+//         return cc->EvalAtIndex(slot_ct, rot);
+//     } catch (const lbcrypto::OpenFHEException& e) {
+//         std::cerr << "[insertSlotAtPosition][EXCEPTION] No rotation key for " << rot << " (target_slot " << target_slot << "): " << e.what() << std::endl;
+//         return nullptr;
+//     }
+// }
 
-// Initialize output ciphertexts to zero
-std::vector<Ciphertext<DCRTPoly>> createZeroCiphertexts(CryptoContext<DCRTPoly> cc, 
-                                                        const PublicKey<DCRTPoly>& pk,
-                                                        size_t numChunks, size_t chunkSize) {
-    std::vector<Ciphertext<DCRTPoly>> zero_cts(numChunks);
+// // Initialize output ciphertexts to zero
+// std::vector<Ciphertext<DCRTPoly>> createZeroCiphertexts(CryptoContext<DCRTPoly> cc, 
+//                                                         const PublicKey<DCRTPoly>& pk,
+//                                                         size_t numChunks, size_t chunkSize) {
+//     std::vector<Ciphertext<DCRTPoly>> zero_cts(numChunks);
     
-#if defined(CKKS)
-    std::vector<double> zeros(chunkSize, 0.0);
-    auto zero_pt = cc->MakeCKKSPackedPlaintext(zeros);
-#else
-    std::vector<int64_t> zeros(chunkSize, 0);
-    auto zero_pt = cc->MakePackedPlaintext(zeros);
-#endif
+// #if defined(CKKS)
+//     std::vector<double> zeros(chunkSize, 0.0);
+//     auto zero_pt = cc->MakeCKKSPackedPlaintext(zeros);
+// #else
+//     std::vector<int64_t> zeros(chunkSize, 0);
+//     auto zero_pt = cc->MakePackedPlaintext(zeros);
+// #endif
     
-    for (size_t i = 0; i < numChunks; ++i) {
-        zero_cts[i] = cc->Encrypt(pk, zero_pt);
-    }
-    return zero_cts;
-}
+//     for (size_t i = 0; i < numChunks; ++i) {
+//         zero_cts[i] = cc->Encrypt(pk, zero_pt);
+//     }
+//     return zero_cts;
+// }
 
-/**
- * @brief Initialize a vector of ciphertexts to encrypt zero vectors
- */
-void initializeZeroCiphertexts(
-    CryptoContext<DCRTPoly> cc,
-    const PublicKey<DCRTPoly>& pk,
-    std::vector<Ciphertext<DCRTPoly>>& output_enc,
-    size_t numChunks, size_t chunkSize)
-{
-    output_enc.resize(numChunks);
+// /**
+//  * @brief Initialize a vector of ciphertexts to encrypt zero vectors
+//  */
+// void initializeZeroCiphertexts(
+//     CryptoContext<DCRTPoly> cc,
+//     const PublicKey<DCRTPoly>& pk,
+//     std::vector<Ciphertext<DCRTPoly>>& output_enc,
+//     size_t numChunks, size_t chunkSize)
+// {
+//     output_enc.resize(numChunks);
     
-#if defined(CKKS)
-    std::vector<double> zeros(chunkSize, 0.0);
-    auto zero_pt = cc->MakeCKKSPackedPlaintext(zeros);
-#else
-    std::vector<int64_t> zeros(chunkSize, 0);
-    auto zero_pt = cc->MakePackedPlaintext(zeros);
-#endif
+// #if defined(CKKS)
+//     std::vector<double> zeros(chunkSize, 0.0);
+//     auto zero_pt = cc->MakeCKKSPackedPlaintext(zeros);
+// #else
+//     std::vector<int64_t> zeros(chunkSize, 0);
+//     auto zero_pt = cc->MakePackedPlaintext(zeros);
+// #endif
     
-    for (size_t i = 0; i < numChunks; ++i) {
-        output_enc[i] = cc->Encrypt(pk, zero_pt);
-    }
-}
+//     for (size_t i = 0; i < numChunks; ++i) {
+//         output_enc[i] = cc->Encrypt(pk, zero_pt);
+//     }
+// }
 
 // -----------------------------------------------------------------------------
 /**
@@ -122,10 +138,15 @@ void seqCopyFHE(
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
   size_t numChunks)
 {
-    #pragma omp parallel for
+    size_t bytesTransferredTotal = 0;
+    #pragma omp parallel for reduction(+:bytesTransferredTotal)
     for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
         c_enc[chunk_idx] = a_enc[chunk_idx];
+        size_t bytesTransferred = estimateCiphertextSize(a_enc[chunk_idx]) + estimateCiphertextSize(c_enc[chunk_idx]);
+        bytesTransferredTotal += bytesTransferred;
+        printf("Transferred %zu bytes for chunk %zu\n", bytesTransferred, chunk_idx);
     }
+    printf("Total bytes transferred: %zu\n", bytesTransferredTotal);
 }
 
 /**
@@ -196,8 +217,9 @@ void seqTriadFHE(
 // -----------------------------------------------------------------------------
 /**
  * @brief Homomorphic gather‑copy kernel.
+ * @param cc       Crypto context
+ * @param pk       Public key
  * @param a_enc    Encrypted input array a
- * @param b_enc Unused
  * @param c_enc    Encrypted output array c
  * @param chunkSize Size of each chunk
  * @param numChunks Number of chunks (calculated from streamArraySize)
@@ -205,80 +227,52 @@ void seqTriadFHE(
  * @param streamArraySize Number of elements
  */
 void gatherCopyFHE(
-  const std::vector<Ciphertext<DCRTPoly>>& a_enc,
-  const std::vector<Ciphertext<DCRTPoly>>& b_enc,
-  std::vector<Ciphertext<DCRTPoly>>& c_enc,
-  const std::vector<ssize_t>& idx1,
-  size_t chunkSize, size_t numChunks, ssize_t streamArraySize)
+    const std::vector<Ciphertext<DCRTPoly>>& a_enc,
+    std::vector<Ciphertext<DCRTPoly>>& c_enc,
+    const std::vector<ssize_t>& idx,
+    size_t chunkSize, size_t numChunks, ssize_t streamArraySize)
 {
-  (void)b_enc;  // unused
-  #pragma omp parallel for
+    #pragma omp parallel for
   for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
     size_t start = chunk_idx * chunkSize;
     size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
     for (size_t j = start; j < end; ++j) {
-      if (j < idx1.size() && idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < a_enc.size() && j < c_enc.size()) {
-        c_enc[j] = a_enc[idx1[j]];
-      }
+      if (j < idx.size() && idx[j] >= 0 && static_cast<size_t>(idx[j]) < a_enc.size() && j < c_enc.size()) {
+        c_enc[j] = a_enc[idx[j]];
+        }
       // else: skip or handle error as needed
+        }
     }
-  }
 }
 
 // -----------------------------------------------------------------------------
 /**
  * @brief Homomorphic gather‑scale kernel.
  * @param cc       Crypto context
- * @param pk       Public key
- * @param a_enc Unused
  * @param b_enc    Encrypted output array b
  * @param c_enc    Encrypted input array c
  * @param chunkSize Size of each chunk
- * @param numChunks Number of chunks (calculated from streamArraySize)
  * @param idx1     Index array for gather
  * @param streamArraySize Number of elements
- * @param scalar   Plaintext scalar
+ * @param scalar_pt Precomputed plaintext scalar
  */
 void gatherScaleFHE(
-  CryptoContext<DCRTPoly> cc,
-  const PublicKey<DCRTPoly>& pk,
-  const std::vector<Ciphertext<DCRTPoly>>& a_enc,
-  std::vector<Ciphertext<DCRTPoly>>& b_enc,
-  const std::vector<ssize_t>& idx,
-  size_t chunkSize, size_t numChunks, ssize_t streamArraySize,
-  const lbcrypto::Plaintext& scalar_pt)
+    CryptoContext<DCRTPoly> cc,
+    std::vector<Ciphertext<DCRTPoly>>& b_enc,
+    const std::vector<Ciphertext<DCRTPoly>>& c_enc,
+    const std::vector<ssize_t>& idx1,
+    size_t chunkSize, size_t numChunks, ssize_t streamArraySize,
+    const lbcrypto::Plaintext& scalar_pt)
 {
-    // Process each logical element
-    #pragma omp parallel for
-    for (ssize_t j = 0; j < streamArraySize; ++j) {
-        if (j >= static_cast<ssize_t>(idx.size()) || idx[j] < 0 || idx[j] >= streamArraySize) {
-            continue; // Skip invalid indices
-        }
-        
-        // Map logical indices to chunk/slot pairs
-        size_t out_chunk = j / chunkSize;
-        size_t out_slot = j % chunkSize;
-        ssize_t src_idx = idx[j];
-        size_t src_chunk = src_idx / chunkSize;
-        size_t src_slot = src_idx % chunkSize;
-        
-        if (src_chunk >= numChunks || out_chunk >= numChunks) {
-            continue; // Skip out-of-bounds
-        }
-        
-        // Extract the source slot value
-        auto extracted = extractSlot(cc, a_enc[src_chunk], src_slot, chunkSize);
-        
-        // Scale the extracted value
-        auto scaled = cc->EvalMult(extracted, scalar_pt);
-        
-        // Insert into the output slot
-        auto inserted = insertSlotAtPosition(cc, scaled, out_slot);
-        
-        // Accumulate into output ciphertext (critical section for thread safety)
-        #pragma omp critical
-        {
-            b_enc[out_chunk] = cc->EvalAdd(b_enc[out_chunk], inserted);
+  #pragma omp parallel for
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        size_t start = chunk_idx * chunkSize;
+        size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
+        for (size_t j = start; j < end; ++j) {
+            if (j < idx1.size() && idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < c_enc.size() && j < b_enc.size()) {
+                b_enc[j] = cc->EvalMult(c_enc[idx1[j]], scalar_pt);
+            }
+            // else: skip or handle error as needed
         }
     }
 }

@@ -16,6 +16,7 @@
 #include <iostream>
 #include <omp.h>
 #include <string>
+#include <cstddef>
 
 #include "RSOpts.h"         // for streamArraySize, kernelName, etc.
 #include "RS_FHE_Config.h"  // STREAM_TYPE, CreateCryptoContext, GenerateKeyPair
@@ -27,6 +28,19 @@
 using namespace lbcrypto;
 using RSFHE::CreatePlaintextVector;
 using RSFHE::CreatePlaintextValue;
+
+// Estimate the size of a ciphertext in bytes
+size_t estimateCiphertextSize(const Ciphertext<DCRTPoly>& ct) {
+    if (!ct) return 0;
+    size_t total = 0;
+    const auto& polys = ct->GetElements();
+    for (const auto& poly : polys) {
+        for (size_t t = 0; t < poly.GetNumOfElements(); ++t) {
+            total += poly.GetElementAtIndex(t).GetLength() * sizeof(uint64_t);
+        }
+    }
+    return total;
+}
 
 /**************************************************
  * @brief Constructor for the RS_FHE_OMP class.
@@ -128,7 +142,7 @@ for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
     size_t chunk_end = std::min(chunk_start + chunkSize, static_cast<size_t>(streamArraySize));
     size_t currentChunkSize = chunk_end - chunk_start;
 
-    // Sequential initialization (like other backends)
+    // Sequential initialization
     std::vector<STREAM_TYPE> A(currentChunkSize), B(currentChunkSize), C(currentChunkSize);
     for (size_t i = 0; i < currentChunkSize; ++i) {
         size_t global_idx = chunk_start + i;
@@ -171,6 +185,13 @@ for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
       std::cout << std::endl;
     }
 }
+
+  // Print the estimated size of a single ciphertext after encryption
+  if (!a_enc.empty()) {
+      size_t sz = estimateCiphertextSize(a_enc[0]);
+      std::cout << "[DEBUG] Estimated size of a single ciphertext: " << sz << " bytes" << std::endl;
+  }
+
   std::cout << "[DEBUG] Finished allocateData()" << std::endl;
   return true;
 }
@@ -223,8 +244,8 @@ bool RS_FHE_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
       std::cout << "[DEBUG] Running kernel: " << BenchTypeTable[k].Notes << std::endl;
       
       // Run the specific kernel
-      if (!executeKernel(currentKernel, TIMES, MBPS, FLOPS, BYTES, FLOATOPS, chunkSize)) {
-        std::cerr << "RS_FHE_OMP::execute() - ERROR: failed to execute kernel " << k << std::endl;
+        if (!executeKernel(currentKernel, TIMES, MBPS, FLOPS, BYTES, FLOATOPS, chunkSize)) {
+          std::cerr << "RS_FHE_OMP::execute() - ERROR: failed to execute kernel " << k << std::endl;
         return false;
       }
     }
@@ -311,7 +332,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   // ------------------------------
   case RSBaseImpl::RS_GATHER_COPY: {
     startTime = mySecond();
-    gatherCopyFHE(a_enc, b_enc, c_enc,
+    gatherCopyFHE(a_enc, c_enc,
                   std::vector<ssize_t>(idx1, idx1 + streamArraySize),
                   chunkSize, numChunks, streamArraySize);
     endTime = mySecond();
@@ -325,12 +346,13 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   }
 
   case RSBaseImpl::RS_GATHER_SCALE: {
-    auto idx_vector = std::vector<ssize_t>(idx1, idx1 + streamArraySize);
-    initializeZeroCiphertexts(cc, kp.publicKey, b_enc, numChunks, chunkSize);
+    // auto idx_vector = std::vector<ssize_t>(idx1, idx1 + streamArraySize);
+    // initializeZeroCiphertexts(cc, kp.publicKey, b_enc, numChunks, chunkSize);
 
     startTime = mySecond();
-    gatherScaleFHE(cc, kp.publicKey, a_enc, b_enc,
-                   idx_vector, chunkSize, numChunks, streamArraySize, scalar_pt);
+    gatherScaleFHE(cc, b_enc, c_enc,
+                   std::vector<ssize_t>(idx1, idx1 + streamArraySize), 
+                   chunkSize, numChunks, streamArraySize, scalar_pt);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);

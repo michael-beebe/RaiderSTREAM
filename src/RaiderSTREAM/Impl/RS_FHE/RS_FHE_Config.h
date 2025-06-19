@@ -84,18 +84,29 @@ inline CryptoContext<DCRTPoly> CreateCryptoContext() {
 // -----------------------------------------------------------------------------
 
 inline KeyPair<DCRTPoly> GenerateKeyPair(
-    const CryptoContext<DCRTPoly>& cc) 
+  const CryptoContext<DCRTPoly>& cc) 
 {
+  std::cout << "[RS_FHE_Config][DEBUG] Entering GenerateKeyPair" << std::endl;
+
+  std::cout << "[RS_FHE_Config][DEBUG] Calling KeyGen()" << std::endl;
   auto kp = cc->KeyGen();
   if (!kp.good()) {
-    std::cerr << "[RS_FHE_Config] KeyGen failed!" << std::endl;
-    exit(1);
+  std::cerr << "[RS_FHE_Config] KeyGen failed!" << std::endl;
+  exit(1);
   }
+  std::cout << "[RS_FHE_Config][DEBUG] KeyGen successful" << std::endl;
+
+  std::cout << "[RS_FHE_Config][DEBUG] Calling EvalMultKeyGen()" << std::endl;
   cc->EvalMultKeyGen(kp.secretKey);
-  // Generate automorphism keys for all possible rotations up to chunk size
-  std::vector<unsigned int> rotations = {1, 2, 4, 8, 16};
-  cc->EvalAutomorphismKeyGen(kp.secretKey, rotations);
-  // cc->EvalSumKeyGen(kp.secretKey);
+  std::cout << "[RS_FHE_Config][DEBUG] EvalMultKeyGen successful" << std::endl;
+
+  // // In GenerateKeyPair function, expand the rotation vector
+  // std::vector<int32_t> rotations;
+  // for (int32_t i = 1; i < 100; ++i) {
+  //   rotations.push_back(i);
+  // }
+  // cc->EvalRotateKeyGen(kp.secretKey, rotations);
+
   std::cout << "[RS_FHE_Config] Key pair generated." << std::endl;
   return kp;
 }
