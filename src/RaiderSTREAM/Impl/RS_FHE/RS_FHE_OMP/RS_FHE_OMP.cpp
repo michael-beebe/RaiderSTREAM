@@ -51,13 +51,13 @@ size_t estimateCiphertextSize(const Ciphertext<DCRTPoly>& ct) {
  **************************************************/
 RS_FHE_OMP::RS_FHE_OMP(const RSOpts &opts)
     : RSBaseImpl("RS_FHE_OMP",
-                 opts.getKernelTypeFromName(opts.getKernelName())),
+                 opts.getKernelTypeFromName(opts.getKernelName())), opts(opts),
       kernelName(opts.getKernelName()),
       streamArraySize(opts.getStreamArraySize()), numPEs(opts.getNumPEs()),
       idx1(nullptr), idx2(nullptr), idx3(nullptr), scalar(3) {
 
     // Set OpenMP thread count from numPEs
-    omp_set_num_threads(numPEs);
+    // omp_set_num_threads(numPEs);
   std::string scheme;
 #if defined(CKKS)
     scheme = "CKKS";
@@ -188,8 +188,50 @@ for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
 
   // Print the estimated size of a single ciphertext after encryption
   if (!a_enc.empty()) {
-      size_t sz = estimateCiphertextSize(a_enc[0]);
-      std::cout << "[DEBUG] Estimated size of a single ciphertext: " << sz << " bytes" << std::endl;
+      size_t ct_size = estimateCiphertextSize(a_enc[0]);
+      std::cout << "[DEBUG] Estimated size of a single ciphertext: " << ct_size << " bytes" << std::endl;
+
+      opts.BYTES[RSBaseImpl::RS_SEQ_COPY]  = 2.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_SEQ_SCALE] = 2.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_SEQ_ADD]   = 3.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_SEQ_TRIAD] = 4.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_GATHER_COPY]  = 2.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_GATHER_SCALE] = 2.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_GATHER_ADD]   = 3.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_GATHER_TRIAD] = 4.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_SCATTER_COPY]  = 2.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_SCATTER_SCALE] = 2.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_SCATTER_ADD]   = 3.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_SCATTER_TRIAD] = 4.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_SG_COPY]  = 2.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_SG_SCALE] = 2.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_SG_ADD]   = 3.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_SG_TRIAD] = 4.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_CENTRAL_COPY]  = 2.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_CENTRAL_SCALE] = 2.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_CENTRAL_ADD]   = 3.0 * numChunks * ct_size;
+      opts.BYTES[RSBaseImpl::RS_CENTRAL_TRIAD] = 4.0 * numChunks * ct_size;
+
+      opts.FLOATOPS[RSBaseImpl::RS_SEQ_COPY]  = 0.0;
+      opts.FLOATOPS[RSBaseImpl::RS_SEQ_SCALE] = 1.0;
+      opts.FLOATOPS[RSBaseImpl::RS_SEQ_ADD]   = 1.0;
+      opts.FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD] = 2.0;
+      opts.FLOATOPS[RSBaseImpl::RS_GATHER_COPY]  = 0.0;
+      opts.FLOATOPS[RSBaseImpl::RS_GATHER_SCALE] = 1.0;
+      opts.FLOATOPS[RSBaseImpl::RS_GATHER_ADD]   = 1.0;
+      opts.FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD] = 2.0;
+      opts.FLOATOPS[RSBaseImpl::RS_SCATTER_COPY]  = 0.0;
+      opts.FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE] = 1.0;
+      opts.FLOATOPS[RSBaseImpl::RS_SCATTER_ADD]   = 1.0;
+      opts.FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD] = 2.0;
+      opts.FLOATOPS[RSBaseImpl::RS_SG_COPY]  = 0.0;
+      opts.FLOATOPS[RSBaseImpl::RS_SG_SCALE] = 1.0;
+      opts.FLOATOPS[RSBaseImpl::RS_SG_ADD]   = 1.0;
+      opts.FLOATOPS[RSBaseImpl::RS_SG_TRIAD] = 2.0;
+      opts.FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY]  = 0.0;
+      opts.FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE] = 1.0;
+      opts.FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD]   = 1.0;
+      opts.FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD] = 2.0;
   }
 
   std::cout << "[DEBUG] Finished allocateData()" << std::endl;

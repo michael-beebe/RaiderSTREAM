@@ -90,6 +90,7 @@ private:
                      double *BYTES, double *FLOATOPS, size_t chunkSize);
 
 private:
+  RSOpts                         opts;          
   std::string                     kernelName;      ///< name of kernel to run
   ssize_t                         streamArraySize; ///< total array length
   int                             numPEs;          ///< number of OpenMP threads
