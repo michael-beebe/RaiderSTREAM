@@ -346,8 +346,8 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
     seqScaleFHE(cc, b_enc, c_enc, numChunks, scalar_pt);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[kType], runTime);
-    flops = calculateFLOPS(FLOATOPS[kType], runTime);
+    mbps = calculateMBPS(opts.BYTES[kType], runTime);
+    flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
     TIMES[kType] = runTime;
     MBPS[kType] = mbps;
     FLOPS[kType] = flops;
@@ -359,8 +359,8 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
     seqAddFHE(cc, a_enc, b_enc, c_enc, numChunks);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[kType], runTime);
-    flops = calculateFLOPS(FLOATOPS[kType], runTime);
+    mbps = calculateMBPS(opts.BYTES[kType], runTime);
+    flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
     TIMES[kType] = runTime;
     MBPS[kType] = mbps;
     FLOPS[kType] = flops;
@@ -372,8 +372,8 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
     seqTriadFHE(cc, a_enc, b_enc, c_enc, numChunks, scalar_pt);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[kType], runTime);
-    flops = calculateFLOPS(FLOATOPS[kType], runTime);
+    mbps = calculateMBPS(opts.BYTES[kType], runTime);
+    flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
     TIMES[kType] = runTime;
     MBPS[kType] = mbps;
     FLOPS[kType] = flops;
