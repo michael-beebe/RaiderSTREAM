@@ -191,6 +191,17 @@ for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
       size_t ct_size = estimateCiphertextSize(a_enc[0]);
       std::cout << "[DEBUG] Estimated size of a single ciphertext: " << ct_size << " bytes" << std::endl;
 
+      size_t manual_ct_size = 0;
+      for (const auto& poly : a_enc[0]->GetElements()) {
+          for (size_t t = 0; t < poly.GetNumOfElements(); ++t) {
+              manual_ct_size += poly.GetElementAtIndex(t).GetLength() * sizeof(uint64_t);
+          }
+      }
+      std::cout << "[DEBUG] True manual ct_size: " << manual_ct_size << " bytes" << std::endl;
+      const auto& polys = a_enc[0]->GetElements();
+      size_t numRnsTowers = polys[0].GetNumOfElements();
+      std::cout << "[DEBUG] numRnsTowers: " << numRnsTowers << std::endl;
+
       opts.BYTES[RSBaseImpl::RS_SEQ_COPY]  = 2.0 * numChunks * ct_size;
       opts.BYTES[RSBaseImpl::RS_SEQ_SCALE] = 2.0 * numChunks * ct_size;
       opts.BYTES[RSBaseImpl::RS_SEQ_ADD]   = 3.0 * numChunks * ct_size;
@@ -318,11 +329,11 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
     endTime = mySecond();
     std::cout << "[DEBUG] Finished seqCopyFHE" << std::endl;
     runTime = calculateRunTime(startTime, endTime);
-    std::cout << "[DEBUG] calculateMBPS(" << BYTES[kType] << ", " << runTime << ") = " << calculateMBPS(BYTES[kType], runTime) << std::endl;
-    std::cout << "[DEBUG] calculateFLOPS(" << FLOATOPS[kType] << ", " << runTime << ") = " << calculateFLOPS(FLOATOPS[kType], runTime) << std::endl;
-    mbps = calculateMBPS(BYTES[kType], runTime);
+    std::cout << "[DEBUG] calculateMBPS(" << opts.BYTES[kType] << ", " << runTime << ") = " << calculateMBPS(opts.BYTES[kType], runTime) << std::endl;
+    std::cout << "[DEBUG] calculateFLOPS(" << opts.FLOATOPS[kType] << ", " << runTime << ") = " << calculateFLOPS(opts.FLOATOPS[kType], runTime) << std::endl;
+    mbps = calculateMBPS(opts.BYTES[kType], runTime);
     std::cout << "[DEBUG] MBPS: " << mbps << std::endl;
-    flops = calculateFLOPS(FLOATOPS[kType], runTime);
+    flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
     std::cout << "[DEBUG] FLOPS: " << flops << std::endl;
     TIMES[kType] = runTime;
     MBPS[kType] = mbps;
