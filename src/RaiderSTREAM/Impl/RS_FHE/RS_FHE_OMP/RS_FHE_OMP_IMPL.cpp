@@ -184,10 +184,18 @@ void seqAddFHE(
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
   size_t numChunks)
 {
-    #pragma omp parallel for
+    size_t bytesTransferredTotal = 0;
+    #pragma omp parallel for reduction(+:bytesTransferredTotal)
     for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
-        c_enc[chunk_idx] = EvalAddOperation(cc, a_enc[chunk_idx], b_enc[chunk_idx]);
+        c_enc[chunk_idx] = a_enc[chunk_idx] + b_enc[chunk_idx];
+        size_t bytesTransferred =
+            estimateCiphertextSize(a_enc[chunk_idx]) +
+            estimateCiphertextSize(b_enc[chunk_idx]) +
+            estimateCiphertextSize(c_enc[chunk_idx]);
+        bytesTransferredTotal += bytesTransferred;
+        printf("Transferred %zu bytes for chunk %zu\n", bytesTransferred, chunk_idx);
     }
+    printf("Total bytes transferred: %zu\n", bytesTransferredTotal);
 }
 
 /**

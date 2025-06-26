@@ -359,8 +359,12 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
     seqAddFHE(cc, a_enc, b_enc, c_enc, numChunks);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
+    std::cout << "[DEBUG] calculateMBPS(" << opts.BYTES[kType] << ", " << runTime << ") = " << calculateMBPS(opts.BYTES[kType], runTime) << std::endl;
+    std::cout << "[DEBUG] calculateFLOPS(" << opts.FLOATOPS[kType] << ", " << runTime << ") = " << calculateFLOPS(opts.FLOATOPS[kType], runTime) << std::endl;
     mbps = calculateMBPS(opts.BYTES[kType], runTime);
+    std::cout << "[DEBUG] MBPS: " << mbps << std::endl;
     flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
+    std::cout << "[DEBUG] FLOPS: " << flops << std::endl;
     TIMES[kType] = runTime;
     MBPS[kType] = mbps;
     FLOPS[kType] = flops;
