@@ -78,10 +78,19 @@ cd build
 #   ../
 
 # --- OpenMP + FHE ---
+# cmake \
+#   -DENABLE_FHE_OMP=ON \
+#   -DSCHEME=BFV \
+#   -DCMAKE_PREFIX_PATH=$HOME/software/openfhe \
+#   ../
+
+# --- MPI + OpenMP + FHE ---
 cmake \
-  -DENABLE_FHE_OMP=ON \
+  -DENABLE_FHE_MPI=ON \
   -DSCHEME=BFV \
   -DCMAKE_PREFIX_PATH=$HOME/software/openfhe \
+  -DCMAKE_C_COMPILER=`which mpicc` \
+  -DCMAKE_CXX_COMPILER=`which mpic++` \
   ../
 
 # --- Build the project

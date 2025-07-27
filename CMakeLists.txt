@@ -16,6 +16,10 @@ option(ENABLE_FHE_OMP
        "Enable the FHE-over-OpenMP backend (self-contained in RS_FHE_OMP/)"
        OFF)
 
+option(ENABLE_FHE_MPI
+       "Enable the FHE-over-MPI+OpenMP backend (self-contained in RS_FHE_MPI/)"
+       OFF)
+
 function(use_shmem)
     if (SHMEM_1_5)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SHMEM_1_5_")
@@ -61,7 +65,7 @@ if( RS_LINKER_FLAGS )
   message(STATUS "USING MACHINE-SPECIFIC LINKER_FLAGS: ${RS_LINKER_FLAGS}")
 endif()
 
-if(NOT ENABLE_FHE_OMP)
+if(NOT ENABLE_FHE_OMP AND NOT ENABLE_FHE_MPI)
   set(STREAM_TYPE "double" CACHE STRING "Data type to use for kernels.")
   add_definitions(-DSTREAM_TYPE=${STREAM_TYPE})
 endif()
@@ -205,6 +209,41 @@ if(ENABLE_FHE_OMP)
   message(STATUS "Selected FHE Scheme: ${SCHEME}, STREAM_TYPE is set accordingly.")
 else()
   message(STATUS "DISABLING OpenFHE + OpenMP FHE Implementation")
+endif()
+
+if(ENABLE_FHE_MPI)
+  find_package(MPI REQUIRED)
+  find_package(OpenMP REQUIRED)
+  find_package(OpenFHE CONFIG REQUIRED)
+  if (MPI_FOUND AND OPENMP_FOUND)
+    # Compile everything with C++17
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 ${RS_CXXFLAGS}")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O0 ${RS_CXXFLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -D_ENABLE_FHE_MPI_")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+    
+    # --- FHE Scheme Selection (same as FHE_OMP)
+    set(SCHEME "CKKS" CACHE STRING "Select FHE scheme: CKKS, BFV, or BGV")
+    set_property(CACHE SCHEME PROPERTY STRINGS "CKKS" "BFV" "BGV")
+
+    if(SCHEME STREQUAL "CKKS")
+      add_definitions(-DCKKS -DSTREAM_TYPE=double)
+    elseif(SCHEME STREQUAL "BFV")
+      add_definitions(-DBFV -DSTREAM_TYPE=int64_t)
+    elseif(SCHEME STREQUAL "BGV")
+      add_definitions(-DBGV -DSTREAM_TYPE=int64_t)
+    else()
+      message(FATAL_ERROR "Invalid scheme '${SCHEME}'. Choose CKKS, BFV, or BGV.")
+    endif()
+
+    message(STATUS "ENABLING OpenFHE + MPI + OpenMP FHE Implementation")
+    message(STATUS "Selected FHE Scheme: ${SCHEME}, STREAM_TYPE is set accordingly.")
+  endif()
+else()
+  message(STATUS "DISABLING OpenFHE + MPI + OpenMP FHE Implementation")
 endif()
 
 # -- hybrids

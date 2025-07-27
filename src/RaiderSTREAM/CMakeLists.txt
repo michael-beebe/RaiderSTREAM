@@ -53,6 +53,12 @@ if (ENABLE_FHE_OMP)
   target_link_libraries(raiderstream PRIVATE RS_FHE_OMP)
 endif()
 
+if (ENABLE_FHE_MPI)
+  link_directories(${OpenFHE_LIBDIR})
+  add_executable(raiderstream ${RSSrcs} $<TARGET_OBJECTS:RS_FHE_MPI_OBJS>)
+  target_link_libraries(raiderstream PRIVATE RS_FHE_MPI)
+endif()
+
 
 install(TARGETS raiderstream DESTINATION bin)
 

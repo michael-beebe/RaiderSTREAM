@@ -68,4 +68,8 @@ if (ENABLE_FHE_OMP)
   add_subdirectory(RS_FHE_OMP)
 endif()
 
+if (ENABLE_FHE_MPI)
+  add_subdirectory(RS_FHE_MPI)
+endif()
+
 message(STATUS "RS_FHE library built successfully.")

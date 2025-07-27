@@ -49,6 +49,10 @@
 #include "Impl/RS_FHE/RS_FHE_OMP/RS_FHE_OMP.h"
 #endif
 
+#ifdef _ENABLE_FHE_MPI_
+#include "Impl/RS_FHE/RS_FHE_MPI/RS_FHE_MPI.h"
+#endif
+
 #ifdef _ENABLE_MPI_CUDA_
 #include "Impl/RS_MPI_CUDA/RS_MPI_CUDA.cuh"
 #endif
@@ -601,6 +605,83 @@ void runBenchFHEOMP(RSOpts *Opts) {
 }
 #endif
 
+#ifdef _ENABLE_FHE_MPI_
+void runBenchFHEMPI(RSOpts *Opts) {
+    std::cout << "[DEBUG] Entering runBenchFHEMPI" << std::endl;
+    
+    /* Initialize MPI */
+    MPI_Init(NULL, NULL);
+    int myRank = -1;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    
+    /* Initialize OpenMP */
+    omp_get_num_threads();
+    
+    /* Initialize the RS_FHE_MPI object */
+    RS_FHE_MPI *RS = new RS_FHE_MPI(*Opts);
+    if (!RS) {
+        std::cout << "[ERROR] COULD NOT ALLOCATE RS_FHE_MPI OBJECT" << std::endl;
+        MPI_Finalize();
+        return;
+    }
+    std::cout << "[DEBUG] Allocated RS_FHE_MPI object" << std::endl;
+
+    /* Allocate Data */
+    if (!RS->allocateData()) {
+        std::cout << "[ERROR] COULD NOT ALLOCATE MEMORY FOR RS_FHE_MPI" << std::endl;
+        MPI_Finalize();
+        delete RS;
+        return;
+    }
+    std::cout << "[DEBUG] Data allocated for RS_FHE_MPI" << std::endl;
+
+    /* Execute the benchmark */
+    if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES, Opts->FLOATOPS)) {
+        std::cout << "[ERROR] COULD NOT EXECUTE BENCHMARK FOR RS_FHE_MPI" << std::endl;
+        RS->freeData();
+        MPI_Finalize();
+        delete RS;
+        return;
+    }
+
+    /* Free the data */
+    if (!RS->freeData()) {
+        std::cout << "[ERROR] COULD NOT FREE THE MEMORY FOR RS_FHE_MPI" << std::endl;
+        MPI_Finalize();
+        delete RS;
+        return;
+    }
+    std::cout << "[DEBUG] Data freed for RS_FHE_MPI" << std::endl;
+
+    /* Benchmark output */
+    if (myRank == 0) {
+        Opts->printLogo();
+        Opts->printOpts();
+        
+        #pragma omp parallel
+        {
+            #pragma omp single
+            {
+                std::cout << "RUNNING WITH NUM_THREADS = " << omp_get_num_threads() << std::endl;
+            }
+        }
+        
+        RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
+        bool headerPrinted = false;
+        for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
+            RSBaseImpl::RSKernelType kernelType = static_cast<RSBaseImpl::RSKernelType>(i);
+            std::string kernelName = BenchTypeTable[i].Notes;
+            printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType, runKernelType, headerPrinted);
+        }
+    }
+
+    /* Free the RS_FHE_MPI object, finalize MPI */
+    MPI_Finalize();
+    delete RS;
+    std::cout << "[DEBUG] Exiting runBenchFHEMPI" << std::endl;
+}
+#endif
+
 #ifdef _ENABLE_MPI_CUDA_
 /**
  * @brief Run hybrid MPI+CUDA version of benchmark
@@ -933,6 +1014,10 @@ int main(int argc, char **argv) {
 
 #ifdef _ENABLE_FHE_OMP_
     runBenchFHEOMP(Opts);
+#endif
+
+#ifdef _ENABLE_FHE_MPI_
+    runBenchFHEMPI(Opts);
 #endif
 
 #ifdef _ENABLE_MPI_CUDA_
