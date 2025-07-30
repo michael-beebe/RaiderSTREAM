@@ -357,16 +357,126 @@ bool RS_FHE_MPI::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES, do
     }
 
     // ------------------------------
-    // GATHER KERNELS (TODO: Implement)
+    // GATHER KERNELS (chunk-based to avoid rotation key memory issues)
     // ------------------------------
-    case RSBaseImpl::RS_GATHER_COPY:
-    case RSBaseImpl::RS_GATHER_SCALE:
-    case RSBaseImpl::RS_GATHER_ADD:
-    case RSBaseImpl::RS_GATHER_TRIAD:
+    case RSBaseImpl::RS_GATHER_COPY: {
+        std::cout << "[DEBUG] Rank " << myRank << ": Calling gatherCopyFHE_MPI" << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        startTime = MPI_Wtime();
+        gatherCopyFHE_MPI(a_enc, c_enc, idx1, numChunks);
+        MPI_Barrier(MPI_COMM_WORLD);
+        endTime = MPI_Wtime();
+        std::cout << "[DEBUG] Rank " << myRank << ": Finished gatherCopyFHE_MPI" << std::endl;
+        
+        runTime = calculateRunTime(startTime, endTime);
+        mbps = calculateMBPS(opts.BYTES[kType], runTime);
+        flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
+
+        localRunTime = runTime;
+        localMbps = mbps;
+        localFlops = flops;
+
+        MPI_Reduce(&localRunTime, &TIMES[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localMbps, &MBPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localFlops, &FLOPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        break;
+    }
+
+    case RSBaseImpl::RS_GATHER_SCALE: {
+        std::cout << "[DEBUG] Rank " << myRank << ": Calling gatherScaleFHE_MPI" << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        startTime = MPI_Wtime();
+        gatherScaleFHE_MPI(cc, b_enc, c_enc, idx1, numChunks, scalar_pt);
+        MPI_Barrier(MPI_COMM_WORLD);
+        endTime = MPI_Wtime();
+        std::cout << "[DEBUG] Rank " << myRank << ": Finished gatherScaleFHE_MPI" << std::endl;
+        
+        runTime = calculateRunTime(startTime, endTime);
+        mbps = calculateMBPS(opts.BYTES[kType], runTime);
+        flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
+
+        localRunTime = runTime;
+        localMbps = mbps;
+        localFlops = flops;
+
+        MPI_Reduce(&localRunTime, &TIMES[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localMbps, &MBPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localFlops, &FLOPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        break;
+    }
+
+    case RSBaseImpl::RS_GATHER_ADD: {
+        std::cout << "[DEBUG] Rank " << myRank << ": Calling gatherAddFHE_MPI" << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        startTime = MPI_Wtime();
+        gatherAddFHE_MPI(cc, a_enc, b_enc, c_enc, idx1, idx2, numChunks);
+        MPI_Barrier(MPI_COMM_WORLD);
+        endTime = MPI_Wtime();
+        std::cout << "[DEBUG] Rank " << myRank << ": Finished gatherAddFHE_MPI" << std::endl;
+        
+        runTime = calculateRunTime(startTime, endTime);
+        mbps = calculateMBPS(opts.BYTES[kType], runTime);
+        flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
+
+        localRunTime = runTime;
+        localMbps = mbps;
+        localFlops = flops;
+
+        MPI_Reduce(&localRunTime, &TIMES[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localMbps, &MBPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localFlops, &FLOPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        break;
+    }
+
+    case RSBaseImpl::RS_GATHER_TRIAD: {
+        std::cout << "[DEBUG] Rank " << myRank << ": Calling gatherTriadFHE_MPI" << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        startTime = MPI_Wtime();
+        gatherTriadFHE_MPI(cc, a_enc, b_enc, c_enc, idx1, idx2, numChunks, scalar_pt);
+        MPI_Barrier(MPI_COMM_WORLD);
+        endTime = MPI_Wtime();
+        std::cout << "[DEBUG] Rank " << myRank << ": Finished gatherTriadFHE_MPI" << std::endl;
+        
+        runTime = calculateRunTime(startTime, endTime);
+        mbps = calculateMBPS(opts.BYTES[kType], runTime);
+        flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
+
+        localRunTime = runTime;
+        localMbps = mbps;
+        localFlops = flops;
+
+        MPI_Reduce(&localRunTime, &TIMES[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localMbps, &MBPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localFlops, &FLOPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        break;
+    }
+
     // ------------------------------
-    // SCATTER KERNELS (TODO: Implement)
+    // SCATTER KERNELS (chunk-based to avoid rotation key memory issues)
     // ------------------------------
-    case RSBaseImpl::RS_SCATTER_COPY:
+    case RSBaseImpl::RS_SCATTER_COPY: {
+        std::cout << "[DEBUG] Rank " << myRank << ": Calling scatterCopyFHE_MPI" << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        startTime = MPI_Wtime();
+        scatterCopyFHE_MPI(a_enc, c_enc, idx1, numChunks);
+        MPI_Barrier(MPI_COMM_WORLD);
+        endTime = MPI_Wtime();
+        std::cout << "[DEBUG] Rank " << myRank << ": Finished scatterCopyFHE_MPI" << std::endl;
+        
+        runTime = calculateRunTime(startTime, endTime);
+        mbps = calculateMBPS(opts.BYTES[kType], runTime);
+        flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
+
+        localRunTime = runTime;
+        localMbps = mbps;
+        localFlops = flops;
+
+        MPI_Reduce(&localRunTime, &TIMES[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localMbps, &MBPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localFlops, &FLOPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        break;
+    }
+
     case RSBaseImpl::RS_SCATTER_SCALE:
     case RSBaseImpl::RS_SCATTER_ADD:
     case RSBaseImpl::RS_SCATTER_TRIAD:
