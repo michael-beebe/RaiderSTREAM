@@ -6,14 +6,19 @@
 
 #include <vector>
 #include <cstddef>
+#include <iostream>
+#include <algorithm>
 #include <mpi.h>
 #include <omp.h>
 #include "RSOpts.h"
 #include "RSBaseImpl.h"
 #include "RS_FHE_Config.h"
+#include "RS_FHE.h"
 #include "openfhe.h"
 
 using namespace lbcrypto;
+using RSFHE::CreatePlaintextVector;
+using RSFHE::CreatePlaintextValue;
 
 size_t estimateCiphertextSize(const Ciphertext<DCRTPoly>& ct);
 
@@ -27,6 +32,9 @@ public:
   bool freeData() override;
 
 private:
+  bool executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES, double *MBPS, double *FLOPS, 
+                     double *BYTES, double *FLOATOPS, size_t numChunks, int myRank);
+  
   RSOpts opts;
   std::string kernelName;
   ssize_t streamArraySize;
@@ -41,6 +49,9 @@ private:
 
 // ---- Kernel function prototypes (free functions, not class members) ----
 void seqCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc, std::vector<Ciphertext<DCRTPoly>> &c_enc, size_t numChunks);
+void seqScaleFHE_MPI(CryptoContext<DCRTPoly> cc, std::vector<Ciphertext<DCRTPoly>> &b_enc, const std::vector<Ciphertext<DCRTPoly>> &c_enc, size_t numChunks, const lbcrypto::Plaintext &scalar_pt);
+void seqAddFHE_MPI(CryptoContext<DCRTPoly> cc, const std::vector<Ciphertext<DCRTPoly>> &a_enc, const std::vector<Ciphertext<DCRTPoly>> &b_enc, std::vector<Ciphertext<DCRTPoly>> &c_enc, size_t numChunks);
+void seqTriadFHE_MPI(CryptoContext<DCRTPoly> cc, std::vector<Ciphertext<DCRTPoly>> &a_enc, const std::vector<Ciphertext<DCRTPoly>> &b_enc, const std::vector<Ciphertext<DCRTPoly>> &c_enc, size_t numChunks, const lbcrypto::Plaintext &scalar_pt);
 // ... declare all other kernel prototypes here, matching the RS_FHE_OMP.h style, but with _MPI suffix
 
 #endif // RS_FHE_MPI_H
