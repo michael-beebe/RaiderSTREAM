@@ -407,4 +407,31 @@ void scatterCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc,
     printf("[DEBUG] scatterCopyFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
 }
 
+void scatterScaleFHE_MPI(CryptoContext<DCRTPoly> cc,
+                         std::vector<Ciphertext<DCRTPoly>> &b_enc,
+                         const std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                         const ssize_t *idx1, size_t numChunks,
+                         const lbcrypto::Plaintext &scalar_pt) {
+    size_t bytesTransferredTotal = 0;
+
+    #pragma omp parallel for reduction(+:bytesTransferredTotal)
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        // Chunk-level scatter scale: b_enc[idx1[chunk_idx]] = scalar * c_enc[chunk_idx]
+        if (idx1[chunk_idx] >= 0 && static_cast<size_t>(idx1[chunk_idx]) < b_enc.size()) {
+            b_enc[idx1[chunk_idx]] = cc->EvalMult(c_enc[chunk_idx], scalar_pt);
+
+            size_t bytesTransferred = estimateCiphertextSize(c_enc[chunk_idx]) +
+                                     estimateCiphertextSize(b_enc[idx1[chunk_idx]]);
+            bytesTransferredTotal += bytesTransferred;
+
+            if (chunk_idx < 3) {
+                printf("[DEBUG] scatterScaleFHE_MPI: Transferred %zu bytes for chunk %zu (idx=%ld)\n",
+                       bytesTransferred, chunk_idx, idx1[chunk_idx]);
+            }
+        }
+    }
+
+    printf("[DEBUG] scatterScaleFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
+}
+
 // TODO: Add stubs for other kernels as needed
