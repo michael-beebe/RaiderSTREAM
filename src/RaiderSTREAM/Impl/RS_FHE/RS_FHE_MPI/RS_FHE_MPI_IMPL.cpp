@@ -407,6 +407,19 @@ void scatterCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc,
     printf("[DEBUG] scatterCopyFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
 }
 
+/** * @brief Homomorphic "scatter-scale" kernel for MPI execution (chunk-based).
+ * 
+ * Performs scatter operations at the ciphertext chunk level to avoid rotation key memory issues.
+ * Each MPI rank processes only its local chunks, avoiding cross-rank slot-level rotations.
+ * Uses OpenMP for intra-node parallelism.
+ * 
+ * @param cc         CryptoContext for FHE operations
+ * @param b_enc      Encrypted output array b (destination chunks to scatter to)
+ * @param c_enc      Encrypted input array c (source chunks)
+ * @param idx1       Index array for scattering chunk indices
+ * @param numChunks  Number of chunks to process (local to this rank)
+ * @param scalar_pt  Plaintext scalar for multiplication
+ */
 void scatterScaleFHE_MPI(CryptoContext<DCRTPoly> cc,
                          std::vector<Ciphertext<DCRTPoly>> &b_enc,
                          const std::vector<Ciphertext<DCRTPoly>> &c_enc,
@@ -432,6 +445,35 @@ void scatterScaleFHE_MPI(CryptoContext<DCRTPoly> cc,
     }
 
     printf("[DEBUG] scatterScaleFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
+}
+
+void scatterAddFHE_MPI(CryptoContext<DCRTPoly> cc,
+                       const std::vector<Ciphertext<DCRTPoly>> &a_enc,
+                       const std::vector<Ciphertext<DCRTPoly>> &b_enc,
+                       std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                       const ssize_t *idx1, const ssize_t *idx2, size_t numChunks) {
+    size_t bytesTransferredTotal = 0;
+
+    #pragma omp parallel for reduction(+:bytesTransferredTotal)
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        // Chunk-level scatter add: c_enc[idx1[chunk_idx]] = a_enc[chunk_idx] + b_enc[idx2[chunk_idx]]
+        if (idx1[chunk_idx] >= 0 && static_cast<size_t>(idx1[chunk_idx]) < c_enc.size() &&
+            idx2[chunk_idx] >= 0 && static_cast<size_t>(idx2[chunk_idx]) < b_enc.size()) {
+            c_enc[idx1[chunk_idx]] = RSFHE::EvalAddOperation(cc, a_enc[chunk_idx], b_enc[idx2[chunk_idx]]);
+
+            size_t bytesTransferred = estimateCiphertextSize(a_enc[chunk_idx]) +
+                                     estimateCiphertextSize(b_enc[idx2[chunk_idx]]) +
+                                     estimateCiphertextSize(c_enc[idx1[chunk_idx]]);
+            bytesTransferredTotal += bytesTransferred;
+
+            if (chunk_idx < 3) {
+                printf("[DEBUG] scatterAddFHE_MPI: Transferred %zu bytes for chunk %zu (idx1=%ld, idx2=%ld)\n",
+                       bytesTransferred, chunk_idx, idx1[chunk_idx], idx2[chunk_idx]);
+            }
+        }
+    }
+
+    printf("[DEBUG] scatterAddFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
 }
 
 // TODO: Add stubs for other kernels as needed

@@ -500,7 +500,30 @@ bool RS_FHE_MPI::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES, do
         break;
     }
 
-    case RSBaseImpl::RS_SCATTER_ADD:
+    
+    case RSBaseImpl::RS_SCATTER_ADD: {
+        std::cout << "[DEBUG] Rank " << myRank << ": Calling scatterAddFHE_MPI" << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        startTime = MPI_Wtime();
+        scatterAddFHE_MPI(cc, a_enc, b_enc, c_enc, idx1, idx2, numChunks);
+        MPI_Barrier(MPI_COMM_WORLD);
+        endTime = MPI_Wtime();
+        std::cout << "[DEBUG] Rank " << myRank << ": Finished scatterAddFHE_MPI" << std::endl;
+
+        runTime = calculateRunTime(startTime, endTime);
+        mbps = calculateMBPS(opts.BYTES[kType], runTime);
+        flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
+
+        localRunTime = runTime;
+        localMbps = mbps;
+        localFlops = flops;
+
+        MPI_Reduce(&localRunTime, &TIMES[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localMbps, &MBPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localFlops, &FLOPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        break;
+    }
+
     case RSBaseImpl::RS_SCATTER_TRIAD:
     // ------------------------------
     // SCATTER-GATHER KERNELS (TODO: Implement)
