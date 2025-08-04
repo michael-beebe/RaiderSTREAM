@@ -508,5 +508,118 @@ void scatterTriadFHE_MPI(CryptoContext<DCRTPoly> cc,
 
     printf("[DEBUG] scatterTriadFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
 }
+void sgCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc,
+                   std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                   const ssize_t *idx1, const ssize_t *idx2, size_t numChunks) {
+    size_t bytesTransferredTotal = 0;
+
+    #pragma omp parallel for reduction(+:bytesTransferredTotal)
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        // Scatter-gather copy: c_enc[idx2[chunk_idx]] = a_enc[idx1[chunk_idx]]
+        if (idx1[chunk_idx] >= 0 && static_cast<size_t>(idx1[chunk_idx]) < a_enc.size() &&
+            idx2[chunk_idx] >= 0 && static_cast<size_t>(idx2[chunk_idx]) < c_enc.size()) {
+            c_enc[idx2[chunk_idx]] = a_enc[idx1[chunk_idx]];
+
+            size_t bytesTransferred = estimateCiphertextSize(a_enc[idx1[chunk_idx]]) +
+                                     estimateCiphertextSize(c_enc[idx2[chunk_idx]]);
+            bytesTransferredTotal += bytesTransferred;
+
+            if (chunk_idx < 3) {
+                printf("[DEBUG] sgCopyFHE_MPI: Transferred %zu bytes for chunk %zu (idx1=%ld, idx2=%ld)\n",
+                       bytesTransferred, chunk_idx, idx1[chunk_idx], idx2[chunk_idx]);
+            }
+        }
+    }
+
+    printf("[DEBUG] sgCopyFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
+}
+void sgScaleFHE_MPI(CryptoContext<DCRTPoly> cc,
+                    std::vector<Ciphertext<DCRTPoly>> &b_enc,
+                    const std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                    const ssize_t *idx1, const ssize_t *idx2, size_t numChunks,
+                    const lbcrypto::Plaintext &scalar_pt) {
+    size_t bytesTransferredTotal = 0;
+
+    #pragma omp parallel for reduction(+:bytesTransferredTotal)
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        // Scatter-gather scale: b_enc[idx2[chunk_idx]] = scalar * c_enc[idx1[chunk_idx]]
+        if (idx1[chunk_idx] >= 0 && static_cast<size_t>(idx1[chunk_idx]) < c_enc.size() &&
+            idx2[chunk_idx] >= 0 && static_cast<size_t>(idx2[chunk_idx]) < b_enc.size()) {
+            b_enc[idx2[chunk_idx]] = cc->EvalMult(c_enc[idx1[chunk_idx]], scalar_pt);
+
+            size_t bytesTransferred = estimateCiphertextSize(c_enc[idx1[chunk_idx]]) +
+                                     estimateCiphertextSize(b_enc[idx2[chunk_idx]]);
+            bytesTransferredTotal += bytesTransferred;
+
+            if (chunk_idx < 3) {
+                printf("[DEBUG] sgScaleFHE_MPI: Transferred %zu bytes for chunk %zu (idx1=%ld, idx2=%ld)\n",
+                       bytesTransferred, chunk_idx, idx1[chunk_idx], idx2[chunk_idx]);
+            }
+        }
+    }
+
+    printf("[DEBUG] sgScaleFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
+}
+
+void sgAddFHE_MPI(CryptoContext<DCRTPoly> cc,
+                  const std::vector<Ciphertext<DCRTPoly>> &a_enc,
+                  const std::vector<Ciphertext<DCRTPoly>> &b_enc,
+                  std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                  const ssize_t *idx1, const ssize_t *idx2, size_t numChunks) {
+    size_t bytesTransferredTotal = 0;
+
+    #pragma omp parallel for reduction(+:bytesTransferredTotal)
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        // Scatter-gather add: c_enc[idx2[chunk_idx]] = a_enc[idx1[chunk_idx]] + b_enc[chunk_idx]
+        if (idx1[chunk_idx] >= 0 && static_cast<size_t>(idx1[chunk_idx]) < a_enc.size() &&
+            idx2[chunk_idx] >= 0 && static_cast<size_t>(idx2[chunk_idx]) < c_enc.size() &&
+            chunk_idx < b_enc.size()) {
+            c_enc[idx2[chunk_idx]] = RSFHE::EvalAddOperation(cc, a_enc[idx1[chunk_idx]], b_enc[chunk_idx]);
+
+            size_t bytesTransferred = estimateCiphertextSize(a_enc[idx1[chunk_idx]]) +
+                                     estimateCiphertextSize(b_enc[chunk_idx]) +
+                                     estimateCiphertextSize(c_enc[idx2[chunk_idx]]);
+            bytesTransferredTotal += bytesTransferred;
+
+            if (chunk_idx < 3) {
+                printf("[DEBUG] sgAddFHE_MPI: Transferred %zu bytes for chunk %zu (idx1=%ld, idx2=%ld)\n",
+                       bytesTransferred, chunk_idx, idx1[chunk_idx], idx2[chunk_idx]);
+            }
+        }
+    }
+
+    printf("[DEBUG] sgAddFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
+}
+void sgTriadFHE_MPI(CryptoContext<DCRTPoly> cc,
+                    std::vector<Ciphertext<DCRTPoly>> &a_enc,
+                    const std::vector<Ciphertext<DCRTPoly>> &b_enc,
+                    const std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                    const ssize_t *idx1, const ssize_t *idx2, size_t numChunks,
+                    const lbcrypto::Plaintext &scalar_pt) {
+    size_t bytesTransferredTotal = 0;
+
+    #pragma omp parallel for reduction(+:bytesTransferredTotal)
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        // Scatter-gather triad: a_enc[idx2[chunk_idx]] = b_enc[chunk_idx] + scalar * c_enc[idx1[chunk_idx]]
+        if (idx1[chunk_idx] >= 0 && static_cast<size_t>(idx1[chunk_idx]) < c_enc.size() &&
+            idx2[chunk_idx] >= 0 && static_cast<size_t>(idx2[chunk_idx]) < a_enc.size() &&
+            chunk_idx < b_enc.size()) {
+            auto tmp = cc->EvalMult(c_enc[idx1[chunk_idx]], scalar_pt);
+            a_enc[idx2[chunk_idx]] = RSFHE::EvalAddOperation(cc, b_enc[chunk_idx], tmp);
+
+            size_t bytesTransferred = estimateCiphertextSize(b_enc[chunk_idx]) +
+                                     estimateCiphertextSize(c_enc[idx1[chunk_idx]]) +
+                                     estimateCiphertextSize(a_enc[idx2[chunk_idx]]);
+            bytesTransferredTotal += bytesTransferred;
+
+            if (chunk_idx < 3) {
+                printf("[DEBUG] sgTriadFHE_MPI: Transferred %zu bytes for chunk %zu (idx1=%ld, idx2=%ld)\n",
+                       bytesTransferred, chunk_idx, idx1[chunk_idx], idx2[chunk_idx]);
+            }
+        }
+    }
+
+    printf("[DEBUG] sgTriadFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
+}
 
 // TODO: Add stubs for other kernels as needed
