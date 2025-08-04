@@ -92,7 +92,19 @@ void sgTriadFHE_MPI(CryptoContext<DCRTPoly> cc,
                     const std::vector<Ciphertext<DCRTPoly>> &c_enc,
                     const ssize_t *idx1, const ssize_t *idx2, size_t numChunks,
                     const lbcrypto::Plaintext &scalar_pt);
-                      
+void centralCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc,
+                        std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                        size_t numChunks);
+void centralScaleFHE_MPI(CryptoContext<DCRTPoly> cc,
+                         std::vector<Ciphertext<DCRTPoly>> &b_enc,
+                         const std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                         size_t numChunks,
+                         const lbcrypto::Plaintext &scalar_pt);
+void centralAddFHE_MPI(CryptoContext<DCRTPoly> cc,
+                       const std::vector<Ciphertext<DCRTPoly>> &a_enc,
+                       const std::vector<Ciphertext<DCRTPoly>> &b_enc,
+                       std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                       size_t numChunks);                         
 // ... declare all other kernel prototypes here, matching the RS_FHE_OMP.h style, but with _MPI suffix
 
 #endif // RS_FHE_MPI_H

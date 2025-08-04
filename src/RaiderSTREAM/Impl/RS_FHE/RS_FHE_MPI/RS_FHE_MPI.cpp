@@ -642,9 +642,72 @@ bool RS_FHE_MPI::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES, do
     // ------------------------------
     // CENTRAL KERNELS (TODO: Implement)
     // ------------------------------
-    case RSBaseImpl::RS_CENTRAL_COPY:
-    case RSBaseImpl::RS_CENTRAL_SCALE:
-    case RSBaseImpl::RS_CENTRAL_ADD:
+        case RSBaseImpl::RS_CENTRAL_COPY: {
+        std::cout << "[DEBUG] Rank " << myRank << ": Calling centralCopyFHE_MPI" << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        startTime = MPI_Wtime();
+        centralCopyFHE_MPI(a_enc, c_enc, numChunks);
+        MPI_Barrier(MPI_COMM_WORLD);
+        endTime = MPI_Wtime();
+        std::cout << "[DEBUG] Rank " << myRank << ": Finished centralCopyFHE_MPI" << std::endl;
+
+        runTime = calculateRunTime(startTime, endTime);
+        mbps = calculateMBPS(opts.BYTES[kType], runTime);
+        flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
+
+        localRunTime = runTime;
+        localMbps = mbps;
+        localFlops = flops;
+
+        MPI_Reduce(&localRunTime, &TIMES[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localMbps, &MBPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localFlops, &FLOPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        break;
+    }
+        case RSBaseImpl::RS_CENTRAL_SCALE: {
+        std::cout << "[DEBUG] Rank " << myRank << ": Calling centralScaleFHE_MPI" << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        startTime = MPI_Wtime();
+        centralScaleFHE_MPI(cc, b_enc, c_enc, numChunks, scalar_pt);
+        MPI_Barrier(MPI_COMM_WORLD);
+        endTime = MPI_Wtime();
+        std::cout << "[DEBUG] Rank " << myRank << ": Finished centralScaleFHE_MPI" << std::endl;
+
+        runTime = calculateRunTime(startTime, endTime);
+        mbps = calculateMBPS(opts.BYTES[kType], runTime);
+        flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
+
+        localRunTime = runTime;
+        localMbps = mbps;
+        localFlops = flops;
+
+        MPI_Reduce(&localRunTime, &TIMES[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localMbps, &MBPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localFlops, &FLOPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        break;
+    }
+        case RSBaseImpl::RS_CENTRAL_ADD: {
+        std::cout << "[DEBUG] Rank " << myRank << ": Calling centralAddFHE_MPI" << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        startTime = MPI_Wtime();
+        centralAddFHE_MPI(cc, a_enc, b_enc, c_enc, numChunks);
+        MPI_Barrier(MPI_COMM_WORLD);
+        endTime = MPI_Wtime();
+        std::cout << "[DEBUG] Rank " << myRank << ": Finished centralAddFHE_MPI" << std::endl;
+
+        runTime = calculateRunTime(startTime, endTime);
+        mbps = calculateMBPS(opts.BYTES[kType], runTime);
+        flops = calculateFLOPS(opts.FLOATOPS[kType], runTime);
+
+        localRunTime = runTime;
+        localMbps = mbps;
+        localFlops = flops;
+
+        MPI_Reduce(&localRunTime, &TIMES[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localMbps, &MBPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&localFlops, &FLOPS[kType], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        break;
+    }
     case RSBaseImpl::RS_CENTRAL_TRIAD:
         std::cout << "[DEBUG] Rank " << myRank << ": Kernel type " << kType << " not yet implemented" << std::endl;
         // For now, just measure timing without actual computation

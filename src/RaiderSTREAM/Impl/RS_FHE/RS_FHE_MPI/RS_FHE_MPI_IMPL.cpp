@@ -621,5 +621,73 @@ void sgTriadFHE_MPI(CryptoContext<DCRTPoly> cc,
 
     printf("[DEBUG] sgTriadFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
 }
+void centralCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc,
+                        std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                        size_t numChunks) {
+    size_t bytesTransferredTotal = 0;
+
+    #pragma omp parallel for reduction(+:bytesTransferredTotal)
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        c_enc[chunk_idx] = a_enc[0]; // All outputs get the encryption of a[0]
+        size_t bytesTransferred = estimateCiphertextSize(a_enc[0]) + estimateCiphertextSize(c_enc[chunk_idx]);
+        bytesTransferredTotal += bytesTransferred;
+
+        if (chunk_idx < 3) {
+            printf("[DEBUG] centralCopyFHE_MPI: Transferred %zu bytes for chunk %zu\n",
+                   bytesTransferred, chunk_idx);
+        }
+    }
+
+    printf("[DEBUG] centralCopyFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
+}
+void centralScaleFHE_MPI(CryptoContext<DCRTPoly> cc,
+                         std::vector<Ciphertext<DCRTPoly>> &b_enc,
+                         const std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                         size_t numChunks,
+                         const lbcrypto::Plaintext &scalar_pt) {
+    size_t bytesTransferredTotal = 0;
+
+    #pragma omp parallel for reduction(+:bytesTransferredTotal)
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        // All outputs get the scaled encryption of c[0]
+        b_enc[chunk_idx] = cc->EvalMult(c_enc[0], scalar_pt);
+
+        size_t bytesTransferred = estimateCiphertextSize(c_enc[0]) +
+                                 estimateCiphertextSize(b_enc[chunk_idx]);
+        bytesTransferredTotal += bytesTransferred;
+
+        if (chunk_idx < 3) {
+            printf("[DEBUG] centralScaleFHE_MPI: Transferred %zu bytes for chunk %zu\n",
+                   bytesTransferred, chunk_idx);
+        }
+    }
+
+    printf("[DEBUG] centralScaleFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
+}
+void centralAddFHE_MPI(CryptoContext<DCRTPoly> cc,
+                       const std::vector<Ciphertext<DCRTPoly>> &a_enc,
+                       const std::vector<Ciphertext<DCRTPoly>> &b_enc,
+                       std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                       size_t numChunks) {
+    size_t bytesTransferredTotal = 0;
+
+    #pragma omp parallel for reduction(+:bytesTransferredTotal)
+    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
+        // All outputs get the sum of a_enc[0] + b_enc[0]
+        c_enc[chunk_idx] = RSFHE::EvalAddOperation(cc, a_enc[0], b_enc[0]);
+
+        size_t bytesTransferred = estimateCiphertextSize(a_enc[0]) +
+                                 estimateCiphertextSize(b_enc[0]) +
+                                 estimateCiphertextSize(c_enc[chunk_idx]);
+        bytesTransferredTotal += bytesTransferred;
+
+        if (chunk_idx < 3) {
+            printf("[DEBUG] centralAddFHE_MPI: Transferred %zu bytes for chunk %zu\n",
+                   bytesTransferred, chunk_idx);
+        }
+    }
+
+    printf("[DEBUG] centralAddFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
+}
 
 // TODO: Add stubs for other kernels as needed
