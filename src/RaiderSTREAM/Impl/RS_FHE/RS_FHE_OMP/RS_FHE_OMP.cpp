@@ -139,7 +139,7 @@ std::cout << "[DEBUG] Resized ciphertext buffers to numChunks = " << numChunks <
 std::cout << "[DEBUG] Starting chunked batch encryption with chunk size " << chunkSize << std::endl;
 for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
     size_t chunk_start = chunk_idx * chunkSize;
-    size_t chunk_end = std::min(chunk_start + chunkSize, static_cast<size_t>(streamArraySize));
+    size_t chunk_end = std::min(chunk_start + chunkSize, static_cast<size_t>(streamArraySize)); // TODO: improve chunkSize handling for last chunk
     size_t currentChunkSize = chunk_end - chunk_start;
 
     // Sequential initialization

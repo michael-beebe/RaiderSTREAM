@@ -1,17 +1,38 @@
 #include "RS_FHE_MPI.h"
 
-// Estimate the size of a ciphertext in bytes
+// Estimate the size of a ciphertext in bytes using serialization.
 size_t estimateCiphertextSize(const Ciphertext<DCRTPoly>& ct) {
     if (!ct) return 0;
-    size_t total = 0;
-    const auto& polys = ct->GetElements();
-    for (const auto& poly : polys) {
-        for (size_t t = 0; t < poly.GetNumOfElements(); ++t) {
-            total += poly.GetElementAtIndex(t).GetLength() * sizeof(uint64_t);
-        }
-    }
-    return total;
+    std::stringstream ss;
+    lbcrypto::Serial::Serialize(ct, ss, lbcrypto::SerType::BINARY);
+    return ss.str().length();
 }
+
+/**
+ * @brief Extracts a single slot from a ciphertext by rotating and masking.
+ */
+Ciphertext<DCRTPoly> extractSlot(CryptoContext<DCRTPoly> cc, const Ciphertext<DCRTPoly>& ct, int slot, int batchSize) {
+    // Create a mask with 1 at the first slot and 0 elsewhere.
+    std::vector<STREAM_TYPE> mask_vec(batchSize, 0);
+    mask_vec[0] = 1;
+    auto mask_pt = CreatePlaintextVector(cc, mask_vec);
+
+    // Rotate the desired slot to position 0 using EvalRotate
+    auto rotated_ct = cc->EvalRotate(ct, -slot);
+
+    // Mask to isolate the value at slot 0
+    return cc->EvalMult(rotated_ct, mask_pt);
+}
+
+/**
+ * @brief Takes a ciphertext with a value at slot 0 and rotates it to a target slot.
+ */
+Ciphertext<DCRTPoly> insertSlotAtPosition(CryptoContext<DCRTPoly> cc, const Ciphertext<DCRTPoly>& ct, int slot) {
+    // Use EvalRotate for composition with power-of-two keys
+    return cc->EvalRotate(ct, slot);
+}
+
+// ---- Kernel Implementations ----
 
 /**
  * @brief Homomorphic "copy" kernel (sequential STREAM copy) for MPI execution.
@@ -186,33 +207,48 @@ void seqTriadFHE_MPI(CryptoContext<DCRTPoly> cc,
  * @param idx1       Index array for gathering chunk indices
  * @param numChunks  Number of chunks to process (local to this rank)
  */
-void gatherCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc,
+/**
+ * @brief Performs a slot-wise gather copy: c[i] = a[idx1[i]].
+ * @note The output vector c_enc MUST be initialized with encrypted zeros before calling this kernel.
+ */
+void gatherCopyFHE_MPI(CryptoContext<DCRTPoly> cc,
+                       const std::vector<Ciphertext<DCRTPoly>> &a_enc,
                        std::vector<Ciphertext<DCRTPoly>> &c_enc,
-                       const ssize_t *idx1, size_t numChunks) {
-    size_t bytesTransferredTotal = 0;
-    
-    #pragma omp parallel for reduction(+:bytesTransferredTotal)
-    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
-        // Chunk-level gather: c_enc[chunk_idx] = a_enc[idx1[chunk_idx]]
-        // This avoids slot-level rotations by working at ciphertext granularity
-        // Each rank only accesses its local chunks, minimizing rotation key requirements
-        if (idx1[chunk_idx] >= 0 && static_cast<size_t>(idx1[chunk_idx]) < a_enc.size()) {
-            c_enc[chunk_idx] = a_enc[idx1[chunk_idx]];
-            
-            // Calculate bytes transferred for this chunk
-            size_t bytesTransferred = estimateCiphertextSize(a_enc[idx1[chunk_idx]]) + 
-                                     estimateCiphertextSize(c_enc[chunk_idx]);
-            bytesTransferredTotal += bytesTransferred;
-            
-            // Debug output (only for first few chunks to avoid spam)
-            if (chunk_idx < 3) {
-                printf("[DEBUG] gatherCopyFHE_MPI: Transferred %zu bytes for chunk %zu (idx=%ld)\n", 
-                       bytesTransferred, chunk_idx, idx1[chunk_idx]);
-            }
+                       const ssize_t *idx1, size_t localStreamSize, int batchSize) {
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < localStreamSize; ++i) {
+        // 1. Identify source and destination locations
+        ssize_t src_global_idx = idx1[i];
+
+        // This kernel only handles intra-rank data movement.
+        // A full MPI implementation would require communication.
+        // For now, skip any access that would go to another rank.
+        if (src_global_idx < 0 || static_cast<size_t>(src_global_idx) >= localStreamSize) {
+            continue;
+        }
+
+        size_t src_ct_idx = src_global_idx / batchSize;
+        int    src_slot_idx = src_global_idx % batchSize;
+
+        size_t dest_ct_idx = i / batchSize;
+        int    dest_slot_idx = i % batchSize;
+
+        // Ensure indices are within the bounds of the local rank's data
+        if (src_ct_idx >= a_enc.size() || dest_ct_idx >= c_enc.size()) continue;
+
+        // 2. Extract the source slot into a new ciphertext (value is at slot 0)
+        Ciphertext<DCRTPoly> extracted_slot_ct = extractSlot(cc, a_enc[src_ct_idx], src_slot_idx, batchSize);
+
+        // 3. Rotate the extracted slot to its destination position
+        Ciphertext<DCRTPoly> positioned_slot_ct = insertSlotAtPosition(cc, extracted_slot_ct, dest_slot_idx);
+
+        // 4. Atomically add the result to the destination ciphertext.
+        #pragma omp critical
+        {
+            c_enc[dest_ct_idx] = cc->EvalAdd(c_enc[dest_ct_idx], positioned_slot_ct);
         }
     }
-    
-    printf("[DEBUG] gatherCopyFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
 }
 
 /**
@@ -378,33 +414,38 @@ void gatherTriadFHE_MPI(CryptoContext<DCRTPoly> cc,
  * @param idx1       Index array for scattering chunk indices
  * @param numChunks  Number of chunks to process (local to this rank)
  */
-void scatterCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc,
+void scatterCopyFHE_MPI(CryptoContext<DCRTPoly> cc,
+                        const std::vector<Ciphertext<DCRTPoly>> &a_enc,
                         std::vector<Ciphertext<DCRTPoly>> &c_enc,
-                        const ssize_t *idx1, size_t numChunks) {
+                        const ssize_t *idx1, size_t localStreamSize, int batchSize) {
     size_t bytesTransferredTotal = 0;
     
-    #pragma omp parallel for reduction(+:bytesTransferredTotal)
-    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
-        // Chunk-level scatter: c_enc[idx1[chunk_idx]] = a_enc[chunk_idx]
-        // This avoids slot-level rotations by working at ciphertext granularity
-        // Each rank only accesses its local chunks, minimizing rotation key requirements
-        if (idx1[chunk_idx] >= 0 && static_cast<size_t>(idx1[chunk_idx]) < c_enc.size()) {
-            c_enc[idx1[chunk_idx]] = a_enc[chunk_idx];
-            
-            // Calculate bytes transferred for this chunk
-            size_t bytesTransferred = estimateCiphertextSize(a_enc[chunk_idx]) + 
-                                     estimateCiphertextSize(c_enc[idx1[chunk_idx]]);
-            bytesTransferredTotal += bytesTransferred;
-            
-            // Debug output (only for first few chunks to avoid spam)
-            if (chunk_idx < 3) {
-                printf("[DEBUG] scatterCopyFHE_MPI: Transferred %zu bytes for chunk %zu (idx=%ld)\n", 
-                       bytesTransferred, chunk_idx, idx1[chunk_idx]);
-            }
+    #pragma omp parallel for
+    for (size_t i = 0; i < localStreamSize; ++i) {
+        // 1. Identify source and destination locations
+        size_t src_ct_idx = i / batchSize;
+        int    src_slot_idx = i % batchSize;
+
+        ssize_t dest_global_idx = idx1[i];
+        size_t dest_ct_idx = dest_global_idx / batchSize;
+        int    dest_slot_idx = dest_global_idx % batchSize;
+
+        // Ensure indices are within the bounds of the local rank's data
+        if (src_ct_idx >= a_enc.size() || dest_ct_idx >= c_enc.size()) continue;
+
+        // 2. Extract the source slot into a new ciphertext (value is at slot 0)
+        Ciphertext<DCRTPoly> extracted_slot_ct = extractSlot(cc, a_enc[src_ct_idx], src_slot_idx, batchSize);
+
+        // 3. Rotate the extracted slot to its destination position
+        Ciphertext<DCRTPoly> positioned_slot_ct = insertSlotAtPosition(cc, extracted_slot_ct, dest_slot_idx);
+
+        // 4. Atomically add the result to the destination ciphertext.
+        // This is critical because multiple source slots may map to the same destination ciphertext.
+        #pragma omp critical
+        {
+            c_enc[dest_ct_idx] = cc->EvalAdd(c_enc[dest_ct_idx], positioned_slot_ct);
         }
     }
-    
-    printf("[DEBUG] scatterCopyFHE_MPI: Total bytes transferred: %zu\n", bytesTransferredTotal);
 }
 
 /** * @brief Homomorphic "scatter-scale" kernel for MPI execution (chunk-based).

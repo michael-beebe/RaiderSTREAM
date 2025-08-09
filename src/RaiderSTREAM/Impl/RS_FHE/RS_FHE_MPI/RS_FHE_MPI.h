@@ -41,7 +41,7 @@ private:
   int numPEs;
   ssize_t *idx1, *idx2, *idx3;
   STREAM_TYPE scalar;
-  ssize_t chunkSize;
+  ssize_t localStreamSize;
   CryptoContext<DCRTPoly> cc;
   KeyPair<DCRTPoly> kp;
   std::vector<Ciphertext<DCRTPoly>> a_enc, b_enc, c_enc;
@@ -52,11 +52,15 @@ void seqCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc, std::vector<
 void seqScaleFHE_MPI(CryptoContext<DCRTPoly> cc, std::vector<Ciphertext<DCRTPoly>> &b_enc, const std::vector<Ciphertext<DCRTPoly>> &c_enc, size_t numChunks, const lbcrypto::Plaintext &scalar_pt);
 void seqAddFHE_MPI(CryptoContext<DCRTPoly> cc, const std::vector<Ciphertext<DCRTPoly>> &a_enc, const std::vector<Ciphertext<DCRTPoly>> &b_enc, std::vector<Ciphertext<DCRTPoly>> &c_enc, size_t numChunks);
 void seqTriadFHE_MPI(CryptoContext<DCRTPoly> cc, std::vector<Ciphertext<DCRTPoly>> &a_enc, const std::vector<Ciphertext<DCRTPoly>> &b_enc, const std::vector<Ciphertext<DCRTPoly>> &c_enc, size_t numChunks, const lbcrypto::Plaintext &scalar_pt);
-void gatherCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc, std::vector<Ciphertext<DCRTPoly>> &c_enc, const ssize_t *idx1, size_t numChunks);
+void gatherCopyFHE_MPI(CryptoContext<DCRTPoly> cc, const std::vector<Ciphertext<DCRTPoly>> &a_enc, std::vector<Ciphertext<DCRTPoly>> &c_enc, const ssize_t *idx1, size_t localStreamSize, int batchSize);
 void gatherScaleFHE_MPI(CryptoContext<DCRTPoly> cc, std::vector<Ciphertext<DCRTPoly>> &b_enc, const std::vector<Ciphertext<DCRTPoly>> &c_enc, const ssize_t *idx1, size_t numChunks, const lbcrypto::Plaintext &scalar_pt);
 void gatherAddFHE_MPI(CryptoContext<DCRTPoly> cc, const std::vector<Ciphertext<DCRTPoly>> &a_enc, const std::vector<Ciphertext<DCRTPoly>> &b_enc, std::vector<Ciphertext<DCRTPoly>> &c_enc, const ssize_t *idx1, const ssize_t *idx2, size_t numChunks);
 void gatherTriadFHE_MPI(CryptoContext<DCRTPoly> cc, std::vector<Ciphertext<DCRTPoly>> &a_enc, const std::vector<Ciphertext<DCRTPoly>> &b_enc, const std::vector<Ciphertext<DCRTPoly>> &c_enc, const ssize_t *idx1, const ssize_t *idx2, size_t numChunks, const lbcrypto::Plaintext &scalar_pt);
-void scatterCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc, std::vector<Ciphertext<DCRTPoly>> &c_enc, const ssize_t *idx1, size_t numChunks);
+// void scatterCopyFHE_MPI(const std::vector<Ciphertext<DCRTPoly>> &a_enc, std::vector<Ciphertext<DCRTPoly>> &c_enc, const ssize_t *idx1, size_t numChunks);
+void scatterCopyFHE_MPI(CryptoContext<DCRTPoly> cc,
+                        const std::vector<Ciphertext<DCRTPoly>> &a_enc,
+                        std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                        const ssize_t *idx1, size_t localStreamSize, int batchSize);
 void scatterScaleFHE_MPI(CryptoContext<DCRTPoly> cc,
                          std::vector<Ciphertext<DCRTPoly>> &b_enc,
                          const std::vector<Ciphertext<DCRTPoly>> &c_enc,
@@ -106,5 +110,17 @@ void centralAddFHE_MPI(CryptoContext<DCRTPoly> cc,
                        std::vector<Ciphertext<DCRTPoly>> &c_enc,
                        size_t numChunks);                         
 // ... declare all other kernel prototypes here, matching the RS_FHE_OMP.h style, but with _MPI suffix
+
+// Helper function to extract a single slot from a ciphertext
+Ciphertext<DCRTPoly> extractSlot(CryptoContext<DCRTPoly> cc, const Ciphertext<DCRTPoly>& ct, int slot, int batchSize);
+
+// Helper function to insert a single-slot ciphertext at a specific position
+Ciphertext<DCRTPoly> insertSlotAtPosition(CryptoContext<DCRTPoly> cc, const Ciphertext<DCRTPoly>& ct, int slot);
+
+// Slot-wise scatter copy kernel. Note: it takes localStreamSize, not numChunks.
+void scatterCopyFHE_MPI(CryptoContext<DCRTPoly> cc,
+                        const std::vector<Ciphertext<DCRTPoly>> &a_enc,
+                        std::vector<Ciphertext<DCRTPoly>> &c_enc,
+                        const ssize_t *idx1, size_t localStreamSize, int batchSize);
 
 #endif // RS_FHE_MPI_H

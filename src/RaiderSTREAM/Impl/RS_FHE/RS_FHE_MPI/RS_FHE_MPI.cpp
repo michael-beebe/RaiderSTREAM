@@ -7,7 +7,7 @@ RS_FHE_MPI::RS_FHE_MPI(const RSOpts &opts)
       streamArraySize(opts.getStreamArraySize()),
       numPEs(opts.getNumPEs()),
       idx1(nullptr), idx2(nullptr), idx3(nullptr),
-      scalar(3), chunkSize(0) {
+      scalar(3), localStreamSize(0) {
     // TODO: MPI-specific initialization
 }
 
@@ -31,28 +31,28 @@ bool RS_FHE_MPI::allocateData() {
     MPI_Barrier(MPI_COMM_WORLD);
 
     /* Calculate the chunk size for each rank */
-    chunkSize = streamArraySize / size;
+    localStreamSize = streamArraySize / size;
     ssize_t remainder = streamArraySize % size;
 
     /* Adjust the chunk size for the last process */
     if (myRank == size - 1) {
-        chunkSize += remainder;
+        localStreamSize += remainder;
     }
 
-    std::cout << "[DEBUG] Rank " << myRank << ": chunkSize = " << chunkSize << std::endl;
+    std::cout << "[DEBUG] Rank " << myRank << ": chunkSize = " << localStreamSize<< std::endl;
 
     // 1) Allocate index arrays for local chunk
-    idx1 = new ssize_t[chunkSize];
+    idx1 = new ssize_t[localStreamSize];
     if (!idx1) {
         std::cerr << "[ERROR] Memory allocation for idx1 failed!" << std::endl;
         return false;
     }
-    idx2 = new ssize_t[chunkSize];
+    idx2 = new ssize_t[localStreamSize];
     if (!idx2) {
         std::cerr << "[ERROR] Memory allocation for idx2 failed!" << std::endl;
         return false;
     }
-    idx3 = new ssize_t[chunkSize];
+    idx3 = new ssize_t[localStreamSize];
     if (!idx3) {
         std::cerr << "[ERROR] Memory allocation for idx3 failed!" << std::endl;
         return false;
@@ -61,14 +61,14 @@ bool RS_FHE_MPI::allocateData() {
 
     // Initialize index arrays
 #ifdef _ARRAYGEN_
-    initReadIdxArray(idx1, chunkSize, "RaiderSTREAM/arraygen/IDX1.txt");
-    initReadIdxArray(idx2, chunkSize, "RaiderSTREAM/arraygen/IDX2.txt");
-    initReadIdxArray(idx3, chunkSize, "RaiderSTREAM/arraygen/IDX3.txt");
+    initReadIdxArray(idx1, localStreamSize, "RaiderSTREAM/arraygen/IDX1.txt");
+    initReadIdxArray(idx2, localStreamSize, "RaiderSTREAM/arraygen/IDX2.txt");
+    initReadIdxArray(idx3, localStreamSize, "RaiderSTREAM/arraygen/IDX3.txt");
     std::cout << "[DEBUG] Rank " << myRank << ": Filled index arrays from files" << std::endl;
 #else
-    initRandomIdxArray(idx1, chunkSize);
-    initRandomIdxArray(idx2, chunkSize);
-    initRandomIdxArray(idx3, chunkSize);
+    initRandomIdxArray(idx1, localStreamSize);
+    initRandomIdxArray(idx2, localStreamSize);
+    initRandomIdxArray(idx3, localStreamSize);
     std::cout << "[DEBUG] Rank " << myRank << ": Filled index arrays with random values" << std::endl;
 #endif
 
@@ -90,9 +90,81 @@ bool RS_FHE_MPI::allocateData() {
         std::cout << "[DEBUG] Rank " << myRank << ": FHE context and keys created" << std::endl;
     }
 
+    // 2) Generate rotation keys (if needed)
+    // --- OPTIMIZED ROTATION KEY GENERATION (BINARY DECOMPOSITION) ---
+    std::cout << "[DEBUG] Rank " << myRank << ": Starting optimized rotation key generation using binary decomposition." << std::endl;
+
+    // Step 1: Collect ALL required rotation indices from ALL relevant kernels.
+    // This ensures we generate keys for any slot-wise operation we might run.
+    std::set<int> required_rotations;
+    int batchSize = DEFAULT_CHUNK_SIZE;
+    for (size_t i = 0; i < localStreamSize; ++i) {
+        // A source slot is always the loop index `i` modulo batchSize
+        int src_slot_idx = i % batchSize;
+        if (src_slot_idx != 0) {
+            required_rotations.insert(-src_slot_idx);
+        }
+
+        // A destination slot can come from any of the index arrays
+        int dest_slot_idx1 = idx1[i] % batchSize;
+        if (dest_slot_idx1 != 0) {
+            required_rotations.insert(dest_slot_idx1);
+        }
+
+        int dest_slot_idx2 = idx2[i] % batchSize;
+        if (dest_slot_idx2 != 0) {
+            required_rotations.insert(dest_slot_idx2);
+        }
+
+        int dest_slot_idx3 = idx3[i] % batchSize;
+        if (dest_slot_idx3 != 0) {
+            required_rotations.insert(dest_slot_idx3);
+        }
+    }
+    std::cout << "[DEBUG] Rank " << myRank << ": Found " << required_rotations.size() << " unique required rotations." << std::endl;
+
+    // Step 2: Decompose each required rotation into powers of two.
+    // For a rotation k, we need keys for powers of two that sum to k.
+    // Example: k=7 -> 1, 2, 4. k=-5 -> -1, -4.
+    std::set<int> power_of_two_rotations;
+    for (int k : required_rotations) {
+        uint32_t n = std::abs(k);
+        uint32_t power_of_two = 1;
+        while (n > 0) {
+            if (n & 1) { // Check if the current bit is 1
+                // If the bit is 1, we need a key for this power of two.
+                // The sign must match the original rotation's sign.
+                power_of_two_rotations.insert((k > 0) ? power_of_two : -power_of_two);
+            }
+            n >>= 1;          // Move to the next bit
+            power_of_two <<= 1; // Move to the next power of two
+        }
+    }
+
+    // Step 3: Generate keys only for the unique powers-of-two rotations.
+    std::vector<int> final_rotations_vec(power_of_two_rotations.begin(), power_of_two_rotations.end());
+
+    if (!final_rotations_vec.empty()) {
+        // Step 4: Call EvalRotateKeyGen, which enables composition of rotations for all schemes.
+        cc->EvalRotateKeyGen(kp.secretKey, final_rotations_vec);
+        
+        // Debug print to show exactly which keys were generated.
+        std::cout << "[DEBUG] Rank " << myRank << ": Generated " << final_rotations_vec.size() 
+                  << " specific power-of-two rotation keys for EvalRotate." << std::endl;
+        std::cout << "[DEBUG] Rank " << myRank << ": Keys generated for rotations: ";
+        for(int key : final_rotations_vec) {
+            std::cout << key << " ";
+        }
+        std::cout << std::endl;
+
+    } else {
+        std::cout << "[DEBUG] Rank " << myRank << ": No rotation keys needed." << std::endl;
+    }
+    // --- END OPTIMIZED KEY GENERATION ---
+
     // 3) Allocate ciphertext buffers for local chunks
     size_t fheChunkSize = DEFAULT_CHUNK_SIZE;
-    size_t numChunks = (chunkSize + fheChunkSize - 1) / fheChunkSize;
+    size_t numChunks = (localStreamSize + fheChunkSize - 1) / fheChunkSize;
     a_enc.resize(numChunks);
     b_enc.resize(numChunks);
     c_enc.resize(numChunks);
@@ -103,7 +175,7 @@ bool RS_FHE_MPI::allocateData() {
     
     for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
         size_t chunk_start = chunk_idx * fheChunkSize;
-        size_t chunk_end = std::min(chunk_start + fheChunkSize, static_cast<size_t>(chunkSize));
+        size_t chunk_end = std::min(chunk_start + fheChunkSize, static_cast<size_t>(localStreamSize));
         size_t currentChunkSize = chunk_end - chunk_start;
 
         // Initialize local data arrays
@@ -360,13 +432,25 @@ bool RS_FHE_MPI::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES, do
     // GATHER KERNELS (chunk-based to avoid rotation key memory issues)
     // ------------------------------
     case RSBaseImpl::RS_GATHER_COPY: {
-        std::cout << "[DEBUG] Rank " << myRank << ": Calling gatherCopyFHE_MPI" << std::endl;
+        std::cout << "[DEBUG] Rank " << myRank << ": Calling gatherCopyFHE_MPI (slot-wise)" << std::endl;
+        
+        // Pre-condition for slot-wise gather: Initialize c_enc with encrypted zeros
+        std::vector<STREAM_TYPE> zeros(DEFAULT_CHUNK_SIZE, 0);
+        auto pt_zero = CreatePlaintextVector(cc, zeros);
+        auto ct_zero = cc->Encrypt(kp.publicKey, pt_zero);
+        for (size_t i = 0; i < c_enc.size(); ++i) {
+            c_enc[i] = ct_zero->Clone();
+        }
+        
         MPI_Barrier(MPI_COMM_WORLD);
         startTime = MPI_Wtime();
-        gatherCopyFHE_MPI(a_enc, c_enc, idx1, numChunks);
+        
+        // Call the kernel with localStreamSize, not numChunks
+        gatherCopyFHE_MPI(cc, a_enc, c_enc, idx1, this->localStreamSize, DEFAULT_CHUNK_SIZE);
+        
         MPI_Barrier(MPI_COMM_WORLD);
         endTime = MPI_Wtime();
-        std::cout << "[DEBUG] Rank " << myRank << ": Finished gatherCopyFHE_MPI" << std::endl;
+        std::cout << "[DEBUG] Rank " << myRank << ": Finished gatherCopyFHE_MPI (slot-wise)" << std::endl;
         
         runTime = calculateRunTime(startTime, endTime);
         mbps = calculateMBPS(opts.BYTES[kType], runTime);
@@ -455,13 +539,25 @@ bool RS_FHE_MPI::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES, do
     // SCATTER KERNELS (chunk-based to avoid rotation key memory issues)
     // ------------------------------
     case RSBaseImpl::RS_SCATTER_COPY: {
-        std::cout << "[DEBUG] Rank " << myRank << ": Calling scatterCopyFHE_MPI" << std::endl;
+        std::cout << "[DEBUG] Rank " << myRank << ": Calling scatterCopyFHE_MPI (slot-wise)" << std::endl;
+        
+        // Pre-condition for slot-wise scatter: Initialize c_enc with encrypted zeros
+        std::vector<STREAM_TYPE> zeros(DEFAULT_CHUNK_SIZE, 0);
+        auto pt_zero = CreatePlaintextVector(cc, zeros);
+        auto ct_zero = cc->Encrypt(kp.publicKey, pt_zero);
+        for (size_t i = 0; i < c_enc.size(); ++i) {
+            c_enc[i] = ct_zero->Clone();
+        }
+        
         MPI_Barrier(MPI_COMM_WORLD);
         startTime = MPI_Wtime();
-        scatterCopyFHE_MPI(a_enc, c_enc, idx1, numChunks);
+        
+        // Call the kernel with localStreamSize, not numChunks
+        scatterCopyFHE_MPI(cc, a_enc, c_enc, idx1, this->localStreamSize, DEFAULT_CHUNK_SIZE);
+        
         MPI_Barrier(MPI_COMM_WORLD);
         endTime = MPI_Wtime();
-        std::cout << "[DEBUG] Rank " << myRank << ": Finished scatterCopyFHE_MPI" << std::endl;
+        std::cout << "[DEBUG] Rank " << myRank << ": Finished scatterCopyFHE_MPI (slot-wise)" << std::endl;
         
         runTime = calculateRunTime(startTime, endTime);
         mbps = calculateMBPS(opts.BYTES[kType], runTime);
@@ -767,10 +863,10 @@ bool RS_FHE_MPI::freeData() {
     b_enc.clear();
     c_enc.clear();
     std::cout << "[DEBUG] Rank " << myRank << ": Cleared ciphertext vectors" << std::endl;
-    
-    // 3) Reset chunk size
-    chunkSize = 0;
-    
+
+    // 3) Reset local stream size
+    localStreamSize = 0;
+
     // 4) MPI barrier to ensure all ranks complete cleanup
     MPI_Barrier(MPI_COMM_WORLD);
     
