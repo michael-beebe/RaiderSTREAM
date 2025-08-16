@@ -8,9 +8,6 @@
 //
 
 #include "RS_FHE_OMP.h"
-
-// #ifdef _RS_FHE_OMP_H_
-
 #include <chrono>
 #include <algorithm>
 #include <iostream>
