@@ -132,8 +132,6 @@ void seqTriadFHE(
 // -----------------------------------------------------------------------------
 /**
  * @brief Homomorphic gather‑copy kernel.
- * @param cc       Crypto context
- * @param pk       Public key
  * @param a_enc    Encrypted input array a
  * @param c_enc    Encrypted output array c
  * @param chunkSize Size of each chunk
@@ -142,22 +140,25 @@ void seqTriadFHE(
  * @param streamArraySize Number of elements
  */
 void gatherCopyFHE(
-    const std::vector<Ciphertext<DCRTPoly>>& a_enc,
-    std::vector<Ciphertext<DCRTPoly>>& c_enc,
-    const std::vector<ssize_t>& idx,
-    size_t chunkSize, size_t numChunks, ssize_t streamArraySize)
+  const std::vector<Ciphertext<DCRTPoly>>& a_enc,
+  std::vector<Ciphertext<DCRTPoly>>& c_enc,
+  const std::vector<ssize_t>& idx1,
+  size_t /*chunkSize*/, size_t numChunks, ssize_t /*streamArraySize*/)
 {
-    #pragma omp parallel for
-  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
-    size_t start = chunk_idx * chunkSize;
-    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
-    for (size_t j = start; j < end; ++j) {
-      if (j < idx.size() && idx[j] >= 0 && static_cast<size_t>(idx[j]) < a_enc.size() && j < c_enc.size()) {
-        c_enc[j] = a_enc[idx[j]];
-        }
-      // else: skip or handle error as needed
-        }
+  // Expect idx1.size() == numChunks (chunk-level mapping).
+  #pragma omp parallel for schedule(static)
+  for (size_t k = 0; k < numChunks; ++k) {
+    if (k >= c_enc.size()) continue;
+    if (k >= idx1.size())  continue;
+
+    const ssize_t s = idx1[k];
+    if (s < 0) continue;
+
+    const size_t src = static_cast<size_t>(s);
+    if (src < a_enc.size()) {
+      c_enc[k] = a_enc[src];
     }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -176,20 +177,22 @@ void gatherScaleFHE(
     std::vector<Ciphertext<DCRTPoly>>& b_enc,
     const std::vector<Ciphertext<DCRTPoly>>& c_enc,
     const std::vector<ssize_t>& idx1,
-    size_t chunkSize, size_t numChunks, ssize_t streamArraySize,
+    size_t /*chunkSize*/, size_t numChunks, ssize_t /*streamArraySize*/,
     const lbcrypto::Plaintext& scalar_pt)
 {
-  #pragma omp parallel for
-    for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
-        size_t start = chunk_idx * chunkSize;
-        size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
-        for (size_t j = start; j < end; ++j) {
-            if (j < idx1.size() && idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < c_enc.size() && j < b_enc.size()) {
-                b_enc[j] = cc->EvalMult(c_enc[idx1[j]], scalar_pt);
-            }
-            // else: skip or handle error as needed
-        }
+  // Expect idx1.size() == numChunks (chunk-level mapping).
+  #pragma omp parallel for schedule(static)
+  for (size_t k = 0; k < numChunks; ++k) {
+    if (k >= b_enc.size() || k >= idx1.size()) continue;
+
+    const ssize_t s = idx1[k];
+    if (s < 0) continue; // skip invalid mapping
+
+    const size_t src = static_cast<size_t>(s);
+    if (src < c_enc.size()) {
+      b_enc[k] = cc->EvalMult(c_enc[src], scalar_pt);
     }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -211,24 +214,21 @@ void gatherAddFHE(
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
   const std::vector<ssize_t>& idx2,
-  size_t chunkSize, ssize_t streamArraySize)
+  size_t /*chunkSize*/, ssize_t /*streamArraySize*/)
 {
-  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
-  #pragma omp parallel for
-  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
-    size_t start = chunk_idx * chunkSize;
-    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
-    for (size_t j = start; j < end; ++j) {
-      if (j < idx1.size() && j < idx2.size() && j < c_enc.size()) {
-        ssize_t idx_a = idx1[j];
-        ssize_t idx_b = idx2[j];
-        if (idx_a >= 0 && static_cast<size_t>(idx_a) < a_enc.size() &&
-            idx_b >= 0 && static_cast<size_t>(idx_b) < b_enc.size()) {
-          c_enc[j] = EvalAddOperation(cc, a_enc[idx_a], b_enc[idx_b]);
-        }
-        // else: skip or handle error as needed
-      }
-      // else: skip or handle error as needed
+  const size_t numChunks = c_enc.size();
+  #pragma omp parallel for schedule(static)
+  for (size_t k = 0; k < numChunks; ++k) {
+    if (k >= idx1.size() || k >= idx2.size()) continue;
+
+    const ssize_t s1 = idx1[k];
+    const ssize_t s2 = idx2[k];
+    if (s1 < 0 || s2 < 0) continue; // skip invalid mappings
+
+    const size_t sa = static_cast<size_t>(s1);
+    const size_t sb = static_cast<size_t>(s2);
+    if (sa < a_enc.size() && sb < b_enc.size()) {
+      c_enc[k] = EvalAddOperation(cc, a_enc[sa], b_enc[sb]);
     }
   }
 }
@@ -237,7 +237,6 @@ void gatherAddFHE(
 /**
  * @brief Homomorphic gather‑triad kernel.
  * @param cc       Crypto context
- * @param pk       Public key
  * @param a_enc    Encrypted output array a
  * @param b_enc    Encrypted input array b
  * @param c_enc    Encrypted input array c
@@ -249,33 +248,31 @@ void gatherAddFHE(
  */
 void gatherTriadFHE(
   CryptoContext<DCRTPoly> cc,
-  const PublicKey<DCRTPoly>& pk,
+  const PublicKey<DCRTPoly>& /*pk*/,
   std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
   const std::vector<ssize_t>& idx2,
-  size_t chunkSize, ssize_t streamArraySize,
+  size_t /*chunkSize*/, ssize_t /*streamArraySize*/,
   STREAM_TYPE scalar)
 {
   auto scalar_pt = CreatePlaintextValue(cc, scalar);
-  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
-  #pragma omp parallel for
-  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
-    size_t start = chunk_idx * chunkSize;
-    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
-    for (size_t j = start; j < end; ++j) {
-      if (j < idx1.size() && j < idx2.size() && j < a_enc.size()) {
-        ssize_t idx_b = idx1[j];
-        ssize_t idx_c = idx2[j];
-        if (idx_b >= 0 && static_cast<size_t>(idx_b) < b_enc.size() &&
-            idx_c >= 0 && static_cast<size_t>(idx_c) < c_enc.size()) {
-          auto tmp = cc->EvalMult(c_enc[idx_c], scalar_pt);
-          a_enc[j] = EvalAddOperation(cc, b_enc[idx_b], tmp);
-        }
-        // else: skip or handle error as needed
-      }
-      // else: skip or handle error as needed
+  const size_t numChunks = a_enc.size();
+
+  #pragma omp parallel for schedule(static)
+  for (size_t k = 0; k < numChunks; ++k) {
+    if (k >= idx1.size() || k >= idx2.size()) continue;
+
+    const ssize_t sb_i = idx1[k];
+    const ssize_t sc_i = idx2[k];
+    if (sb_i < 0 || sc_i < 0) continue; // skip invalid mappings
+
+    const size_t sb = static_cast<size_t>(sb_i);
+    const size_t sc = static_cast<size_t>(sc_i);
+    if (sb < b_enc.size() && sc < c_enc.size()) {
+      auto tmp = cc->EvalMult(c_enc[sc], scalar_pt);
+      a_enc[k] = EvalAddOperation(cc, b_enc[sb], tmp);
     }
   }
 }
@@ -438,26 +435,22 @@ void scatterTriadFHE(
  */
 void sgCopyFHE(
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
-  const std::vector<Ciphertext<DCRTPoly>>& b_enc,
+  const std::vector<Ciphertext<DCRTPoly>>& /*b_enc*/,
   std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
   const std::vector<ssize_t>& idx2,
-  size_t chunkSize, ssize_t streamArraySize)
+  size_t /*chunkSize*/, ssize_t /*streamArraySize*/)
 {
-  (void)b_enc;  // unused
-  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
-  #pragma omp parallel for
-  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
-    size_t start = chunk_idx * chunkSize;
-    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
-    for (size_t j = start; j < end; ++j) {
-      if (j < idx1.size() && j < idx2.size() &&
-          idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < c_enc.size() &&
-          idx2[j] >= 0 && static_cast<size_t>(idx2[j]) < a_enc.size()) {
-        c_enc[static_cast<size_t>(idx1[j])] = a_enc[static_cast<size_t>(idx2[j])];
-      }
-      // else: skip or handle error as needed
-    }
+  const size_t numChunks = c_enc.size();
+  #pragma omp parallel for schedule(static)
+  for (size_t k = 0; k < numChunks; ++k) {
+    if (k >= idx1.size() || k >= idx2.size()) continue;
+    const ssize_t d = idx1[k], s = idx2[k];
+    if (d < 0 || s < 0) continue;
+    const size_t dst = static_cast<size_t>(d);
+    const size_t src = static_cast<size_t>(s);
+    if (dst < c_enc.size() && src < a_enc.size())
+      c_enc[dst] = a_enc[src];
   }
 }
 
@@ -465,7 +458,6 @@ void sgCopyFHE(
 /**
  * @brief Homomorphic scatter‑gather‑scale kernel.
  * @param cc       Crypto context
- * @param pk       Public key
  * @param a_enc Unused
  * @param b_enc    Encrypted output array b
  * @param c_enc    Encrypted input array c
@@ -477,30 +469,26 @@ void sgCopyFHE(
  */
 void sgScaleFHE(
   CryptoContext<DCRTPoly> cc,
-  const PublicKey<DCRTPoly>& pk,
+  const PublicKey<DCRTPoly>& /*pk*/,
   const std::vector<Ciphertext<DCRTPoly>>& a_enc,
   std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
   const std::vector<ssize_t>& idx2,
-  size_t chunkSize, ssize_t streamArraySize,
+  size_t /*chunkSize*/, ssize_t /*streamArraySize*/,
   STREAM_TYPE scalar)
 {
-  (void)a_enc;  // unused
   auto scalar_pt = CreatePlaintextValue(cc, scalar);
-  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
-  #pragma omp parallel for
-  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
-    size_t start = chunk_idx * chunkSize;
-    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
-    for (size_t j = start; j < end; ++j) {
-      if (j < idx1.size() && j < idx2.size() &&
-          idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < c_enc.size() &&
-          idx2[j] >= 0 && static_cast<size_t>(idx2[j]) < b_enc.size()) {
-        b_enc[static_cast<size_t>(idx2[j])] = cc->EvalMult(c_enc[static_cast<size_t>(idx1[j])], scalar_pt);
-      }
-      // else: skip or handle error as needed
-    }
+  const size_t numChunks = b_enc.size();
+  #pragma omp parallel for schedule(static)
+  for (size_t k = 0; k < numChunks; ++k) {
+    if (k >= idx1.size() || k >= idx2.size()) continue;
+    const ssize_t s = idx1[k], d = idx2[k];
+    if (s < 0 || d < 0) continue;
+    const size_t src = static_cast<size_t>(s);
+    const size_t dst = static_cast<size_t>(d);
+    if (src < c_enc.size() && dst < b_enc.size())
+      b_enc[dst] = cc->EvalMult(c_enc[src], scalar_pt);
   }
 }
 
@@ -525,27 +513,19 @@ void sgAddFHE(
   const std::vector<ssize_t>& idx1,
   const std::vector<ssize_t>& idx2,
   const std::vector<ssize_t>& idx3,
-  size_t chunkSize, ssize_t streamArraySize)
+  size_t /*chunkSize*/, ssize_t /*streamArraySize*/)
 {
-  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
-  #pragma omp parallel for
-  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
-    size_t start = chunk_idx * chunkSize;
-    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
-    for (size_t j = start; j < end; ++j) {
-      if (j < idx1.size() && j < idx2.size() && j < idx3.size()) {
-        ssize_t out_idx = idx1[j];
-        ssize_t a_idx = idx2[j];
-        ssize_t b_idx = idx3[j];
-        if (out_idx >= 0 && static_cast<size_t>(out_idx) < c_enc.size() &&
-            a_idx >= 0 && static_cast<size_t>(a_idx) < a_enc.size() &&
-            b_idx >= 0 && static_cast<size_t>(b_idx) < b_enc.size()) {
-          c_enc[static_cast<size_t>(out_idx)] = EvalAddOperation(cc, a_enc[static_cast<size_t>(a_idx)], b_enc[static_cast<size_t>(b_idx)]);
-        }
-        // else: skip or handle error as needed
-      }
-      // else: skip or handle error as needed
-    }
+  const size_t numChunks = c_enc.size();
+  #pragma omp parallel for schedule(static)
+  for (size_t k = 0; k < numChunks; ++k) {
+    if (k >= idx1.size() || k >= idx2.size() || k >= idx3.size()) continue;
+    const ssize_t d = idx1[k], sa = idx2[k], sb = idx3[k];
+    if (d < 0 || sa < 0 || sb < 0) continue;
+    const size_t dst = static_cast<size_t>(d);
+    const size_t ia  = static_cast<size_t>(sa);
+    const size_t ib  = static_cast<size_t>(sb);
+    if (dst < c_enc.size() && ia < a_enc.size() && ib < b_enc.size())
+      c_enc[dst] = EvalAddOperation(cc, a_enc[ia], b_enc[ib]);
   }
 }
 
@@ -566,31 +546,29 @@ void sgAddFHE(
  */
 void sgTriadFHE(
   CryptoContext<DCRTPoly> cc,
-  const PublicKey<DCRTPoly>& pk,
+  const PublicKey<DCRTPoly>& /*pk*/,
   std::vector<Ciphertext<DCRTPoly>>& a_enc,
   const std::vector<Ciphertext<DCRTPoly>>& b_enc,
   const std::vector<Ciphertext<DCRTPoly>>& c_enc,
   const std::vector<ssize_t>& idx1,
   const std::vector<ssize_t>& idx2,
   const std::vector<ssize_t>& idx3,
-  size_t chunkSize, ssize_t streamArraySize,
+  size_t /*chunkSize*/, ssize_t /*streamArraySize*/,
   STREAM_TYPE scalar)
 {
   auto scalar_pt = CreatePlaintextValue(cc, scalar);
-  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
-  #pragma omp parallel for
-  for (size_t chunk_idx = 0; chunk_idx < numChunks; ++chunk_idx) {
-    size_t start = chunk_idx * chunkSize;
-    size_t end = std::min(start + chunkSize, static_cast<size_t>(streamArraySize));
-    for (size_t j = start; j < end; ++j) {
-      if (j < idx1.size() && j < idx2.size() && j < idx3.size() &&
-          idx1[j] >= 0 && static_cast<size_t>(idx1[j]) < c_enc.size() &&
-          idx2[j] >= 0 && static_cast<size_t>(idx2[j]) < a_enc.size() &&
-          idx3[j] >= 0 && static_cast<size_t>(idx3[j]) < b_enc.size()) {
-        auto tmp = cc->EvalMult(c_enc[static_cast<size_t>(idx1[j])], scalar_pt);
-        a_enc[static_cast<size_t>(idx2[j])] = EvalAddOperation(cc, b_enc[static_cast<size_t>(idx3[j])], tmp);
-      }
-      // else: skip or handle error as needed
+  const size_t numChunks = a_enc.size();
+  #pragma omp parallel for schedule(static)
+  for (size_t k = 0; k < numChunks; ++k) {
+    if (k >= idx1.size() || k >= idx2.size() || k >= idx3.size()) continue;
+    const ssize_t sc = idx1[k], d = idx2[k], sb = idx3[k];
+    if (sc < 0 || d < 0 || sb < 0) continue;
+    const size_t ic  = static_cast<size_t>(sc);
+    const size_t dst = static_cast<size_t>(d);
+    const size_t ib  = static_cast<size_t>(sb);
+    if (ic < c_enc.size() && ib < b_enc.size() && dst < a_enc.size()) {
+      auto tmp = cc->EvalMult(c_enc[ic], scalar_pt);
+      a_enc[dst] = EvalAddOperation(cc, b_enc[ib], tmp);
     }
   }
 }

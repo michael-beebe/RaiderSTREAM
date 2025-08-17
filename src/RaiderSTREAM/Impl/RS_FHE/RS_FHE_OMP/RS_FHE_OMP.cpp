@@ -106,16 +106,20 @@ bool RS_FHE_OMP::allocateData() {
     return false;
   }
   std::cout << "[DEBUG] Allocated index arrays" << std::endl;
+
+  size_t chunkSize = DEFAULT_CHUNK_SIZE;
+  size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
+  
 #ifdef _ARRAYGEN_
-  initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
-  initReadIdxArray(idx2, streamArraySize, "RaiderSTREAM/arraygen/IDX2.txt");
-  initReadIdxArray(idx3, streamArraySize, "RaiderSTREAM/arraygen/IDX3.txt");
+  initReadIdxArray(idx1, numChunks, "RaiderSTREAM/arraygen/IDX1.txt");
+  initReadIdxArray(idx2, numChunks, "RaiderSTREAM/arraygen/IDX2.txt");
+  initReadIdxArray(idx3, numChunks, "RaiderSTREAM/arraygen/IDX3.txt");
   std::cout << "[DEBUG] Filled index arrays from files" << std::endl;
 #else
-  initRandomIdxArray(idx1, streamArraySize);
-  initRandomIdxArray(idx2, streamArraySize);
-  initRandomIdxArray(idx3, streamArraySize);
-  std::cout << "[DEBUG] Filled index arrays with random values" << std::endl;
+  initRandomIdxArray(idx1, numChunks);
+  initRandomIdxArray(idx2, numChunks);
+  initRandomIdxArray(idx3, numChunks);
+  std::cout << "[DEBUG] Filled index arrays with random values according to the numChunks" << std::endl;
 #endif
 
   // 2) create FHE context & keys
@@ -126,8 +130,6 @@ bool RS_FHE_OMP::allocateData() {
   std::cout << "[DEBUG] FHE key pair generated" << std::endl;
 
  // 3) allocate ciphertext buffers for number of chunks
-size_t chunkSize = DEFAULT_CHUNK_SIZE;
-size_t numChunks = (streamArraySize + chunkSize - 1) / chunkSize;
 a_enc.resize(numChunks);
 b_enc.resize(numChunks);
 c_enc.resize(numChunks);
@@ -395,7 +397,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_GATHER_COPY: {
     startTime = mySecond();
     gatherCopyFHE(a_enc, c_enc,
-                  std::vector<ssize_t>(idx1, idx1 + streamArraySize),
+                  std::vector<ssize_t>(idx1, idx1 + numChunks),
                   chunkSize, numChunks, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
@@ -413,7 +415,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
 
     startTime = mySecond();
     gatherScaleFHE(cc, b_enc, c_enc,
-                   std::vector<ssize_t>(idx1, idx1 + streamArraySize), 
+                   std::vector<ssize_t>(idx1, idx1 + numChunks), 
                    chunkSize, numChunks, streamArraySize, scalar_pt);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
@@ -428,8 +430,8 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_GATHER_ADD: {
     startTime = mySecond();
     gatherAddFHE(
-        cc, a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-        std::vector<ssize_t>(idx2, idx2 + streamArraySize), chunkSize, streamArraySize);
+        cc, a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + numChunks),
+        std::vector<ssize_t>(idx2, idx2 + numChunks), chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -443,8 +445,8 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_GATHER_TRIAD: {
     startTime = mySecond();
     gatherTriadFHE(cc, kp.publicKey, a_enc, b_enc, c_enc,
-                   std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-                   std::vector<ssize_t>(idx2, idx2 + streamArraySize),
+                   std::vector<ssize_t>(idx1, idx1 + numChunks),
+                   std::vector<ssize_t>(idx2, idx2 + numChunks),
                    chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
@@ -462,7 +464,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_SCATTER_COPY: {
     startTime = mySecond();
     scatterCopyFHE(a_enc, b_enc, c_enc,
-                   std::vector<ssize_t>(idx1, idx1 + streamArraySize),
+                   std::vector<ssize_t>(idx1, idx1 + numChunks),
                    chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
@@ -477,7 +479,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_SCATTER_SCALE: {
     startTime = mySecond();
     scatterScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc,
-                    std::vector<ssize_t>(idx1, idx1 + streamArraySize),
+                    std::vector<ssize_t>(idx1, idx1 + numChunks),
                     chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
@@ -492,7 +494,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_SCATTER_ADD: {
     startTime = mySecond();
     scatterAddFHE(cc, a_enc, b_enc, c_enc,
-                  std::vector<ssize_t>(idx1, idx1 + streamArraySize),
+                  std::vector<ssize_t>(idx1, idx1 + numChunks),
                   chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
@@ -507,7 +509,7 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_SCATTER_TRIAD: {
     startTime = mySecond();
     scatterTriadFHE(cc, kp.publicKey, a_enc, b_enc, c_enc,
-                    std::vector<ssize_t>(idx1, idx1 + streamArraySize),
+                    std::vector<ssize_t>(idx1, idx1 + numChunks),
                     chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
@@ -525,8 +527,8 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_SG_COPY: {
     startTime = mySecond();
     sgCopyFHE(
-        a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-        std::vector<ssize_t>(idx2, idx2 + streamArraySize), chunkSize, streamArraySize);
+        a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + numChunks),
+        std::vector<ssize_t>(idx2, idx2 + numChunks), chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -540,8 +542,8 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_SG_SCALE: {
     startTime = mySecond();
     sgScaleFHE(cc, kp.publicKey, a_enc, b_enc, c_enc,
-               std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-               std::vector<ssize_t>(idx2, idx2 + streamArraySize),
+               std::vector<ssize_t>(idx1, idx1 + numChunks),
+               std::vector<ssize_t>(idx2, idx2 + numChunks),
                chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
@@ -556,9 +558,9 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_SG_ADD: {
     startTime = mySecond();
     sgAddFHE(
-        cc, a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-        std::vector<ssize_t>(idx2, idx2 + streamArraySize),
-        std::vector<ssize_t>(idx3, idx3 + streamArraySize), chunkSize, streamArraySize);
+        cc, a_enc, b_enc, c_enc, std::vector<ssize_t>(idx1, idx1 + numChunks),
+        std::vector<ssize_t>(idx2, idx2 + numChunks),
+        std::vector<ssize_t>(idx3, idx3 + numChunks), chunkSize, streamArraySize);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
     mbps = calculateMBPS(BYTES[kType], runTime);
@@ -572,9 +574,9 @@ bool RS_FHE_OMP::executeKernel(RSBaseImpl::RSKernelType kType, double *TIMES,
   case RSBaseImpl::RS_SG_TRIAD: {
     startTime = mySecond();
     sgTriadFHE(cc, kp.publicKey, a_enc, b_enc, c_enc,
-               std::vector<ssize_t>(idx1, idx1 + streamArraySize),
-               std::vector<ssize_t>(idx2, idx2 + streamArraySize),
-               std::vector<ssize_t>(idx3, idx3 + streamArraySize),
+               std::vector<ssize_t>(idx1, idx1 + numChunks),
+               std::vector<ssize_t>(idx2, idx2 + numChunks),
+               std::vector<ssize_t>(idx3, idx3 + numChunks),
                chunkSize, streamArraySize, scalar);
     endTime = mySecond();
     runTime = calculateRunTime(startTime, endTime);
