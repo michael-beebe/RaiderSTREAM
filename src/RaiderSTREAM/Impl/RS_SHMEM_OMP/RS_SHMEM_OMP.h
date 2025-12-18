@@ -53,7 +53,7 @@ public:
    * @brief Allocates and initializes memory for stream arrays
    * @return True if allocation succeeds, false otherwise
    */
-  virtual bool allocateData() override;
+  virtual bool allocateData(double * allocTime) override;
 
   /**
    * @brief Executes the selected benchmark kernel

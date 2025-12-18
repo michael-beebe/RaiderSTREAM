@@ -99,7 +99,7 @@ RS_SHMEM_OMP::~RS_SHMEM_OMP() {}
  * @details Allocates symmetric heap memory for arrays and initializes them with
  * data
  */
-bool RS_SHMEM_OMP::allocateData() {
+bool RS_SHMEM_OMP::allocateData(double * allocTime) {
   int myRank = shmem_my_pe(); /* Current rank */
   int size = shmem_n_pes();   /* Number of shmem ranks */
 
@@ -122,6 +122,7 @@ bool RS_SHMEM_OMP::allocateData() {
     chunkSize += remainder;
   }
 
+  auto allocStart = mySecond();
   /* Allocate memory for the local chunks in symmetric heap space */
   a = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
   b = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
@@ -129,6 +130,7 @@ bool RS_SHMEM_OMP::allocateData() {
   idx1 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   idx2 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   idx3 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
+  *allocTime = calculateRunTime(allocStart, mySecond()); 
 
   /* Initialize the local chunks */
   initStreamArray(a, chunkSize, 1.0);

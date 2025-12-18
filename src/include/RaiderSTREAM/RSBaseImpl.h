@@ -155,7 +155,7 @@ public:
    *
    * @return True if successful, false otherwise.
    **/
-  virtual bool allocateData() = 0;
+  virtual bool allocateData(double * allocTime) = 0; 
 
   /**
    * @brief Free data for kernels.

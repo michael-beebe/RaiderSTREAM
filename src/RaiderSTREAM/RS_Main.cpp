@@ -111,6 +111,21 @@ void printTiming(const std::string &kernelName, double totalRuntime,
   }
 }
 
+void printRunStats(double SHMEM_MALLOC_TIME){
+  std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
+  std::cout << std::setfill(' ');
+  std::cout << std::left << std::setw(30) << "Operation";
+  std::cout << std::right << std::setw(20) << "Time (s)" << std::endl;
+  std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
+  std::cout << std::setfill(' ');
+
+  /* Memmory Allocation */
+  std::cout << std::left << std::setw(30) << "Memmory Alloc";
+  std::cout << std::right << std::setw(20) << std::fixed
+            << std::setprecision(6) << SHMEM_MALLOC_TIME << std::endl;
+  std::cout << std::right << std::setw(20) << std::fixed;
+}
+
 #ifdef _ENABLE_OMP_
 /**
  * @brief Run OpenMP version of benchmark
@@ -419,12 +434,14 @@ void runBenchSHMEMOMP(RSOpts *Opts) {
       static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
   double *SHMEM_FLOATOPS =
       static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
+  double *SHMEM_MALLOC_TIME = static_cast<double *>(shmem_malloc(sizeof(double)));
+
   for (int i = 0; i < NUM_KERNELS; i++) {
     SHMEM_BYTES[i] = Opts->BYTES[i];
     SHMEM_FLOATOPS[i] = Opts->FLOATOPS[i];
   }
 
-  if (!RS->allocateData()) {
+  if (!RS->allocateData(SHMEM_MALLOC_TIME)) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_SHMEM_OMP"
               << std::endl;
     shmem_finalize();
@@ -464,6 +481,7 @@ void runBenchSHMEMOMP(RSOpts *Opts) {
                   << std::endl;
       }
     }
+    printRunStats(*SHMEM_MALLOC_TIME);
     RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
     bool headerPrinted = false;
     for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
@@ -483,6 +501,7 @@ void runBenchSHMEMOMP(RSOpts *Opts) {
   shmem_free(SHMEM_FLOPS);
   shmem_free(SHMEM_BYTES);
   shmem_free(SHMEM_FLOATOPS);
+  shmem_free(SHMEM_MALLOC_TIME);
 
   shmem_finalize();
   delete RS;
