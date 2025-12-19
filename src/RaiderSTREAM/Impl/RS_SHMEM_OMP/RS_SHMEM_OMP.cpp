@@ -99,7 +99,7 @@ RS_SHMEM_OMP::~RS_SHMEM_OMP() {}
  * @details Allocates symmetric heap memory for arrays and initializes them with
  * data
  */
-bool RS_SHMEM_OMP::allocateData(double * allocTime) {
+bool RS_SHMEM_OMP::allocateData(double * allocTime, double * initTime) {
   int myRank = shmem_my_pe(); /* Current rank */
   int size = shmem_n_pes();   /* Number of shmem ranks */
 
@@ -122,16 +122,23 @@ bool RS_SHMEM_OMP::allocateData(double * allocTime) {
     chunkSize += remainder;
   }
 
+  shmem_barrier_all();
   auto allocStart = mySecond();
   /* Allocate memory for the local chunks in symmetric heap space */
   a = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
   b = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
   c = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  result_a = static_cast<STREAM_TYPE *>(shmem_malloc(streamArraySize * sizeof(STREAM_TYPE)));
+  result_b = static_cast<STREAM_TYPE *>(shmem_malloc(streamArraySize * sizeof(STREAM_TYPE)));
+  result_c = static_cast<STREAM_TYPE *>(shmem_malloc(streamArraySize * sizeof(STREAM_TYPE)));
   idx1 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   idx2 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   idx3 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
-  *allocTime = calculateRunTime(allocStart, mySecond()); 
+  shmem_barrier_all();
+  *allocTime = calculateRunTime(allocStart, mySecond());
 
+  shmem_barrier_all();
+  auto initStart = mySecond();
   /* Initialize the local chunks */
   initStreamArray(a, chunkSize, 1.0);
   initStreamArray(b, chunkSize, 2.0);
@@ -146,6 +153,8 @@ bool RS_SHMEM_OMP::allocateData(double * allocTime) {
   initRandomIdxArray(idx2, chunkSize);
   initRandomIdxArray(idx3, chunkSize);
 #endif
+  shmem_barrier_all();
+  *initTime = calculateRunTime(initStart, mySecond()); 
 
 #ifdef _DEBUG_
   if (myRank == 0) {
@@ -179,6 +188,27 @@ bool RS_SHMEM_OMP::allocateData(double * allocTime) {
 
   return true;
 }
+
+void RS_SHMEM_OMP::collectChunks(double * gatherTime){
+  int size = shmem_n_pes();
+  int myRank = shmem_my_pe();
+
+  ssize_t chunkSize = streamArraySize / size;
+  ssize_t remainder = streamArraySize % size;
+
+  /* Adjust the chunk size for the last process */
+  if (myRank == size - 1) {
+    chunkSize += remainder;
+  }
+  //int shmem_collect(shmem_team_t team, TYPE *dest, const TYPE *source, size_t nelems);
+  
+  auto collectStart = mySecond();
+  shmem_collect(SHMEM_TEAM_WORLD, result_a, a, chunkSize);
+  shmem_collect(SHMEM_TEAM_WORLD, result_b, b, chunkSize);
+  shmem_collect(SHMEM_TEAM_WORLD, result_c, c, chunkSize);
+  *gatherTime = calculateRunTime(collectStart, mySecond());
+}
+
 
 /**
  * @brief Frees all allocated memory for the RS_SHMEM_OMP object

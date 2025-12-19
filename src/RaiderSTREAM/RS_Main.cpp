@@ -111,7 +111,7 @@ void printTiming(const std::string &kernelName, double totalRuntime,
   }
 }
 
-void printRunStats(double SHMEM_MALLOC_TIME){
+void printRunStats(double SHMEM_MALLOC_TIME, double INIT_TIME, double COLLECT_TIME){
   std::cout << std::setfill('-') << std::setw(110) << "-" << std::endl;
   std::cout << std::setfill(' ');
   std::cout << std::left << std::setw(30) << "Operation";
@@ -123,6 +123,18 @@ void printRunStats(double SHMEM_MALLOC_TIME){
   std::cout << std::left << std::setw(30) << "Memmory Alloc";
   std::cout << std::right << std::setw(20) << std::fixed
             << std::setprecision(6) << SHMEM_MALLOC_TIME << std::endl;
+  std::cout << std::right << std::setw(20) << std::fixed;
+
+  /* Initialization Time */
+  std::cout << std::left << std::setw(30) << "Array Initialization";
+  std::cout << std::right << std::setw(20) << std::fixed
+            << std::setprecision(6) << INIT_TIME << std::endl;
+  std::cout << std::right << std::setw(20) << std::fixed;
+
+  /* Initialization Time */
+  std::cout << std::left << std::setw(30) << "Chunk Collection";
+  std::cout << std::right << std::setw(20) << std::fixed
+            << std::setprecision(6) << COLLECT_TIME << std::endl;
   std::cout << std::right << std::setw(20) << std::fixed;
 }
 
@@ -435,13 +447,15 @@ void runBenchSHMEMOMP(RSOpts *Opts) {
   double *SHMEM_FLOATOPS =
       static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
   double *SHMEM_MALLOC_TIME = static_cast<double *>(shmem_malloc(sizeof(double)));
+  double *INIT_TIME = static_cast<double *>(shmem_malloc(sizeof(double)));
+  double *COLLECT_TIME = static_cast<double *>(shmem_malloc(sizeof(double)));
 
   for (int i = 0; i < NUM_KERNELS; i++) {
     SHMEM_BYTES[i] = Opts->BYTES[i];
     SHMEM_FLOATOPS[i] = Opts->FLOATOPS[i];
   }
 
-  if (!RS->allocateData(SHMEM_MALLOC_TIME)) {
+  if (!RS->allocateData(SHMEM_MALLOC_TIME, INIT_TIME)) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_SHMEM_OMP"
               << std::endl;
     shmem_finalize();
@@ -459,6 +473,8 @@ void runBenchSHMEMOMP(RSOpts *Opts) {
     delete RS;
     return;
   }
+
+  RS->collectChunks(COLLECT_TIME);
 
   /* Free the data */
   if (!RS->freeData()) {
@@ -481,7 +497,7 @@ void runBenchSHMEMOMP(RSOpts *Opts) {
                   << std::endl;
       }
     }
-    printRunStats(*SHMEM_MALLOC_TIME);
+    printRunStats(*SHMEM_MALLOC_TIME, *INIT_TIME, *COLLECT_TIME);
     RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
     bool headerPrinted = false;
     for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
@@ -502,6 +518,8 @@ void runBenchSHMEMOMP(RSOpts *Opts) {
   shmem_free(SHMEM_BYTES);
   shmem_free(SHMEM_FLOATOPS);
   shmem_free(SHMEM_MALLOC_TIME);
+  shmem_free(INIT_TIME);
+  shmem_free(COLLECT_TIME);
 
   shmem_finalize();
   delete RS;
@@ -907,6 +925,8 @@ int main(int argc, char **argv) {
 #ifdef _ENABLE_SHMEM_OACC_
   runBenchSHMEMOACC(Opts);
 #endif
+
+  delete Opts;
 
   return 0;
 }

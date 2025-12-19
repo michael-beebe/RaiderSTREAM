@@ -155,7 +155,14 @@ public:
    *
    * @return True if successful, false otherwise.
    **/
-  virtual bool allocateData(double * allocTime) = 0; 
+  virtual bool allocateData(double * allocTime, double * initTime) = 0; 
+
+  /**
+   * @brief collect all results into one array
+   *
+   * @param gatherTime The time taken to collect all results
+  **/
+  virtual void collectChunks(double * gatherTime) = 0;
 
   /**
    * @brief Free data for kernels.
@@ -201,25 +208,19 @@ public:
    * @param nelems Number of elements in the array.
    */
   void initRandomIdxArray(ssize_t *array, ssize_t nelems) {
-    if (nelems > std::numeric_limits<ssize_t>::max() / sizeof(unsigned char)) {
-      std::cerr << "Error: Array size too large to allocate flags array."
-                << std::endl;
-      return;
+    size_t i, j, temp;
+
+    /* Initialize array of 0 ... n - 1 */
+    for (i = 0; i < nelems; i ++){
+      array[i] = i;
     }
-    int success;
-    ssize_t i, idx;
-    std::vector<unsigned char> flags(
-        nelems, 0); // Use std::vector to avoid allocation warnings
-    for (i = 0; i < nelems; i++) {
-      success = 0;
-      while (success == 0) {
-        idx = static_cast<ssize_t>(rand()) % nelems;
-        if (flags[idx] == 0) {
-          array[i] = idx;
-          flags[idx] = 1;
-          success = 1;
-        }
-      }
+
+    /* Fisher-Yates Algorithm (in-place, O(N)) */
+    for (i = nelems - 1; i > 0; i --){
+      j = static_cast<ssize_t>(rand()) % (i + 1);
+      temp = array[i];
+      array[i] = array[j];
+      array[j] = temp;
     }
   }
 

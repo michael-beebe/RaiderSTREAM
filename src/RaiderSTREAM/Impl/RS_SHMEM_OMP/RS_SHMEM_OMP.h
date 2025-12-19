@@ -32,6 +32,9 @@ private:
   STREAM_TYPE *a;          /**< First stream array */
   STREAM_TYPE *b;          /**< Second stream array */
   STREAM_TYPE *c;          /**< Third stream array */
+  STREAM_TYPE *result_a;
+  STREAM_TYPE *result_b;
+  STREAM_TYPE *result_c;
   ssize_t *idx1;           /**< First index array */
   ssize_t *idx2;           /**< Second index array */
   ssize_t *idx3;           /**< Third index array */
@@ -53,7 +56,7 @@ public:
    * @brief Allocates and initializes memory for stream arrays
    * @return True if allocation succeeds, false otherwise
    */
-  virtual bool allocateData(double * allocTime) override;
+  virtual bool allocateData(double * allocTime, double * initTime) override;
 
   /**
    * @brief Executes the selected benchmark kernel
@@ -66,6 +69,13 @@ public:
    */
   virtual bool execute(double *TIMES, double *MBPS, double *FLOPS,
                        double *BYTES, double *FLOATOPS) override;
+
+  /**
+   * @brief collect all results into one array
+   *
+   * @param gatherTime The time taken to collect all results
+  **/
+  virtual void collectChunks(double * gatherTime) override;
 
   /**
    * @brief Frees allocated memory
