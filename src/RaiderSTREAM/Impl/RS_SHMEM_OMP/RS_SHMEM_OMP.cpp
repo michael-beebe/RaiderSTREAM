@@ -84,14 +84,30 @@ RS_SHMEM_OMP::RS_SHMEM_OMP(const RSOpts &opts)
     : RSBaseImpl("RS_SHMEM_OMP",
                  opts.getKernelTypeFromName(opts.getKernelName())),
       kernelName(opts.getKernelName()),
-      streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
-      numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
+      streamArraySize(opts.getStreamArraySize()), chunkSize(getChunkSize(streamArraySize)), 
+      lArgc(0), lArgv(nullptr), numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
       idx2(nullptr), idx3(nullptr), scalar(3) {}
 
 /**
  * @brief Destructor for the RS_SHMEM_OMP class
  */
 RS_SHMEM_OMP::~RS_SHMEM_OMP() {}
+
+  /**
+   * @brief Determine local chunk size of PE
+   * @param streamArraySize Total size of arrays in problem
+   */
+ssize_t RS_SHMEM_OMP::getChunkSize(ssize_t streamArraySize) {
+    int size = shmem_n_pes();
+    int myRank = shmem_my_pe();
+    ssize_t chunkSize = streamArraySize / size;
+    ssize_t remainder = streamArraySize % size;
+
+    /* Adjust the chunk size for the last process */
+    if (myRank == size - 1)
+      chunkSize += remainder;
+    return chunkSize;
+  }
 
 /**
  * @brief Allocates and initializes memory for data arrays
@@ -190,22 +206,27 @@ bool RS_SHMEM_OMP::allocateData(double * allocTime, double * initTime) {
 }
 
 void RS_SHMEM_OMP::collectChunks(double * gatherTime){
-  int size = shmem_n_pes();
-  int myRank = shmem_my_pe();
-
-  ssize_t chunkSize = streamArraySize / size;
-  ssize_t remainder = streamArraySize % size;
-
-  /* Adjust the chunk size for the last process */
-  if (myRank == size - 1) {
-    chunkSize += remainder;
-  }
-  //int shmem_collect(shmem_team_t team, TYPE *dest, const TYPE *source, size_t nelems);
-  
+  shmem_barrier_all();
   auto collectStart = mySecond();
+
+#ifdef _SHMEM_1_5_
   shmem_collect(SHMEM_TEAM_WORLD, result_a, a, chunkSize);
   shmem_collect(SHMEM_TEAM_WORLD, result_b, b, chunkSize);
   shmem_collect(SHMEM_TEAM_WORLD, result_c, c, chunkSize);
+#endif
+#ifdef _SHMEM_1_4_
+  syncSize = SHMEM_SYNC_SIZE;
+  long *pSync = static_cast<long *>(shmem_malloc(syncSize * sizeof(long)));
+  for (size_t i = 0; i < syncSize; ++i) {
+    pSync[i] = SHMEM_SYNC_VALUE;
+  }
+  int npes = shmem_n_pes();
+  shmem_collect(result_a, a, chunkSize, 0, 0, npes, pSync);
+  shmem_collect(result_b, b, chunkSize, 0, 0, npes, pSync);
+  shmem_collect(result_c, c, chunkSize, 0, 0, npes, pSync);
+  shmem_free(pSync);
+#endif
+  shmem_barrier_all();
   *gatherTime = calculateRunTime(collectStart, mySecond());
 }
 
@@ -274,17 +295,6 @@ bool RS_SHMEM_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
 #endif
 
   shmem_barrier_all();
-
-  /* If updated, also update corresponding
-   * region in RS_SHMEM_OMP::allocateData. */
-  /* Calculate the chunk size for each rank */
-  ssize_t chunkSize = streamArraySize / size;
-  ssize_t remainder = streamArraySize % size;
-
-  /* Adjust the chunk size for the last process */
-  if (myRank == size - 1) {
-    chunkSize += remainder;
-  }
 
   RSBaseImpl::RSKernelType kType = getKernelType();
 

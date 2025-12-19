@@ -26,6 +26,7 @@ class RS_SHMEM_OMP : public RSBaseImpl {
 private:
   std::string kernelName;  /**< Name of kernel being executed */
   ssize_t streamArraySize; /**< Size of stream arrays */
+  ssize_t chunkSize;       /**< Size of local chunk */
   int lArgc;               /**< Local argument count */
   char **lArgv;            /**< Local argument vector */
   int numPEs;              /**< Number of processing elements */
@@ -51,6 +52,12 @@ public:
    * @brief Destroys the RS_SHMEM_OMP object
    */
   ~RS_SHMEM_OMP();
+
+  /**
+   * @brief Determine local chunk size of PE
+   * @param streamArraySize Total size of arrays in problem
+   */
+  ssize_t getChunkSize(ssize_t streamArraySize);
 
   /**
    * @brief Allocates and initializes memory for stream arrays
