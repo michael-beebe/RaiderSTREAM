@@ -197,7 +197,7 @@ public:
   int getNumPEs() const { return numPEs; }
 
 /* FIXME: do we need this for OpenACC? I think not */
-#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA__
+#if _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
   /**
    * @brief Gets the number of work groups.
    *
@@ -361,21 +361,6 @@ public:
       1.0,         /* CENTRAL Add */
       2.0,         /* CENTRAL Triad */
   };
-
-  /**
-   * @brief Storage for the memory bandwidth results in MB/s for each kernel
-   */
-  double MBPS[NUM_KERNELS] = {0};
-
-  /**
-   * @brief Storage for the floating point operations per second for each kernel
-   */
-  double FLOPS[NUM_KERNELS] = {0};
-
-  /**
-   * @brief Storage for the execution time in seconds for each kernel
-   */
-  double TIMES[NUM_KERNELS] = {0};
 };
 
 #endif /* _RSOPTS_H_ */

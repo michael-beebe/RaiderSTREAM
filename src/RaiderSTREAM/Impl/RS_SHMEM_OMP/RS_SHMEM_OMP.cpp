@@ -115,9 +115,11 @@ ssize_t RS_SHMEM_OMP::getChunkSize(ssize_t streamArraySize) {
  * @details Allocates symmetric heap memory for arrays and initializes them with
  * data
  */
-bool RS_SHMEM_OMP::allocateData(double * allocTime, double * initTime) {
+bool RS_SHMEM_OMP::allocateData(double *allocTime, double *initTime, double *randomGenTime) {
   int myRank = shmem_my_pe(); /* Current rank */
   int size = shmem_n_pes();   /* Number of shmem ranks */
+  double startTime;
+
 
   if (numPEs == 0) {
     std::cout << "RS_SHMEM_OMP::allocateData() - ERROR: 'pes' cannot be 0"
@@ -139,7 +141,7 @@ bool RS_SHMEM_OMP::allocateData(double * allocTime, double * initTime) {
   }
 
   shmem_barrier_all();
-  auto allocStart = mySecond();
+  startTime = mySecond();
   /* Allocate memory for the local chunks in symmetric heap space */
   a = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
   b = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
@@ -151,15 +153,19 @@ bool RS_SHMEM_OMP::allocateData(double * allocTime, double * initTime) {
   idx2 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   idx3 = static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   shmem_barrier_all();
-  *allocTime = calculateRunTime(allocStart, mySecond());
+  *allocTime = calculateRunTime(startTime, mySecond());
 
   shmem_barrier_all();
-  auto initStart = mySecond();
+  startTime = mySecond();
   /* Initialize the local chunks */
   initStreamArray(a, chunkSize, 1.0);
   initStreamArray(b, chunkSize, 2.0);
   initStreamArray(c, chunkSize, 0.0);
+  shmem_barrier_all();
+  *initTime = calculateRunTime(startTime, mySecond()); 
 
+  shmem_barrier_all();
+  startTime = mySecond();
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, chunkSize, "RaiderSTREAM/arraygen/IDX1.txt");
   initReadIdxArray(idx2, chunkSize, "RaiderSTREAM/arraygen/IDX2.txt");
@@ -170,7 +176,7 @@ bool RS_SHMEM_OMP::allocateData(double * allocTime, double * initTime) {
   initRandomIdxArray(idx3, chunkSize);
 #endif
   shmem_barrier_all();
-  *initTime = calculateRunTime(initStart, mySecond()); 
+  *randomGenTime = calculateRunTime(startTime, mySecond()); 
 
 #ifdef _DEBUG_
   if (myRank == 0) {

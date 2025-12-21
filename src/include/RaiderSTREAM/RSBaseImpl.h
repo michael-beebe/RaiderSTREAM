@@ -155,7 +155,7 @@ public:
    *
    * @return True if successful, false otherwise.
    **/
-  virtual bool allocateData(double * allocTime, double * initTime) = 0; 
+  virtual bool allocateData(double * allocTime, double * initTime, double * randomGenTime) = 0; 
 
   /**
    * @brief collect all results into one array
