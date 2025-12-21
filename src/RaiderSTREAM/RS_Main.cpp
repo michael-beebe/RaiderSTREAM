@@ -371,28 +371,40 @@ void runBenchMPIOMP(RSOpts *Opts) {
     std::cout << "ERROR: COULD NOT ALLOCATE RS_MPI_OMP OBJECT" << std::endl;
   }
 
+  /* Initialize the RSRes object */
+  RSRes *Results = new RSRes();
+  if (!Results) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RSRes OBJECT" << std::endl;
+  }
+
   /* Allocate Data */
-  if (!RS->allocateData()) {
+  if (!RS->allocateData(&Results->ALLOC_TIME, &Results->INIT_TIME, &Results->RANDOM_GEN_TIME)) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_MPI_OMP" << std::endl;
     MPI_Finalize();
+    delete Results;
     delete RS;
     return;
   }
 
   /* Execute the benchmark */
-  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES,
+  if (!RS->execute(Results->TIMES, Results->MBPS, Results->FLOPS, Opts->BYTES,
                    Opts->FLOATOPS)) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_MPI_OMP"
               << std::endl;
+    delete Results;
     RS->freeData();
     MPI_Finalize();
     delete RS;
     return;
   }
+  
+  /* Collect result data */
+  RS->collectChunks(&Results->COLLECT_TIME);
 
   /* Free the data */
   if (!RS->freeData()) {
     std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_MPI_OMP" << std::endl;
+    delete Results;
     MPI_Finalize();
     delete RS;
     return;
@@ -410,18 +422,20 @@ void runBenchMPIOMP(RSOpts *Opts) {
                   << std::endl;
       }
     }
+    printRunStats(Results->ALLOC_TIME, Results->INIT_TIME, Results->RANDOM_GEN_TIME, Results->COLLECT_TIME);
     RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
     bool headerPrinted = false;
     for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
       RSBaseImpl::RSKernelType kernelType =
           static_cast<RSBaseImpl::RSKernelType>(i);
       std::string kernelName = BenchTypeTable[i].Notes;
-      printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS,
+      printTiming(kernelName, Results->TIMES[i], Results->MBPS, Results->FLOPS,
                   kernelType, runKernelType, headerPrinted);
     }
   }
 
-  /* Free the RS_MPI_OMP object, finalize MPI */
+  /* Free the RS_MPI_OMP and Results object, finalize MPI */
+  delete Results;
   MPI_Finalize();
   delete RS;
 }

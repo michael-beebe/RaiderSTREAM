@@ -146,6 +146,12 @@ public:
   std::string getImplName() { return Impl; }
 
   /**
+   * @brief Determine local chunk size of PE
+   * @param streamArraySize Total size of arrays in problem
+   */
+  virtual ssize_t getChunkSize(ssize_t streamArraySize) = 0;
+
+  /**
    * @brief Allocate data for kernels.
    *
    * Depending on the implementation, this could

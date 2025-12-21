@@ -98,16 +98,16 @@ RS_SHMEM_OMP::~RS_SHMEM_OMP() {}
    * @param streamArraySize Total size of arrays in problem
    */
 ssize_t RS_SHMEM_OMP::getChunkSize(ssize_t streamArraySize) {
-    int size = shmem_n_pes();
-    int myRank = shmem_my_pe();
-    ssize_t chunkSize = streamArraySize / size;
-    ssize_t remainder = streamArraySize % size;
+  int size = shmem_n_pes();
+  int myRank = shmem_my_pe();
+  ssize_t chunkSize = streamArraySize / size;
+  ssize_t remainder = streamArraySize % size;
 
-    /* Adjust the chunk size for the last process */
-    if (myRank == size - 1)
-      chunkSize += remainder;
-    return chunkSize;
-  }
+  /* Adjust the chunk size for the last process */
+  if (myRank == size - 1)
+    chunkSize += remainder;
+  return chunkSize;
+}
 
 /**
  * @brief Allocates and initializes memory for data arrays

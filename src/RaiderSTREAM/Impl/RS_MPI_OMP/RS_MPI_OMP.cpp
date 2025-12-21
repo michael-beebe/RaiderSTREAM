@@ -21,8 +21,9 @@
 RS_MPI_OMP::RS_MPI_OMP(const RSOpts &opts)
     : RSBaseImpl("RS_MPI_OMP",
                  opts.getKernelTypeFromName(opts.getKernelName())),
-      kernelName(opts.getKernelName()),
-      streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
+      kernelName(opts.getKernelName()), 
+      streamArraySize(opts.getStreamArraySize()), 
+      chunkSize(getChunkSize(streamArraySize)), lArgc(0), lArgv(nullptr),
       numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
       idx2(nullptr), idx3(nullptr), scalar(3) {}
 
@@ -30,6 +31,27 @@ RS_MPI_OMP::RS_MPI_OMP(const RSOpts &opts)
  * @brief Destructor for the RS_MPI_OMP class.
  **************************************************/
 RS_MPI_OMP::~RS_MPI_OMP() {}
+
+/************************************************
+ * @brief Determine local chunk size of PE
+ * 
+ * @param streamArraySize Total size of arrays in problem
+ ***********************************************/
+ssize_t RS_MPI_OMP::getChunkSize(ssize_t streamArraySize) {
+  int myRank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  /* Calculate the chunk size for each rank */
+  ssize_t chunkSize = streamArraySize / size;
+  ssize_t remainder = streamArraySize % size;
+
+  /* Adjust the chunk size for the last process */
+  if (myRank == size - 1) {
+    chunkSize += remainder;
+  }
+  return chunkSize;
+  }
 
 /**********************************************
  * @brief Allocates and initializes memory
@@ -41,9 +63,10 @@ RS_MPI_OMP::~RS_MPI_OMP() {}
  *
  * @return True if allocation is successful, false otherwise.
  **********************************************/
-bool RS_MPI_OMP::allocateData() {
+bool RS_MPI_OMP::allocateData(double *allocTime, double *initTime, double *randomGenTime) {
   int myRank = -1; /* MPI rank */
   int size = -1;   /* MPI size (number of PEs) */
+  double startTime;
 
   if (numPEs == 0) {
     std::cout << "RS_MPI_OMP::allocateData() - ERROR: 'pes' cannot be 0"
@@ -55,23 +78,31 @@ bool RS_MPI_OMP::allocateData() {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Barrier(MPI_COMM_WORLD);
 
-  /* Calculate the chunk size for each rank */
-  ssize_t chunkSize = streamArraySize / size;
-  ssize_t remainder = streamArraySize % size;
-
-  /* Adjust the chunk size for the last process */
-  if (myRank == size - 1) {
-    chunkSize += remainder;
-  }
-
+  startTime = mySecond();
   /* Allocate memory for the local chunks in local heap space */
   MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &a);
   MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &b);
   MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &c);
+  MPI_Alloc_mem(streamArraySize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &result_a);
+  MPI_Alloc_mem(streamArraySize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &result_b);
+  MPI_Alloc_mem(streamArraySize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &result_c);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx1);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx2);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx3);
+  MPI_Barrier(MPI_COMM_WORLD);
+  *allocTime = calculateRunTime(startTime, mySecond()); 
 
+  MPI_Barrier(MPI_COMM_WORLD);
+  startTime = mySecond();
+  /* Initialize the local chunks */
+  initStreamArray(a, chunkSize, 1.0);
+  initStreamArray(b, chunkSize, 2.0);
+  initStreamArray(c, chunkSize, 0.0);
+  MPI_Barrier(MPI_COMM_WORLD);
+  *initTime = calculateRunTime(startTime, mySecond()); 
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  startTime = mySecond();
 /* Initialize the local chunks */
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, chunkSize, "RaiderSTREAM/arraygen/IDX1.txt");
@@ -82,6 +113,8 @@ bool RS_MPI_OMP::allocateData() {
   initRandomIdxArray(idx2, chunkSize);
   initRandomIdxArray(idx3, chunkSize);
 #endif
+  MPI_Barrier(MPI_COMM_WORLD);
+  *randomGenTime = calculateRunTime(startTime, mySecond()); 
 
 #ifdef _DEBUG_
   if (myRank == 0) {
@@ -114,6 +147,54 @@ bool RS_MPI_OMP::allocateData() {
   MPI_Barrier(MPI_COMM_WORLD);
 
   return true;
+}
+
+/**
+ * @brief collect all results into one array
+ *
+ * @param collectTime The time taken to collect all results
+**/
+void RS_MPI_OMP::collectChunks(double * collectTime){
+  /* Create array with chunk sizes*/
+  int myRank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int * recvcounts = NULL;
+  if (myRank == 0) 
+    recvcounts = static_cast<int *>(malloc(size * sizeof(int)));
+  MPI_Gather(&chunkSize, 1, MPI_INT, recvcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  int *displs = NULL;
+  if (myRank == 0){
+    displs = static_cast<int *>(malloc(size * sizeof(int)));
+    displs[0] = 0;
+    for (int i = 1; i < size; i++) {
+        displs[i] = displs[i - 1] + recvcounts[i - 1];
+    }
+  }
+
+  MPI_Datatype mpi_type;
+
+  /* Find correct data size based on stream type */
+  if (sizeof(STREAM_TYPE) == 8)
+    mpi_type = MPI_UINT64_T;
+  else if (sizeof(STREAM_TYPE) == 4)
+    mpi_type = MPI_UINT32_T;
+  else if (sizeof(STREAM_TYPE) == 2)
+    mpi_type = MPI_UINT16_T;
+  else
+    mpi_type = MPI_UINT8_T;
+
+  double collectStart = mySecond();
+  MPI_Gatherv(a, chunkSize, mpi_type, result_a, recvcounts, displs, mpi_type, 0, MPI_COMM_WORLD);
+  MPI_Gatherv(b, chunkSize, mpi_type, result_b, recvcounts, displs, mpi_type, 0, MPI_COMM_WORLD);
+  MPI_Gatherv(c, chunkSize, mpi_type, result_c, recvcounts, displs, mpi_type, 0, MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);
+  *collectTime = calculateRunTime(collectStart, mySecond());
+  if (myRank == 0){
+    free(recvcounts);
+    free(displs);
+  }
 }
 
 /**************************************************
