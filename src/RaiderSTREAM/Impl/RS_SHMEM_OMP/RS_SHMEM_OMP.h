@@ -80,9 +80,9 @@ public:
   /**
    * @brief collect all results into one array
    *
-   * @param gatherTime The time taken to collect all results
+   * @param collectTime The time taken to collect all results
   **/
-  virtual void collectChunks(double * gatherTime) override;
+  virtual void collectChunks(double * collectTime) override;
 
   /**
    * @brief Frees allocated memory

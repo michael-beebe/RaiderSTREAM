@@ -160,9 +160,9 @@ public:
   /**
    * @brief collect all results into one array
    *
-   * @param gatherTime The time taken to collect all results
+   * @param collectTime The time taken to collect all results
   **/
-  virtual void collectChunks(double * gatherTime) = 0;
+  virtual void collectChunks(double * collectTime) = 0;
 
   /**
    * @brief Free data for kernels.
@@ -200,7 +200,7 @@ public:
    * @brief Initializes an array with random indices.
    *
    * This function initializes the provided array with unique random indices.
-   * It uses a rejection sampling approach to ensure that no index is repeated.
+   * It uses a Fisher-Yates Algorithm to ensure that no index is repeated.
    *
    * All indices are within the range [0, nelems).
    *

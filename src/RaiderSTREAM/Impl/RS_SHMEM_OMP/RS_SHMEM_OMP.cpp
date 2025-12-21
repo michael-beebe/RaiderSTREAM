@@ -120,24 +120,10 @@ bool RS_SHMEM_OMP::allocateData(double *allocTime, double *initTime, double *ran
   int size = shmem_n_pes();   /* Number of shmem ranks */
   double startTime;
 
-
   if (numPEs == 0) {
     std::cout << "RS_SHMEM_OMP::allocateData() - ERROR: 'pes' cannot be 0"
               << std::endl;
     return false;
-  }
-
-  shmem_barrier_all();
-
-  /* If updated, also update corresponding
-   * region in RS_SHMEM_OMP::execute. */
-  /* Calculate the chunk size for each rank */
-  ssize_t chunkSize = streamArraySize / size;
-  ssize_t remainder = streamArraySize % size;
-
-  /* Adjust the chunk size for the last process */
-  if (myRank == size - 1) {
-    chunkSize += remainder;
   }
 
   shmem_barrier_all();
@@ -211,7 +197,12 @@ bool RS_SHMEM_OMP::allocateData(double *allocTime, double *initTime, double *ran
   return true;
 }
 
-void RS_SHMEM_OMP::collectChunks(double * gatherTime){
+/**
+ * @brief collect all results into one array
+ *
+ * @param collectTime The time taken to collect all results
+**/
+void RS_SHMEM_OMP::collectChunks(double * collectTime){
   shmem_barrier_all();
   auto collectStart = mySecond();
 
@@ -233,7 +224,7 @@ void RS_SHMEM_OMP::collectChunks(double * gatherTime){
   shmem_free(pSync);
 #endif
   shmem_barrier_all();
-  *gatherTime = calculateRunTime(collectStart, mySecond());
+  *collectTime = calculateRunTime(collectStart, mySecond());
 }
 
 
