@@ -147,9 +147,13 @@ public:
 
   /**
    * @brief Determine local chunk size of PE
+   * 
+   * by default, return size of stream array
+   * 
    * @param streamArraySize Total size of arrays in problem
    */
-  virtual ssize_t getChunkSize(ssize_t streamArraySize) = 0;
+  virtual ssize_t getChunkSize(ssize_t streamArraySize) 
+      { return streamArraySize; };
 
   /**
    * @brief Allocate data for kernels.
@@ -161,7 +165,8 @@ public:
    *
    * @return True if successful, false otherwise.
    **/
-  virtual bool allocateData(double * allocTime, double * initTime, double * randomGenTime) = 0; 
+  virtual bool allocateData(double * allocTime, double * initTime, 
+      double * randomGenTime) = 0; 
 
   /**
    * @brief collect all results into one array

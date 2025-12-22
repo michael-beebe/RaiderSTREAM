@@ -42,14 +42,26 @@ RS_OMP_TARGET::~RS_OMP_TARGET() {}
  *
  * @return True if allocation and copy are successful, false otherwise.
  */
-bool RS_OMP_TARGET::allocateData() {
+bool RS_OMP_TARGET::allocateData(double *allocTime, double *initTime, double *randomGenTime) {
+  double startTime;
+
+  startTime = mySecond();
   STREAM_TYPE *a = new STREAM_TYPE[streamArraySize];
   STREAM_TYPE *b = new STREAM_TYPE[streamArraySize];
   STREAM_TYPE *c = new STREAM_TYPE[streamArraySize];
   ssize_t *idx1 = new ssize_t[streamArraySize];
   ssize_t *idx2 = new ssize_t[streamArraySize];
   ssize_t *idx3 = new ssize_t[streamArraySize];
+  *allocTime = calculateRunTime(startTime, mySecond());
 
+  startTime = mySecond();
+  /* Initialize the local chunks */
+  initStreamArray(a, streamArraySize, 1.0);
+  initStreamArray(b, streamArraySize, 2.0);
+  initStreamArray(c, streamArraySize, 0.0);
+  *initTime = calculateRunTime(startTime, mySecond()); 
+
+  startTime = mySecond();
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
   initReadIdxArray(idx2, streamArraySize, "RaiderSTREAM/arraygen/IDX2.txt");
@@ -59,6 +71,7 @@ bool RS_OMP_TARGET::allocateData() {
   initRandomIdxArray(idx2, streamArraySize);
   initRandomIdxArray(idx3, streamArraySize);
 #endif
+  *randomGenTime = calculateRunTime(startTime, mySecond()); 
 
   size_t data_size = sizeof(STREAM_TYPE) * streamArraySize;
   size_t idx_size = sizeof(ssize_t) * streamArraySize;
@@ -113,6 +126,17 @@ bool RS_OMP_TARGET::allocateData() {
   delete[] idx3;
 
   return true;
+}
+
+/**
+ * @brief collect all results into one array
+ *
+ * No gathering is necessary, so gather time is set to zero
+ * 
+ * @param collectTime The time taken to collect all results
+**/
+void RS_OMP_TARGET::collectChunks (double * collectTime){
+  *collectTime = 0;
 }
 
 /**

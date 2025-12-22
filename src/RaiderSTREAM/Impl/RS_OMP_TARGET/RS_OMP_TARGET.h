@@ -55,7 +55,7 @@ public:
    * @brief Allocates and initializes memory for stream arrays on device
    * @return True if allocation succeeds, false otherwise
    */
-  virtual bool allocateData() override;
+  virtual bool allocateData(double *allocTime, double *initTime, double *randomGenTime) override;
 
   /**
    * @brief Executes the selected benchmark kernel on device
@@ -68,6 +68,13 @@ public:
    */
   virtual bool execute(double *TIMES, double *MBPS, double *FLOPS,
                        double *BYTES, double *FLOATOPS) override;
+
+  /**
+   * @brief collect all results into one array
+   *
+   * @param collectTime The time taken to collect all results
+   **/
+  virtual void collectChunks(double * collectTime) override;
 
   /**
    * @brief Frees allocated device memory

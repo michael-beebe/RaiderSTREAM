@@ -298,28 +298,39 @@ void runBenchOMPTarget(RSOpts *Opts) {
     return;
   }
 
+  /* Initialize the RSRes object */
+  RSRes *Results = new RSRes();
+  if (!Results) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RSRes OBJECT" << std::endl;
+  }
+
   /* Allocate Data */
-  if (!RS->allocateData()) {
+  if (!RS->allocateData(&Results->ALLOC_TIME, &Results->INIT_TIME, &Results->RANDOM_GEN_TIME)) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OMP_TARGET"
               << std::endl;
+    delete Results;
     delete RS;
     return;
   }
 
   /* Execute the benchmark */
-  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES,
+  if (!RS->execute(Results->TIMES, Results->MBPS, Results->FLOPS, Opts->BYTES,
                    Opts->FLOATOPS)) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP_TARGET"
               << std::endl;
     RS->freeData();
+    delete Results;
     delete RS;
     return;
   }
+
+  RS->collectChunks(&Results->COLLECT_TIME);
 
   /* Free the data */
   if (!RS->freeData()) {
     std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_OMP_TARGET"
               << std::endl;
+    delete Results;
     delete RS;
     return;
   }
@@ -336,17 +347,19 @@ void runBenchOMPTarget(RSOpts *Opts) {
                 << std::endl;
     }
   }
+  printRunStats(Results->ALLOC_TIME, Results->INIT_TIME, Results->RANDOM_GEN_TIME, Results->COLLECT_TIME);
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   bool headerPrinted = false;
   for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
     RSBaseImpl::RSKernelType kernelType =
         static_cast<RSBaseImpl::RSKernelType>(i);
     std::string kernelName = BenchTypeTable[i].Notes;
-    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType,
-                runKernelType, headerPrinted);
+    printTiming(kernelName, Results->TIMES[i], Results->MBPS, Results->FLOPS,
+                  kernelType, runKernelType, headerPrinted);
   }
 
-  /* Free the RS_OMP object */
+  /* Free the RS_OMP_TARGET and RSRes object */
+  delete Results;
   delete RS;
 }
 #endif
@@ -546,25 +559,36 @@ void runBenchCUDA(RSOpts *Opts) {
     return;
   }
 
+  /* Initialize the RS_SHMEM_OMP object */
+  RS_SHMEM_OMP *RS = new RS_SHMEM_OMP(*Opts);
+  if (!RS) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RS_SHMEM_OMP OBJECT" << std::endl;
+  }
+
   /* Allocate Data */
-  if (!RS->allocateData()) {
+  if (!RS->allocateData(&Results->ALLOC_TIME, &Results->INIT_TIME, &Results->RANDOM_GEN_TIME)) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OMP" << std::endl;
+    delete Results;
     delete RS;
     return;
   }
 
   /* Execute the benchmark */
-  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES,
+  if (!RS->execute(Results->TIMES, Results->MBPS, Results->FLOPS, Opts->BYTES,
                    Opts->FLOATOPS)) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OMP" << std::endl;
     RS->freeData();
+    delete Results;
     delete RS;
     return;
   }
 
+  RS->collectChunks(&Results->COLLECT_TIME);
+
   /* Free the data */
   if (!RS->freeData()) {
     std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_OMP" << std::endl;
+    delete Results;
     delete RS;
     return;
   }
@@ -572,17 +596,19 @@ void runBenchCUDA(RSOpts *Opts) {
   /* Print the timing */
   Opts->printLogo();
   Opts->printOpts();
+  printRunStats(Results->ALLOC_TIME, Results->INIT_TIME, Results->RANDOM_GEN_TIME, Results->COLLECT_TIME);
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   bool headerPrinted = false;
   for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
     RSBaseImpl::RSKernelType kernelType =
         static_cast<RSBaseImpl::RSKernelType>(i);
     std::string kernelName = BenchTypeTable[i].Notes;
-    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType,
-                runKernelType, headerPrinted);
+    printTiming(kernelName, Results->TIMES[i], Results->MBPS, Results->FLOPS,
+                  kernelType, runKernelType, headerPrinted);
   }
 
   /* Free the RS_OMP object */
+  delete Results;
   delete RS;
 }
 #endif
