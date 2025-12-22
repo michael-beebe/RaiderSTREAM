@@ -135,7 +135,7 @@ bool RS_SHMEM_CUDA::printCudaDeviceProps() {
  * @return True if allocation and copy are
  *         successful, false otherwise.
  **********************************************/
-bool RS_SHMEM_CUDA::allocateData() {
+bool RS_SHMEM_CUDA::allocateData(){
   if(cudaSetDevice(deviceId) != cudaSuccess) {
     std::cout << "RS_SHMEM_CUDA::allocateData() - ERROR: failed setting CUDA device to "
               << deviceId

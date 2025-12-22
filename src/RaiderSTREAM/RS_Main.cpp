@@ -559,10 +559,13 @@ void runBenchCUDA(RSOpts *Opts) {
     return;
   }
 
-  /* Initialize the RS_SHMEM_OMP object */
-  RS_SHMEM_OMP *RS = new RS_SHMEM_OMP(*Opts);
-  if (!RS) {
-    std::cout << "ERROR: COULD NOT ALLOCATE RS_SHMEM_OMP OBJECT" << std::endl;
+
+  /* Initialize the RS_CUDA object */
+  RSRes * Results = new RSRes();
+  if (!Results) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RESULTS OBJECT" << std::endl;
+	delete RS;
+    return;
   }
 
   /* Allocate Data */
