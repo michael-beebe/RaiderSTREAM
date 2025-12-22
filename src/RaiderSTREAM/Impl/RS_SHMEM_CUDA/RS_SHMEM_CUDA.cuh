@@ -25,12 +25,16 @@ private:
   std::string kernelName;         /**< Name of kernel being executed */
   ssize_t streamArraySize;        /**< Size of stream arrays */
   ssize_t streamArrayMemSize;     /**< Memory size of stream arrays in bytes */
+	ssize_t chunkSize;
   int numPEs;                     /**< Number of processing elements */
   int lArgc;                      /**< Local argument count */
   char **lArgv;                   /**< Local argument vector */
   STREAM_TYPE *a;                 /**< Host pointer for first stream array */
   STREAM_TYPE *b;                 /**< Host pointer for second stream array */ 
   STREAM_TYPE *c;                 /**< Host pointer for third stream array */
+  STREAM_TYPE *result_a;          /**< Result pointer for first stream array */
+  STREAM_TYPE *result_b;          /**< Result pointer for second stream array */ 
+  STREAM_TYPE *result_c;          /**< Result pointer for third stream array */
   STREAM_TYPE *d_a;               /**< Device pointer for first stream array */
   STREAM_TYPE *d_b;               /**< Device pointer for second stream array */
   STREAM_TYPE *d_c;               /**< Device pointer for third stream array */
@@ -59,6 +63,12 @@ public:
   ~RS_SHMEM_CUDA();
 
   /**
+   * @brief Determine local chunk size of PE
+   * @param streamArraySize Total size of arrays in problem
+   */
+  ssize_t getChunkSize(ssize_t streamArraySize);
+
+  /**
    * @brief Prints CUDA device properties
    * @return True if successful, false otherwise
    */
@@ -68,7 +78,7 @@ public:
    * @brief Allocates and initializes memory for stream arrays
    * @return True if allocation succeeds, false otherwise
    */
-  virtual bool allocateData() override;
+  virtual bool allocateData(double * allocTime, double * initTime, double * randomGenTime) override;
 
   /**
    * @brief Executes the selected benchmark kernel
@@ -81,6 +91,13 @@ public:
    */
   virtual bool execute(double *TIMES, double *MBPS, double *FLOPS,
                        double *BYTES, double *FLOATOPS) override;
+
+  /**
+   * @brief collect all results into one array
+   *
+   * @param collectTime The time taken to collect all results
+  **/
+  virtual void collectChunks(double * collectTime) override;
 
   /**
    * @brief Frees allocated memory

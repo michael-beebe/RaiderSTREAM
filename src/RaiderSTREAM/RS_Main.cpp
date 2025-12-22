@@ -846,53 +846,48 @@ void runBenchSHMEMCUDA(RSOpts *Opts) {
   shmem_init();
   int myRank = shmem_my_pe();
 
-  /* Initialize the RS_SHMEM_OMP object */
+  /* Initialize the RS_SHMEM_CUDA object */
   RS_SHMEM_CUDA *RS = new RS_SHMEM_CUDA(*Opts);
   if (!RS) {
     std::cout << "ERROR: COULD NOT ALLOCATE RS_SHMEM_CUDA OBJECT" << std::endl;
   }
 
-  /* Allocate Data */
-  double *SHMEM_TIMES =
-      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
-  double *SHMEM_MBPS =
-      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
-  double *SHMEM_FLOPS =
-      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
-
-  double *SHMEM_BYTES =
-      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
-  double *SHMEM_FLOATOPS =
-      static_cast<double *>(shmem_malloc(NUM_KERNELS * sizeof(double)));
-  for (int i = 0; i < NUM_KERNELS; i++) {
-    SHMEM_BYTES[i] = Opts->BYTES[i];
-    SHMEM_FLOATOPS[i] = Opts->FLOATOPS[i];
+  /* Initialize the RSRes object */
+  RSRes *Results = new RSRes();
+  if (!Results) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RSRes OBJECT" << std::endl;
+		delete RS;
   }
 
-  if (!RS->allocateData()) {
+  if (!RS->allocateData(&Results->ALLOC_TIME, &Results->INIT_TIME, &Results->RANDOM_GEN_TIME)) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_SHMEM_CUDA"
               << std::endl;
+		delete Results;
     shmem_finalize();
     delete RS;
     return;
   }
 
   /* Execute the benchmark */
-  if (!RS->execute(SHMEM_TIMES, SHMEM_MBPS, SHMEM_FLOPS, SHMEM_BYTES,
-                   SHMEM_FLOATOPS)) {
+  if (!RS->execute(Results->TIMES, Results->MBPS, Results->FLOPS, Opts->BYTES,
+                   Opts->FLOATOPS)) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_SHMEM_CUDA"
               << std::endl;
     RS->freeData();
+		delete Results;
     shmem_finalize();
     delete RS;
     return;
   }
+
+  RS->collectChunks(&Results->COLLECT_TIME);
 
   /* Free the data */
   if (!RS->freeData()) {
     std::cout << "ERROR: COULD NOT FREE THE MEMORY FOR RS_SHMEM_CUDA"
               << std::endl;
     shmem_finalize();
+		delete Results;
     delete RS;
     return;
   }
@@ -901,13 +896,14 @@ void runBenchSHMEMCUDA(RSOpts *Opts) {
   if (myRank == 0) {
     Opts->printLogo();
     Opts->printOpts();
+    printRunStats(Results->ALLOC_TIME, Results->INIT_TIME, Results->RANDOM_GEN_TIME, Results->COLLECT_TIME);
     RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
     bool headerPrinted = false;
     for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
       RSBaseImpl::RSKernelType kernelType =
           static_cast<RSBaseImpl::RSKernelType>(i);
       std::string kernelName = BenchTypeTable[i].Notes;
-      printTiming(kernelName, SHMEM_TIMES[i], SHMEM_MBPS, SHMEM_FLOPS,
+      printTiming(kernelName, Results->TIMES[i], Results->MBPS, Results->FLOPS,
                   kernelType, runKernelType, headerPrinted);
     }
   }
@@ -915,12 +911,7 @@ void runBenchSHMEMCUDA(RSOpts *Opts) {
   shmem_barrier_all();
   
   /* Free the RS_SHMEM_OMP object, finalize OpenSHMEM */
-  shmem_free(SHMEM_TIMES);
-  shmem_free(SHMEM_MBPS);
-  shmem_free(SHMEM_FLOPS);
-  shmem_free(SHMEM_BYTES);
-  shmem_free(SHMEM_FLOATOPS);
-
+	delete Results;
   shmem_finalize();
   delete RS;
 }

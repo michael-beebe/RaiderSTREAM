@@ -152,8 +152,7 @@ public:
    * 
    * @param streamArraySize Total size of arrays in problem
    */
-  virtual ssize_t getChunkSize(ssize_t streamArraySize) 
-      { return streamArraySize; };
+  virtual ssize_t getChunkSize(ssize_t streamArraySize) = 0;
 
   /**
    * @brief Allocate data for kernels.
