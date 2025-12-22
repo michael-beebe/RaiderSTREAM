@@ -229,37 +229,52 @@ void runBenchOACC(RSOpts *Opts) {
     std::cout << "ERROR" << std::endl;
     return;
   }
+
+  /* Initialize the RS_CUDA object */
+  RSRes * Results = new RSRes();
+  if (!Results) {
+    std::cout << "ERROR: COULD NOT ALLOCATE RESULTS OBJECT" << std::endl;
+	delete RS;
+    return;
+  }
+
   /* Set Device */
   if (!RS->setDevice()) {
     std::cout << "ERROR: COULD NOT SET DEVICE FOR RS_OACC" << std::endl;
     RS->freeData();
     acc_shutdown(acc_device_nvidia);
+	delete Results;	
     delete RS;
     return;
   }
   /* Allocate Data */
-  if (!RS->allocateData()) {
+  if (!RS->allocateData(&Results->ALLOC_TIME, &Results->INIT_TIME, &Results->RANDOM_GEN_TIME)) {
     std::cout << "ERROR: COULD NOT ALLOCATE MEMORY FOR RS_OACC" << std::endl;
     RS->freeData();
     acc_shutdown(acc_device_nvidia);
+	delete Results;
     delete RS;
     return;
   }
 
   /* Execute the Benchmark */
-  if (!RS->execute(Opts->TIMES, Opts->MBPS, Opts->FLOPS, Opts->BYTES,
+  if (!RS->execute(Results->TIMES, Results->MBPS, Results->FLOPS, Opts->BYTES,
                    Opts->FLOATOPS)) {
     std::cout << "ERROR: COULD NOT EXECUTE BENCHMARK FOR RS_OACC" << std::endl;
     RS->freeData();
     acc_shutdown(acc_device_nvidia);
-    delete RS;
+    delete Results;
+	delete RS;
     return;
   }
+
+  RS->collectChunks(&Results->COLLECT_TIME);
 
   /* Free the data */
   if (!RS->freeData()) {
     std::cout << " ERROR: COULD NOT FREE THE MEMORY FOR RS_OACC" << std::endl;
     acc_shutdown(acc_device_nvidia);
+	delete Results;
     delete RS;
     return;
   }
@@ -267,17 +282,19 @@ void runBenchOACC(RSOpts *Opts) {
   /* Print the timing */
   Opts->printLogo();
   Opts->printOpts();
+  printRunStats(Results->ALLOC_TIME, Results->INIT_TIME, Results->RANDOM_GEN_TIME, Results->COLLECT_TIME);
   RSBaseImpl::RSKernelType runKernelType = Opts->getKernelType();
   bool headerPrinted = false;
   for (int i = 0; i <= RSBaseImpl::RS_ALL; i++) {
     RSBaseImpl::RSKernelType kernelType =
         static_cast<RSBaseImpl::RSKernelType>(i);
     std::string kernelName = BenchTypeTable[i].Notes;
-    printTiming(kernelName, Opts->TIMES[i], Opts->MBPS, Opts->FLOPS, kernelType,
-                runKernelType, headerPrinted);
+    printTiming(kernelName, Results->TIMES[i], Results->MBPS, Results->FLOPS,
+                  kernelType, runKernelType, headerPrinted);
   }
 
-  /* Free the RS_OACC object */
+  /* Free the RS_OACC and RSRes object */
+  delete Results;
   delete RS;
 }
 #endif
