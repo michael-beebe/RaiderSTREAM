@@ -79,7 +79,8 @@ RS_SHMEM_OACC::RS_SHMEM_OACC(const RSOpts &opts)
     : RSBaseImpl("RS_SHMEM_OACC",
                  opts.getKernelTypeFromName(opts.getKernelName())),
       kernelName(opts.getKernelName()),
-      streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
+      streamArraySize(opts.getStreamArraySize()), 
+      chunkSize(getChunkSize(streamArraySize)), lArgc(0), lArgv(nullptr),
       numPEs(opts.getNumPEs()), d_a(nullptr), d_b(nullptr), d_idx1(nullptr),
       d_idx2(nullptr), d_idx3(nullptr), scalar(3) {}
 
@@ -87,6 +88,22 @@ RS_SHMEM_OACC::RS_SHMEM_OACC(const RSOpts &opts)
  * @brief Destructor for the RS_SHMEM_OACC class
  */
 RS_SHMEM_OACC::~RS_SHMEM_OACC() {}
+
+/**
+ * @brief Determine local chunk size of PE
+ * @param streamArraySize Total size of arrays in problem
+ */
+ssize_t RS_SHMEM_OACC::getChunkSize(ssize_t streamArraySize) {
+  int size = shmem_n_pes();
+  int myRank = shmem_my_pe();
+  ssize_t chunkSize = streamArraySize / size;
+  ssize_t remainder = streamArraySize % size;
+
+  /* Adjust the chunk size for the last process */
+  if (myRank == size - 1)
+    chunkSize += remainder;
+  return chunkSize;
+}
 
 /**
  * @brief Allocates and initializes memory for data arrays
@@ -98,7 +115,8 @@ RS_SHMEM_OACC::~RS_SHMEM_OACC() {}
  *          - Copies data to device memory
  *          - Performs debug validation if enabled
  */
-bool RS_SHMEM_OACC::allocateData() {
+bool RS_SHMEM_OACC::allocateData(double * allocTime, double * initTime, 
+double * randomGenTime) {
   int myRank = shmem_my_pe(); /* Current rank */
   int size = shmem_n_pes();   /* Number of shmem ranks */
   if (numPEs == 0) {
@@ -106,39 +124,31 @@ bool RS_SHMEM_OACC::allocateData() {
               << std::endl;
     return false;
   }
-
   shmem_barrier_all();
-
-  /* If updated, also update corresponding
-   * region in RS_SHMEM_OACC::execute. */
-  /* Calculate the chunk size for each rank */
-  ssize_t chunkSize = streamArraySize / size;
-  ssize_t remainder = streamArraySize % size;
-
-  /* Adjust the chunk size for the last process */
-  if (myRank == size - 1) {
-    chunkSize += remainder;
-  }
-
+  double startTime = mySecond(); 
   /* Allocate memory for the local chunks in symmetric heap space */
-  STREAM_TYPE *a =
-      static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
-  STREAM_TYPE *b =
-      static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
-  STREAM_TYPE *c =
-      static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  a = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  b = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  c = static_cast<STREAM_TYPE *>(shmem_malloc(chunkSize * sizeof(STREAM_TYPE)));
+  result_a = static_cast<STREAM_TYPE *>(shmem_malloc(streamArraySize * sizeof(STREAM_TYPE)));
+  result_b = static_cast<STREAM_TYPE *>(shmem_malloc(streamArraySize * sizeof(STREAM_TYPE)));
+  result_c = static_cast<STREAM_TYPE *>(shmem_malloc(streamArraySize * sizeof(STREAM_TYPE)));
   ssize_t *idx1 =
       static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   ssize_t *idx2 =
       static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
   ssize_t *idx3 =
       static_cast<ssize_t *>(shmem_malloc(chunkSize * sizeof(ssize_t)));
-
+  *allocTime = calculateRunTime(startTime, mySecond());
+ 
+  startTime = mySecond();
   /* Initialize the local chunks */
   initStreamArray(a, chunkSize, 1);
   initStreamArray(b, chunkSize, 2);
   initStreamArray(c, chunkSize, 3);
+  *initTime = calculateRunTime(startTime, mySecond());
 
+  startTime = mySecond();
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, chunkSize, "RaiderSTREAM/arraygen/IDX1.txt");
   initReadIdxArray(idx2, chunkSize, "RaiderSTREAM/arraygen/IDX2.txt");
@@ -148,6 +158,7 @@ bool RS_SHMEM_OACC::allocateData() {
   initRandomIdxArray(idx2, chunkSize);
   initRandomIdxArray(idx3, chunkSize);
 #endif
+  *randomGenTime = calculateRunTime(startTime, mySecond());
 
   ssize_t streamMemArraySize = sizeof(STREAM_TYPE) * chunkSize;
   ssize_t idxMemArraySize = sizeof(ssize_t) * chunkSize;
@@ -213,15 +224,6 @@ bool RS_SHMEM_OACC::allocateData() {
 
   shmem_barrier_all();
 
-  if (a) {
-    shmem_free(a);
-  }
-  if (b) {
-    shmem_free(b);
-  }
-  if (c) {
-    shmem_free(c);
-  }
   if (idx1) {
     shmem_free(idx1);
   }
@@ -235,12 +237,68 @@ bool RS_SHMEM_OACC::allocateData() {
   return true;
 }
 
+
+/**
+ * @brief collect all results into one array
+ *
+ * @param collectTime The time taken to collect all results
+ **/
+void RS_SHMEM_OACC::collectChunks(double * collectTime){
+  /* Pull data from device */
+  ssize_t streamMemArraySize = sizeof(STREAM_TYPE) * chunkSize;
+  acc_memcpy_from_device(a, d_a, streamMemArraySize);
+  acc_memcpy_from_device(b, d_b, streamMemArraySize);
+  acc_memcpy_from_device(c, d_c, streamMemArraySize);
+
+  /* Collect Results */
+  shmem_barrier_all();
+  double collectStart = mySecond();
+#ifdef _SHMEM_1_5_
+  shmem_collect(SHMEM_TEAM_WORLD, result_a, a, chunkSize);
+  shmem_collect(SHMEM_TEAM_WORLD, result_b, b, chunkSize);
+  shmem_collect(SHMEM_TEAM_WORLD, result_c, c, chunkSize);
+#endif
+#ifdef _SHMEM_1_4_
+  syncSize = SHMEM_SYNC_SIZE;
+  long *pSync = static_cast<long *>(shmem_malloc(syncSize * sizeof(long)));
+  for (size_t i = 0; i < syncSize; ++i) {
+    pSync[i] = SHMEM_SYNC_VALUE;
+  }
+  int npes = shmem_n_pes();
+  shmem_collect64(result_a, a, chunkSize, 0, 0, npes, pSync);
+  shmem_collect64(result_b, b, chunkSize, 0, 0, npes, pSync);
+  shmem_collect64(result_c, c, chunkSize, 0, 0, npes, pSync);
+  shmem_free(pSync);
+#endif
+
+  shmem_barrier_all();
+  *collectTime = calculateRunTime(collectStart, mySecond());
+}
+
 /**
  * @brief Frees all allocated device memory
  * @return true if all memory was successfully freed
  * @details Frees device memory for arrays d_a, d_b, d_c, d_idx1, d_idx2, d_idx3
  */
 bool RS_SHMEM_OACC::freeData() {
+  if (a) {
+    shmem_free(a);
+  }
+  if (b) {
+    shmem_free(b);
+  }
+  if (c) {
+    shmem_free(c);
+  }
+  if (result_a) {
+    shmem_free(result_a);
+  }
+  if (result_b) {
+    shmem_free(result_b);
+  }
+  if (result_c) {
+    shmem_free(result_c);
+  }
   if (d_a) {
     acc_free(d_a);
   }
@@ -302,17 +360,6 @@ bool RS_SHMEM_OACC::execute(double *TIMES, double *MBPS, double *FLOPS,
 #endif
 
   shmem_barrier_all();
-
-  /* If updated, also update corresponding
-   * region in RS_SHMEM_OACC::allocateData. */
-  /* Calculate the chunk size for each rank */
-  ssize_t chunkSize = streamArraySize / size;
-  ssize_t remainder = streamArraySize % size;
-
-  /* Adjust the chunk size for the last process */
-  if (myRank == size - 1) {
-    chunkSize += remainder;
-  }
 
   RSBaseImpl::RSKernelType kType = getKernelType();
 
