@@ -373,17 +373,6 @@ bool RS_SHMEM_OMP_TARGET::execute(double *TIMES, double *MBPS, double *FLOPS,
 
   shmem_barrier_all();
 
-  /* If updated, also update corresponding
-   * region in RS_SHMEM_OMP::allocateData. */
-  /* Calculate the chunk size for each rank */
-  ssize_t chunkSize = streamArraySize / size;
-  ssize_t remainder = streamArraySize % size;
-
-  /* Adjust the chunk size for the last process */
-  if (myRank == size - 1) {
-    chunkSize += remainder;
-  }
-
   RSBaseImpl::RSKernelType kType = getKernelType();
 
   switch (kType) {
