@@ -103,7 +103,9 @@ RS_SHMEM_CUDA::RS_SHMEM_CUDA(const RSOpts &opts)
     : RSBaseImpl("RS_SHMEM_CUDA",
                  opts.getKernelTypeFromName(opts.getKernelName())),
       kernelName(opts.getKernelName()),
-      streamArraySize(opts.getStreamArraySize()), streamArrayMemSize(0),
+      streamArraySize(opts.getStreamArraySize()), 
+			chunkSize(getChunkSize(streamArraySize)), 
+			streamArrayMemSize(0),
       idxArrayMemSize(0), numPEs(opts.getNumPEs()), lArgc(0), lArgv(nullptr),
       a(nullptr), b(nullptr), c(nullptr), d_a(nullptr), d_b(nullptr),
       d_c(nullptr), idx1(nullptr), idx2(nullptr), idx3(nullptr),
@@ -128,6 +130,24 @@ bool RS_SHMEM_CUDA::printCudaDeviceProps() {
   return true;
 }
 
+/**************************************************
+ * @brief Determine local chunk size of PE
+ * @param streamArraySize Total size of arrays in problem
+ ********************************************/
+
+ ssize_t getChunkSize(ssize_t streamArraySize);
+ssize_t RS_SHMEM_CUDA::getChunkSize(ssize_t streamArraySize) {
+  int size = shmem_n_pes();
+  int myRank = shmem_my_pe();
+  ssize_t chunkSize = streamArraySize / size;
+  ssize_t remainder = streamArraySize % size;
+
+  /* Adjust the chunk size for the last process */
+  if (myRank == size - 1)
+    chunkSize += remainder;
+  return chunkSize;
+}
+
 /**********************************************
  * @brief Allocates and initializes memory for
  *        data arrays and copies data to the device.
@@ -135,7 +155,7 @@ bool RS_SHMEM_CUDA::printCudaDeviceProps() {
  * @return True if allocation and copy are
  *         successful, false otherwise.
  **********************************************/
-bool RS_SHMEM_CUDA::allocateData() {
+bool RS_SHMEM_CUDA::allocateData(double * allocTime, double * initTime, double * randomGenTime){
   if(cudaSetDevice(deviceId) != cudaSuccess) {
     std::cout << "RS_SHMEM_CUDA::allocateData() - ERROR: failed setting CUDA device to "
               << deviceId
@@ -152,17 +172,6 @@ bool RS_SHMEM_CUDA::allocateData() {
 
   shmem_barrier_all();
 
-  /* If updated, also update corresponding
-   * region in RS_SHMEM_CUDA::execute. */
-  /* Calculate the chunk size for each rank */
-  ssize_t chunkSize = streamArraySize / size;
-  ssize_t remainder = streamArraySize % size;
-
-  /* Adjust the chunk size for the last process */
-  if (myRank == size - 1) {
-    chunkSize += remainder;
-  }
-
   if (threadBlocks <= 0) {
     std::cout
         << "RS_SHMEM_CUDA::AllocateData: threadBlocks must be greater than 0"
@@ -175,22 +184,30 @@ bool RS_SHMEM_CUDA::allocateData() {
         << std::endl;
     return false;
   }
-
+	
+	double startTime = mySecond();
   /* Allocate host memory */
+  result_a = new STREAM_TYPE[streamArraySize];
+  result_b = new STREAM_TYPE[streamArraySize];
+  result_c = new STREAM_TYPE[streamArraySize];
   a = new STREAM_TYPE[chunkSize];
   b = new STREAM_TYPE[chunkSize];
   c = new STREAM_TYPE[chunkSize];
   idx1 = new ssize_t[chunkSize];
   idx2 = new ssize_t[chunkSize];
-  idx3 = new ssize_t[chunkSize];
+  idx3 = new ssize_t[chunkSize];	
+  *allocTime = calculateRunTime(startTime, mySecond());
 
+	startTime = mySecond();
   for (ssize_t i = 0; i < chunkSize; i++) {
     a[i] = b[i] = c[i] = i;
   }
+  *initTime = calculateRunTime(startTime, mySecond());
 
   streamArrayMemSize = chunkSize * sizeof(STREAM_TYPE);
   idxArrayMemSize = chunkSize * sizeof(ssize_t);
 
+	startTime = mySecond();
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, chunkSize, "RaiderSTREAM/arraygen/IDX1.txt");
   initReadIdxArray(idx2, chunkSize, "RaiderSTREAM/arraygen/IDX2.txt");
@@ -200,6 +217,7 @@ bool RS_SHMEM_CUDA::allocateData() {
   initRandomIdxArray(idx2, chunkSize);
   initRandomIdxArray(idx3, chunkSize);
 #endif
+	*randomGenTime = 	calculateRunTime(startTime, mySecond());
 
   /* a -> d_a */
   if (cudaMalloc(&d_a, streamArrayMemSize) != cudaSuccess) {
@@ -207,9 +225,9 @@ bool RS_SHMEM_CUDA::allocateData() {
                  "on device"
               << std::endl;
     cudaFree(d_a);
-    free(a);
-    free(b);
-    free(c);
+		delete[] a;
+		delete[] b;
+		delete[] c;
     free(idx1);
     free(idx2);
     free(idx3);
@@ -229,9 +247,9 @@ bool RS_SHMEM_CUDA::allocateData() {
                  "on device"
               << std::endl;
     cudaFree(d_b);
-    free(a);
-    free(b);
-    free(c);
+		delete[] a;
+		delete[] b;
+		delete[] c;
     free(idx1);
     free(idx2);
     free(idx3);
@@ -251,9 +269,9 @@ bool RS_SHMEM_CUDA::allocateData() {
                  "on device"
               << std::endl;
     cudaFree(d_c);
-    free(a);
-    free(b);
-    free(c);
+		delete[] a;
+		delete[] b;
+		delete[] c;
     free(idx1);
     free(idx2);
     free(idx3);
@@ -273,9 +291,9 @@ bool RS_SHMEM_CUDA::allocateData() {
                  "allocated on device"
               << std::endl;
     cudaFree(d_idx1);
-    free(a);
-    free(b);
-    free(c);
+		delete[] a;
+		delete[] b;
+		delete[] c;
     free(idx1);
     free(idx2);
     free(idx3);
@@ -295,9 +313,9 @@ bool RS_SHMEM_CUDA::allocateData() {
                  "allocated on device"
               << std::endl;
     cudaFree(d_idx2);
-    free(a);
-    free(b);
-    free(c);
+		delete[] a;
+		delete[] b;
+		delete[] c;
     free(idx1);
     free(idx2);
     free(idx3);
@@ -317,9 +335,9 @@ bool RS_SHMEM_CUDA::allocateData() {
                  "allocated on device"
               << std::endl;
     cudaFree(d_idx3);
-    free(a);
-    free(b);
-    free(c);
+		delete[] a;
+		delete[] b;
+		delete[] c;
     free(idx1);
     free(idx2);
     free(idx3);
@@ -358,8 +376,63 @@ bool RS_SHMEM_CUDA::allocateData() {
                "===================="
             << std::endl;
 #endif
-
   return true;
+}
+
+/**
+ * @brief collect all results into one array
+ *
+ * @param collectTime The time taken to collect all results
+**/
+void RS_SHMEM_CUDA::collectChunks(double * collectTime){
+  ssize_t streamArrayMemSize = chunkSize * sizeof(STREAM_TYPE);
+
+  if (cudaMemcpy(a, d_a, streamArrayMemSize, cudaMemcpyDeviceToHost) !=
+      cudaSuccess) {
+    std::cout
+        << "RS_SHMEM_CUDA::AllocateData : 'd_a' could not be copied from device to host"
+        << std::endl;
+    return;
+  }
+
+  if (cudaMemcpy(b, d_b, streamArrayMemSize, cudaMemcpyDeviceToHost) !=
+      cudaSuccess) {
+    std::cout
+        << "RS_SHMEM_CUDA::AllocateData : 'd_a' could not be copied from device to host"
+        << std::endl;
+    return;
+  }
+
+  if (cudaMemcpy(c, d_c, streamArrayMemSize, cudaMemcpyDeviceToHost) !=
+      cudaSuccess) {
+    std::cout
+        << "RS_SHMEM_CUDA::AllocateData : 'd_a' could not be copied from device to host"
+        << std::endl;
+    return;
+  }
+
+  shmem_barrier_all();
+  auto collectStart = mySecond();
+#ifdef _SHMEM_1_5_
+  shmem_collect(SHMEM_TEAM_WORLD, result_a, a, chunkSize);
+  shmem_collect(SHMEM_TEAM_WORLD, result_b, b, chunkSize);
+  shmem_collect(SHMEM_TEAM_WORLD, result_c, c, chunkSize);
+#endif
+#ifdef _SHMEM_1_4_
+  syncSize = SHMEM_SYNC_SIZE;
+  long *pSync = static_cast<long *>(shmem_malloc(syncSize * sizeof(long)));
+  for (size_t i = 0; i < syncSize; ++i) {
+    pSync[i] = SHMEM_SYNC_VALUE;
+  }
+  int npes = shmem_n_pes();
+  shmem_collect(result_a, a, chunkSize, 0, 0, npes, pSync);
+  shmem_collect(result_b, b, chunkSize, 0, 0, npes, pSync);
+  shmem_collect(result_c, c, chunkSize, 0, 0, npes, pSync);
+  shmem_free(pSync);
+#endif
+  shmem_barrier_all();
+  *collectTime = calculateRunTime(collectStart, mySecond());
+	
 }
 
 /**************************************************
@@ -380,6 +453,15 @@ bool RS_SHMEM_CUDA::freeData() {
   }
   if (c) {
     delete[] c;
+  }
+  if (result_a) {
+    delete[] result_a;
+  }
+  if (result_b) {
+    delete[] result_b;
+  }
+  if (result_c) {
+    delete[] result_c;
   }
   if (idx1) {
     delete[] idx1;
@@ -458,17 +540,6 @@ bool RS_SHMEM_CUDA::execute(double *TIMES, double *MBPS, double *FLOPS,
   }
 
   shmem_barrier_all();
-
-  /* If updated, also update corresponding
-   * region in RS_SHMEM_CUDA::allocateData. */
-  /* Calculate the chunk size for each rank */
-  ssize_t chunkSize = streamArraySize / size;
-  ssize_t remainder = streamArraySize % size;
-
-  /* Adjust the chunk size for the last process */
-  if (myRank == size - 1) {
-    chunkSize += remainder;
-  }
 
   /* cuda likes to be too smart for its
    * own good, and will delay certain init

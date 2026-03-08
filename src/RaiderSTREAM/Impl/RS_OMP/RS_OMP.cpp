@@ -38,14 +38,26 @@ RS_OMP::~RS_OMP() {}
  *
  * @return True if allocation is successful, false otherwise.
  **************************************************/
-bool RS_OMP::allocateData() {
+bool RS_OMP::allocateData(double *allocTime, double *initTime, double *randomGenTime) {
+  double startTime;
+
+  startTime = mySecond();
   a = new STREAM_TYPE[streamArraySize];
   b = new STREAM_TYPE[streamArraySize];
   c = new STREAM_TYPE[streamArraySize];
   idx1 = new ssize_t[streamArraySize];
   idx2 = new ssize_t[streamArraySize];
   idx3 = new ssize_t[streamArraySize];
+  *allocTime = calculateRunTime(startTime, mySecond());
 
+  startTime = mySecond();
+  /* Initialize the local chunks */
+  initStreamArray(a, streamArraySize, 1.0);
+  initStreamArray(b, streamArraySize, 2.0);
+  initStreamArray(c, streamArraySize, 0.0);
+  *initTime = calculateRunTime(startTime, mySecond()); 
+
+  startTime = mySecond();
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
   initReadIdxArray(idx2, streamArraySize, "RaiderSTREAM/arraygen/IDX2.txt");
@@ -55,6 +67,7 @@ bool RS_OMP::allocateData() {
   initRandomIdxArray(idx2, streamArraySize);
   initRandomIdxArray(idx3, streamArraySize);
 #endif
+  *randomGenTime = calculateRunTime(startTime, mySecond()); 
 
 #ifdef _DEBUG_
   std::cout << "==============================================================="
@@ -83,6 +96,17 @@ bool RS_OMP::allocateData() {
 #endif
 
   return true;
+}
+
+/**
+ * @brief collect all results into one array
+ *
+ * No gathering is necessary, so gather time is set to zero
+ * 
+ * @param collectTime The time taken to collect all results
+**/
+void RS_OMP::collectChunks (double * collectTime){
+  *collectTime = 0;
 }
 
 /**************************************************

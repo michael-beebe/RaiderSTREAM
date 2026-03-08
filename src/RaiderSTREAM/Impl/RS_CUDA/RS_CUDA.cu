@@ -79,7 +79,7 @@ bool RS_CUDA::printCudaDeviceProps() {
  *
  * @return True if allocation and initialization successful, false otherwise
  */
-bool RS_CUDA::allocateData() {
+bool RS_CUDA::allocateData(double * allocTime, double * initTime, double * randomGenTime) {
   if(cudaSetDevice(deviceId) != cudaSuccess) {
     std::cout << "RS_CUDA::allocateData() - ERROR: failed setting CUDA device to "
               << deviceId
@@ -95,22 +95,28 @@ bool RS_CUDA::allocateData() {
               << std::endl;
     return false;
   }
+  double startTime;
 
   /* Allocate host memory */
+  startTime = mySecond();
   a = new STREAM_TYPE[streamArraySize];
   b = new STREAM_TYPE[streamArraySize];
   c = new STREAM_TYPE[streamArraySize];
   idx1 = new ssize_t[streamArraySize];
   idx2 = new ssize_t[streamArraySize];
   idx3 = new ssize_t[streamArraySize];
+  *allocTime = calculateRunTime(startTime, mySecond());
 
+  startTime = mySecond();
   for (ssize_t i = 0; i < streamArraySize; i++) {
     a[i] = b[i] = c[i] = i;
   }
+  *initTime = calculateRunTime(startTime, mySecond());
 
   streamArrayMemSize = streamArraySize * sizeof(STREAM_TYPE);
   idxArrayMemSize = streamArraySize * sizeof(ssize_t);
 
+  startTime = mySecond();
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, streamArraySize, "RaiderSTREAM/arraygen/IDX1.txt");
   initReadIdxArray(idx2, streamArraySize, "RaiderSTREAM/arraygen/IDX2.txt");
@@ -120,6 +126,7 @@ bool RS_CUDA::allocateData() {
   initRandomIdxArray(idx2, streamArraySize);
   initRandomIdxArray(idx3, streamArraySize);
 #endif
+  *randomGenTime = calculateRunTime(startTime, mySecond());
 
   /* a -> d_a */
   if (cudaMalloc(&d_a, streamArrayMemSize) != cudaSuccess) {
@@ -283,6 +290,11 @@ bool RS_CUDA::allocateData() {
 #endif
 
   return true;
+}
+
+
+void RS_CUDA::collectChunks(double * collectTime) {
+  *collectTime = 0;
 }
 
 /**

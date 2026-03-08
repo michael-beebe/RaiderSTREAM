@@ -9,6 +9,7 @@ set (
   RSSrcs
   RS_Main.cpp
   RSOpts.cpp
+  RSRes.cpp
 )
 
 if (ENABLE_OMP)

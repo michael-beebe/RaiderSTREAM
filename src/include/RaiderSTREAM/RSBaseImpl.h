@@ -146,6 +146,15 @@ public:
   std::string getImplName() { return Impl; }
 
   /**
+   * @brief Determine local chunk size of PE
+   * 
+   * by default, return size of stream array
+   * 
+   * @param streamArraySize Total size of arrays in problem
+   */
+  virtual ssize_t getChunkSize(ssize_t streamArraySize) = 0;
+
+  /**
    * @brief Allocate data for kernels.
    *
    * Depending on the implementation, this could
@@ -155,7 +164,15 @@ public:
    *
    * @return True if successful, false otherwise.
    **/
-  virtual bool allocateData() = 0;
+  virtual bool allocateData(double * allocTime, double * initTime, 
+      double * randomGenTime) = 0; 
+
+  /**
+   * @brief collect all results into one array
+   *
+   * @param collectTime The time taken to collect all results
+  **/
+  virtual void collectChunks(double * collectTime) = 0;
 
   /**
    * @brief Free data for kernels.
@@ -193,7 +210,7 @@ public:
    * @brief Initializes an array with random indices.
    *
    * This function initializes the provided array with unique random indices.
-   * It uses a rejection sampling approach to ensure that no index is repeated.
+   * It uses a Fisher-Yates Algorithm to ensure that no index is repeated.
    *
    * All indices are within the range [0, nelems).
    *
@@ -201,25 +218,19 @@ public:
    * @param nelems Number of elements in the array.
    */
   void initRandomIdxArray(ssize_t *array, ssize_t nelems) {
-    if (nelems > std::numeric_limits<ssize_t>::max() / sizeof(unsigned char)) {
-      std::cerr << "Error: Array size too large to allocate flags array."
-                << std::endl;
-      return;
+    size_t i, j, temp;
+
+    /* Initialize array of 0 ... n - 1 */
+    for (i = 0; i < nelems; i ++){
+      array[i] = i;
     }
-    int success;
-    ssize_t i, idx;
-    std::vector<unsigned char> flags(
-        nelems, 0); // Use std::vector to avoid allocation warnings
-    for (i = 0; i < nelems; i++) {
-      success = 0;
-      while (success == 0) {
-        idx = static_cast<ssize_t>(rand()) % nelems;
-        if (flags[idx] == 0) {
-          array[i] = idx;
-          flags[idx] = 1;
-          success = 1;
-        }
-      }
+
+    /* Fisher-Yates Algorithm (in-place, O(N)) */
+    for (i = nelems - 1; i > 0; i --){
+      j = static_cast<ssize_t>(rand()) % (i + 1);
+      temp = array[i];
+      array[i] = array[j];
+      array[j] = temp;
     }
   }
 

@@ -68,7 +68,14 @@ public:
    * @brief Allocate memory for arrays on host and device
    * @return True if successful, false otherwise
    */
-  virtual bool allocateData() override;
+  virtual bool allocateData(double * allocTime, double * initTime, double * randomGenTime) override;
+ 
+  /**
+   * @brief collect all results into one array
+   *
+   * @param collectTime The time taken to collect all results
+  **/
+  virtual void collectChunks(double *collectTime) override;
 
   /**
    * @brief Execute the benchmark kernels

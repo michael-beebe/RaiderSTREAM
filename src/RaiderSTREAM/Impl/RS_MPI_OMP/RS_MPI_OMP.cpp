@@ -11,6 +11,24 @@
 
 #ifdef _RS_MPI_OMP_H_
 
+#define MPI_OMP_BENCHMARK(KERNEL_TYPE, f)                                   \
+    do {                                                                    \
+    startTime = MPI_Wtime();                                                \
+    f;                                                                      \
+    endTime = MPI_Wtime();                                                  \
+                                                                            \
+    runTime = calculateRunTime(startTime, endTime);                         \
+    mbps = calculateMBPS(BYTES[RSBaseImpl::KERNEL_TYPE], runTime);          \
+    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::KERNEL_TYPE], runTime);     \
+                                                                            \
+    MPI_Reduce(&runTime, &TIMES[RSBaseImpl::KERNEL_TYPE], 1, MPI_DOUBLE,    \
+               MPI_MAX, 0, MPI_COMM_WORLD);                                 \
+    MPI_Reduce(&mbps, &MBPS[RSBaseImpl::KERNEL_TYPE], 1, MPI_DOUBLE,        \
+               MPI_MAX, 0, MPI_COMM_WORLD);                                 \
+    MPI_Reduce(&flops, &FLOPS[RSBaseImpl::KERNEL_TYPE], 1, MPI_DOUBLE,      \
+               MPI_MAX, 0, MPI_COMM_WORLD);                                 \
+    } while(0);
+
 /**************************************************
  * @brief Constructor for the RS_MPI_OMP class.
  *
@@ -21,8 +39,9 @@
 RS_MPI_OMP::RS_MPI_OMP(const RSOpts &opts)
     : RSBaseImpl("RS_MPI_OMP",
                  opts.getKernelTypeFromName(opts.getKernelName())),
-      kernelName(opts.getKernelName()),
-      streamArraySize(opts.getStreamArraySize()), lArgc(0), lArgv(nullptr),
+      kernelName(opts.getKernelName()), 
+      streamArraySize(opts.getStreamArraySize()), 
+      chunkSize(getChunkSize(streamArraySize)), lArgc(0), lArgv(nullptr),
       numPEs(opts.getNumPEs()), a(nullptr), b(nullptr), idx1(nullptr),
       idx2(nullptr), idx3(nullptr), scalar(3) {}
 
@@ -30,6 +49,27 @@ RS_MPI_OMP::RS_MPI_OMP(const RSOpts &opts)
  * @brief Destructor for the RS_MPI_OMP class.
  **************************************************/
 RS_MPI_OMP::~RS_MPI_OMP() {}
+
+/************************************************
+ * @brief Determine local chunk size of PE
+ * 
+ * @param streamArraySize Total size of arrays in problem
+ ***********************************************/
+ssize_t RS_MPI_OMP::getChunkSize(ssize_t streamArraySize) {
+  int myRank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  /* Calculate the chunk size for each rank */
+  ssize_t chunkSize = streamArraySize / size;
+  ssize_t remainder = streamArraySize % size;
+
+  /* Adjust the chunk size for the last process */
+  if (myRank == size - 1) {
+    chunkSize += remainder;
+  }
+  return chunkSize;
+  }
 
 /**********************************************
  * @brief Allocates and initializes memory
@@ -41,9 +81,10 @@ RS_MPI_OMP::~RS_MPI_OMP() {}
  *
  * @return True if allocation is successful, false otherwise.
  **********************************************/
-bool RS_MPI_OMP::allocateData() {
+bool RS_MPI_OMP::allocateData(double *allocTime, double *initTime, double *randomGenTime) {
   int myRank = -1; /* MPI rank */
   int size = -1;   /* MPI size (number of PEs) */
+  double startTime;
 
   if (numPEs == 0) {
     std::cout << "RS_MPI_OMP::allocateData() - ERROR: 'pes' cannot be 0"
@@ -55,23 +96,31 @@ bool RS_MPI_OMP::allocateData() {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Barrier(MPI_COMM_WORLD);
 
-  /* Calculate the chunk size for each rank */
-  ssize_t chunkSize = streamArraySize / size;
-  ssize_t remainder = streamArraySize % size;
-
-  /* Adjust the chunk size for the last process */
-  if (myRank == size - 1) {
-    chunkSize += remainder;
-  }
-
+  startTime = mySecond();
   /* Allocate memory for the local chunks in local heap space */
   MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &a);
   MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &b);
   MPI_Alloc_mem(chunkSize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &c);
+  MPI_Alloc_mem(streamArraySize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &result_a);
+  MPI_Alloc_mem(streamArraySize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &result_b);
+  MPI_Alloc_mem(streamArraySize * sizeof(STREAM_TYPE), MPI_INFO_NULL, &result_c);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx1);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx2);
   MPI_Alloc_mem(chunkSize * sizeof(ssize_t), MPI_INFO_NULL, &idx3);
+  MPI_Barrier(MPI_COMM_WORLD);
+  *allocTime = calculateRunTime(startTime, mySecond()); 
 
+  MPI_Barrier(MPI_COMM_WORLD);
+  startTime = mySecond();
+  /* Initialize the local chunks */
+  initStreamArray(a, chunkSize, 1.0);
+  initStreamArray(b, chunkSize, 2.0);
+  initStreamArray(c, chunkSize, 0.0);
+  MPI_Barrier(MPI_COMM_WORLD);
+  *initTime = calculateRunTime(startTime, mySecond()); 
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  startTime = mySecond();
 /* Initialize the local chunks */
 #ifdef _ARRAYGEN_
   initReadIdxArray(idx1, chunkSize, "RaiderSTREAM/arraygen/IDX1.txt");
@@ -82,6 +131,8 @@ bool RS_MPI_OMP::allocateData() {
   initRandomIdxArray(idx2, chunkSize);
   initRandomIdxArray(idx3, chunkSize);
 #endif
+  MPI_Barrier(MPI_COMM_WORLD);
+  *randomGenTime = calculateRunTime(startTime, mySecond()); 
 
 #ifdef _DEBUG_
   if (myRank == 0) {
@@ -114,6 +165,54 @@ bool RS_MPI_OMP::allocateData() {
   MPI_Barrier(MPI_COMM_WORLD);
 
   return true;
+}
+
+/**
+ * @brief collect all results into one array
+ *
+ * @param collectTime The time taken to collect all results
+**/
+void RS_MPI_OMP::collectChunks(double * collectTime){
+  /* Create array with chunk sizes*/
+  int myRank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int * recvcounts = NULL;
+  if (myRank == 0) 
+    recvcounts = static_cast<int *>(malloc(size * sizeof(int)));
+  MPI_Gather(&chunkSize, 1, MPI_INT, recvcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  int *displs = NULL;
+  if (myRank == 0){
+    displs = static_cast<int *>(malloc(size * sizeof(int)));
+    displs[0] = 0;
+    for (int i = 1; i < size; i++) {
+        displs[i] = displs[i - 1] + recvcounts[i - 1];
+    }
+  }
+
+  MPI_Datatype mpi_type;
+
+  /* Find correct data size based on stream type */
+  if (sizeof(STREAM_TYPE) == 8)
+    mpi_type = MPI_UINT64_T;
+  else if (sizeof(STREAM_TYPE) == 4)
+    mpi_type = MPI_UINT32_T;
+  else if (sizeof(STREAM_TYPE) == 2)
+    mpi_type = MPI_UINT16_T;
+  else
+    mpi_type = MPI_UINT8_T;
+
+  double collectStart = mySecond();
+  MPI_Gatherv(a, chunkSize, mpi_type, result_a, recvcounts, displs, mpi_type, 0, MPI_COMM_WORLD);
+  MPI_Gatherv(b, chunkSize, mpi_type, result_b, recvcounts, displs, mpi_type, 0, MPI_COMM_WORLD);
+  MPI_Gatherv(c, chunkSize, mpi_type, result_c, recvcounts, displs, mpi_type, 0, MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);
+  *collectTime = calculateRunTime(collectStart, mySecond());
+  if (myRank == 0){
+    free(recvcounts);
+    free(displs);
+  }
 }
 
 /**************************************************
@@ -171,934 +270,161 @@ bool RS_MPI_OMP::execute(double *TIMES, double *MBPS, double *FLOPS,
   double mbps = 0.0;
   double flops = 0.0;
 
-  double localRunTime = 0.0;
-  double localMbps = 0.0;
-  double localFlops = 0.0;
-
   int myRank = -1; /* MPI rank */
   int size = -1;   /* MPI size (number of PEs) */
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Barrier(MPI_COMM_WORLD);
 
-  /* Calculate the chunk size for each rank */
-  ssize_t chunkSize = streamArraySize / size;
-  ssize_t remainder = streamArraySize % size;
-
-  /* Adjust the chunk size for the last process */
-  if (myRank == size - 1) {
-    chunkSize += remainder;
-  }
-
   RSBaseImpl::RSKernelType kType = getKernelType();
 
   switch (kType) {
   /* SEQUENTIAL KERNELS */
   case RSBaseImpl::RS_SEQ_COPY:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    seqCopy(a, b, c, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SEQ_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SEQ_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SEQ_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SEQ_COPY, seqCopy(a, b, c, chunkSize))
     break;
 
   case RSBaseImpl::RS_SEQ_SCALE:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    seqScale(a, b, c, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SEQ_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SEQ_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SEQ_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SEQ_SCALE, seqScale(a, b, c, chunkSize, scalar))
     break;
 
   case RSBaseImpl::RS_SEQ_ADD:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    seqAdd(a, b, c, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SEQ_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SEQ_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SEQ_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SEQ_ADD, seqAdd(a, b, c, chunkSize))
     break;
 
   case RSBaseImpl::RS_SEQ_TRIAD:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    seqTriad(a, b, c, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SEQ_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SEQ_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SEQ_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SEQ_TRIAD, seqTriad(a, b, c, chunkSize, scalar))
     break;
 
   /* GATHER KERNELS */
   case RSBaseImpl::RS_GATHER_COPY:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    gatherCopy(a, b, c, idx1, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_GATHER_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_GATHER_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_GATHER_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_GATHER_COPY, gatherCopy(a, b, c, idx1, chunkSize))
     break;
 
   case RSBaseImpl::RS_GATHER_SCALE:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    gatherScale(a, b, c, idx1, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_GATHER_SCALE], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_GATHER_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_GATHER_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_GATHER_SCALE, gatherScale(a, b, c, idx1, chunkSize, scalar))
     break;
 
   case RSBaseImpl::RS_GATHER_ADD:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    gatherAdd(a, b, c, idx1, idx2, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_GATHER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_GATHER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_GATHER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_GATHER_ADD, gatherAdd(a, b, c, idx1, idx2, chunkSize))
     break;
 
   case RSBaseImpl::RS_GATHER_TRIAD:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_GATHER_TRIAD], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_GATHER_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_GATHER_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_GATHER_TRIAD, gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar))
     break;
 
   /* SCATTER KERNELS */
   case RSBaseImpl::RS_SCATTER_COPY:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    scatterCopy(a, b, c, idx1, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SCATTER_COPY], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SCATTER_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SCATTER_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SCATTER_COPY, scatterCopy(a, b, c, idx1, chunkSize))
     break;
 
   case RSBaseImpl::RS_SCATTER_SCALE:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    scatterScale(a, b, c, idx1, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SCATTER_SCALE], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SCATTER_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SCATTER_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SCATTER_SCALE, scatterScale(a, b, c, idx1, chunkSize, scalar))
     break;
 
   case RSBaseImpl::RS_SCATTER_ADD:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    scatterAdd(a, b, c, idx1, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SCATTER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SCATTER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SCATTER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SCATTER_ADD, scatterAdd(a, b, c, idx1, chunkSize))
     break;
 
   case RSBaseImpl::RS_SCATTER_TRIAD:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    scatterTriad(a, b, c, idx1, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SCATTER_TRIAD], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SCATTER_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SCATTER_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SCATTER_TRIAD, scatterTriad(a, b, c, idx1, chunkSize, scalar))
     break;
 
   /* SCATTER-GATHER KERNELS */
   case RSBaseImpl::RS_SG_COPY:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    sgCopy(a, b, c, idx1, idx2, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SG_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SG_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SG_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SG_COPY, sgCopy(a, b, c, idx1, idx2, chunkSize))
     break;
 
   case RSBaseImpl::RS_SG_SCALE:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    sgScale(a, b, c, idx1, idx2, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SG_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SG_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SG_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SG_SCALE, sgScale(a, b, c, idx1, idx2, chunkSize, scalar))
     break;
 
   case RSBaseImpl::RS_SG_ADD:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    sgAdd(a, b, c, idx1, idx2, idx3, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SG_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SG_ADD], 1, MPI_DOUBLE, MPI_MAX,
-               0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SG_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SG_ADD, sgAdd(a, b, c, idx1, idx2, idx3, chunkSize))
     break;
 
   case RSBaseImpl::RS_SG_TRIAD:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SG_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SG_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SG_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SG_TRIAD, sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar))
     break;
 
   /* CENTRAL KERNELS */
   case RSBaseImpl::RS_CENTRAL_COPY:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    centralCopy(a, b, c, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_CENTRAL_COPY], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_CENTRAL_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_CENTRAL_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_CENTRAL_COPY, centralCopy(a, b, c, chunkSize))
     break;
 
   case RSBaseImpl::RS_CENTRAL_SCALE:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    centralScale(a, b, c, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_CENTRAL_SCALE], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_CENTRAL_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_CENTRAL_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_CENTRAL_SCALE, centralScale(a, b, c, chunkSize, scalar))
     break;
 
   case RSBaseImpl::RS_CENTRAL_ADD:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    centralAdd(a, b, c, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_CENTRAL_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_CENTRAL_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_CENTRAL_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize))
     break;
 
   case RSBaseImpl::RS_CENTRAL_TRIAD:
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    centralTriad(a, b, c, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_CENTRAL_TRIAD], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_CENTRAL_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_CENTRAL_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_CENTRAL_TRIAD, centralTriad(a, b, c, chunkSize, scalar))
     break;
 
   /* ALL KERNELS */
   case RSBaseImpl::RS_ALL:
-    /* RS_SEQ_COPY */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    seqCopy(a, b, c, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SEQ_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SEQ_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SEQ_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    /* RS_SEQ_COPY */ 
+    MPI_OMP_BENCHMARK(RS_SEQ_COPY, seqCopy(a, b, c, chunkSize))
 
     /* RS_SEQ_SCALE */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    seqScale(a, b, c, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SEQ_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SEQ_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SEQ_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SEQ_SCALE, seqScale(a, b, c, chunkSize, scalar))
 
     /* RS_SEQ_ADD */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    seqAdd(a, b, c, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SEQ_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SEQ_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SEQ_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SEQ_ADD, seqAdd(a, b, c, chunkSize))
 
     /* RS_SEQ_TRIAD */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    seqTriad(a, b, c, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SEQ_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SEQ_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SEQ_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SEQ_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SEQ_TRIAD, seqTriad(a, b, c, chunkSize, scalar))
 
     /* RS_GATHER_COPY */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    gatherCopy(a, b, c, idx1, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_GATHER_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_GATHER_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_GATHER_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_GATHER_COPY, gatherCopy(a, b, c, idx1, chunkSize))
 
     /* RS_GATHER_SCALE */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    gatherScale(a, b, c, idx1, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_GATHER_SCALE], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_GATHER_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_GATHER_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_GATHER_SCALE, gatherScale(a, b, c, idx1, chunkSize, scalar))
 
     /* RS_GATHER_ADD */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    gatherAdd(a, b, c, idx1, idx2, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_GATHER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_GATHER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_GATHER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_GATHER_ADD, gatherAdd(a, b, c, idx1, idx2, chunkSize))
 
     /* RS_GATHER_TRIAD */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_GATHER_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_GATHER_TRIAD], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_GATHER_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_GATHER_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_GATHER_TRIAD, gatherTriad(a, b, c, idx1, idx2, chunkSize, scalar))
 
     /* RS_SCATTER_COPY */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    scatterCopy(a, b, c, idx1, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SCATTER_COPY], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SCATTER_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SCATTER_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SCATTER_COPY, scatterCopy(a, b, c, idx1, chunkSize))
 
     /* RS_SCATTER_SCALE */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    scatterScale(a, b, c, idx1, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SCATTER_SCALE], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SCATTER_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SCATTER_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SCATTER_SCALE, scatterScale(a, b, c, idx1, chunkSize, scalar))
 
     /* RS_SCATTER_ADD */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    scatterAdd(a, b, c, idx1, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SCATTER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SCATTER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SCATTER_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SCATTER_ADD, scatterAdd(a, b, c, idx1, chunkSize))
 
     /* RS_SCATTER_TRIAD */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    scatterTriad(a, b, c, idx1, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SCATTER_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SCATTER_TRIAD], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SCATTER_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SCATTER_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SCATTER_TRIAD, scatterTriad(a, b, c, idx1, chunkSize, scalar))
 
     /* RS_SG_COPY */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    sgCopy(a, b, c, idx1, idx2, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SG_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SG_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SG_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SG_COPY, sgCopy(a, b, c, idx1, idx2, chunkSize))
 
     /* RS_SG_SCALE */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    sgScale(a, b, c, idx1, idx2, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SG_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SG_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SG_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SG_SCALE, sgScale(a, b, c, idx1, idx2, chunkSize, scalar))
 
     /* RS_SG_ADD */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    sgAdd(a, b, c, idx1, idx2, idx3, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SG_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SG_ADD], 1, MPI_DOUBLE, MPI_MAX,
-               0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SG_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SG_ADD, sgAdd(a, b, c, idx1, idx2, idx3, chunkSize))
 
     /* RS_SG_TRIAD */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_SG_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_SG_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_SG_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_SG_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_SG_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_SG_TRIAD, sgTriad(a, b, c, idx1, idx2, idx3, chunkSize, scalar))
 
     /* RS_CENTRAL_COPY */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    centralCopy(a, b, c, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_COPY], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_CENTRAL_COPY], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_CENTRAL_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_CENTRAL_COPY], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_CENTRAL_COPY, centralCopy(a, b, c, chunkSize))
 
     /* RS_CENTRAL_SCALE */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    centralScale(a, b, c, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_SCALE], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_CENTRAL_SCALE], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_CENTRAL_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_CENTRAL_SCALE], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_CENTRAL_SCALE, centralScale(a, b, c, chunkSize, scalar))
 
     /* RS_CENTRAL_ADD */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    centralAdd(a, b, c, chunkSize);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_ADD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_CENTRAL_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_CENTRAL_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_CENTRAL_ADD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_CENTRAL_ADD, centralAdd(a, b, c, chunkSize))
 
     /* RS_CENTRAL_TRIAD */
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTime = MPI_Wtime();
-    centralTriad(a, b, c, chunkSize, scalar);
-    MPI_Barrier(MPI_COMM_WORLD);
-    endTime = MPI_Wtime();
-
-    runTime = calculateRunTime(startTime, endTime);
-    mbps = calculateMBPS(BYTES[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-    flops = calculateFLOPS(FLOATOPS[RSBaseImpl::RS_CENTRAL_TRIAD], runTime);
-
-    localRunTime = runTime;
-    localMbps = mbps;
-    localFlops = flops;
-
-    MPI_Reduce(&localRunTime, &TIMES[RSBaseImpl::RS_CENTRAL_TRIAD], 1,
-               MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localMbps, &MBPS[RSBaseImpl::RS_CENTRAL_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localFlops, &FLOPS[RSBaseImpl::RS_CENTRAL_TRIAD], 1, MPI_DOUBLE,
-               MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_OMP_BENCHMARK(RS_CENTRAL_TRIAD, centralTriad(a, b, c, chunkSize, scalar))
     break;
 
   /* NO KERNELS, SOMETHING IS WRONG */

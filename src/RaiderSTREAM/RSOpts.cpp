@@ -10,10 +10,10 @@
 #include "RaiderSTREAM/RSOpts.h"
 #include <algorithm>
 
-#ifdef _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
+#if defined(_ENABLE_CUDA_) || defined(_ENABLE_SHMEM_CUDA_)
 #include <cuda.h>
 #endif
-#ifdef _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+#if defined(_ENABLE_OMP_TARGET_) || defined(_ENABLE_SHMEM_OMP_TARGET_)
 #include <omp.h>
 #endif
 
@@ -61,10 +61,10 @@ BenchType BenchTypeTable[] = {
 RSOpts::RSOpts()
     : isHelp(false), isList(false), streamArraySize(1000000), numPEs(1),
       lArgc(0), lArgv(nullptr)
-#ifdef _ENABLE_CUDA_ || _ENABLE_SHMEM_CUDA_
+#if defined(_ENABLE_CUDA_) || defined(_ENABLE_SHMEM_CUDA_)
       , deviceId(0)
 #endif
-#ifdef _ENABLE_OMP_TARGET_ || _ENABLE_SHMEM_OMP_TARGET_
+#if  defined(_ENABLE_OMP_TARGET_) || defined(_ENABLE_SHMEM_OMP_TARGET_)
       , deviceId(omp_get_default_device())
 #endif
 {}

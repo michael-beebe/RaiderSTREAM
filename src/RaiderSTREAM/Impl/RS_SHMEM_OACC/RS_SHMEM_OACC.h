@@ -26,9 +26,16 @@ class RS_SHMEM_OACC : public RSBaseImpl {
 private:
   std::string kernelName;  /**< Name of kernel being executed */
   ssize_t streamArraySize; /**< Size of stream arrays */
+  ssize_t chunkSize;       /**< Size of local chunk */
   int lArgc;               /**< Local argument count */
   char **lArgv;            /**< Local argument vector */
   int numPEs;              /**< Number of processing elements */
+  STREAM_TYPE *a;          /**< First stream array */
+  STREAM_TYPE *b;          /**< Second stream array */
+  STREAM_TYPE *c;          /**< Third stream array */
+  STREAM_TYPE *result_a;   /**< First Result array */
+  STREAM_TYPE *result_b;   /**< Second Result array */
+  STREAM_TYPE *result_c;   /**< Third Result array */
   STREAM_TYPE *d_a;        /**< Device pointer for first stream array */
   STREAM_TYPE *d_b;        /**< Device pointer for second stream array */
   STREAM_TYPE *d_c;        /**< Device pointer for third stream array */
@@ -50,10 +57,17 @@ public:
   ~RS_SHMEM_OACC();
 
   /**
+   * @brief Determine local chunk size of PE
+   * @param streamArraySize Total size of arrays in problem
+   */
+  ssize_t getChunkSize(ssize_t streamArraySize);
+
+  /**
    * @brief Allocates and initializes memory for stream arrays
    * @return True if allocation succeeds, false otherwise
    */
-  virtual bool allocateData() override;
+  virtual bool allocateData(double * allocTime, double * initTime, 
+      double * randomGenTime) override;
 
   /**
    * @brief Executes the selected benchmark kernel
@@ -66,6 +80,13 @@ public:
    */
   virtual bool execute(double *TIMES, double *MBPS, double *FLOPS,
                        double *BYTES, double *FLOATOPS) override;
+
+  /**
+   * @brief collect all results into one array
+   *
+   * @param collectTime The time taken to collect all results
+   */
+  virtual void collectChunks(double * collectTime) override;
 
   /**
    * @brief Frees allocated memory
