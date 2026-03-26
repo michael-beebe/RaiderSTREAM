@@ -58,7 +58,7 @@ public:
    * @brief Determine local chunk size of PE
    * @param streamArraySize Total size of arrays in problem
    */
-  ssize_t getChunkSize(ssize_t streamArraySize) override;
+  ssize_t getChunkSize(ssize_t streamArraySize);
 
   /**
    * @brief Allocates and initializes memory for stream arrays

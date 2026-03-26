@@ -146,15 +146,6 @@ public:
   std::string getImplName() { return Impl; }
 
   /**
-   * @brief Determine local chunk size of PE
-   * 
-   * by default, return size of stream array
-   * 
-   * @param streamArraySize Total size of arrays in problem
-   */
-  virtual ssize_t getChunkSize(ssize_t streamArraySize) = 0;
-
-  /**
    * @brief Allocate data for kernels.
    *
    * Depending on the implementation, this could
@@ -219,7 +210,6 @@ public:
    */
   void initRandomIdxArray(ssize_t *array, ssize_t nelems) {
     size_t i, j, temp;
-
     /* Initialize array of 0 ... n - 1 */
     for (i = 0; i < nelems; i ++){
       array[i] = i;

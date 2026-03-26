@@ -154,7 +154,7 @@ bool RSOpts::parseOpts(int argc, char **argv) {
     }
     /* Get the stream array size */
     else if ((s == "-s") || (s == "--size")) {
-      setStreamArraySize(atoi(argv[i + 1]));
+      setStreamArraySize(atol(argv[i + 1]));
       i++;
     }
     /* Get the number of PEs */
